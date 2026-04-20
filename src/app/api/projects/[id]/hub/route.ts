@@ -1,0 +1,18 @@
+import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/permissions";
+import { getProjectHub } from "@/lib/services/project-hub.service";
+import { toApiError } from "@/lib/errors";
+
+type Params = { params: Promise<{ id: string }> };
+
+export async function GET(_req: NextRequest, { params }: Params) {
+  try {
+    const { id } = await params;
+    const user = await requireAuth();
+    const data = await getProjectHub(user, id);
+    return NextResponse.json({ data });
+  } catch (err) {
+    const error = toApiError(err);
+    return NextResponse.json({ error }, { status: error.status });
+  }
+}

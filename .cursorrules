@@ -1,0 +1,93 @@
+# Tribus Hub — Cursor Rules
+
+## Stack
+- Next.js 15 App Router (TypeScript strict)
+- Drizzle ORM + PostgreSQL (Neon)
+- Auth.js v5 (next-auth)
+- Cloudflare R2 for assets
+- Tailwind CSS v4 + shadcn/ui + Radix UI
+- TanStack Query v5 for server state
+- Vitest + React Testing Library for unit tests
+
+## Architecture
+
+### Feature modules (`src/features/<domain>/`)
+Each feature owns its UI, hooks and local utilities.
+- `components/` — React components
+- `hooks/` — TanStack Query hooks (useQuery / useMutation)
+- `lib/` — pure helpers, search utilities
+
+### API routes (`src/app/api/`)
+- One `route.ts` per resource/sub-resource
+- Always validate with Zod before touching the DB
+- Return `NextResponse.json({ data })` on success
+- Use `toApiError()` from `@/lib/errors` for error responses
+
+### DB layer (`src/lib/`)
+- `db/schema.ts` — all Drizzle table definitions
+- `db/client.ts` — singleton `db` instance
+- `repositories/` — query functions (no business logic)
+
+## Coding rules
+
+### General
+- TypeScript strict — no `any` unless unavoidable (prefer `unknown`)
+- Use `type` imports: `import type { Foo } from "..."`
+- No default exports except Next.js pages/layouts/routes
+- No barrel `index.ts` re-exports unless the module is a public API
+
+### Components
+- Server Components by default; add `"use client"` only when needed
+- Props interfaces over `React.FC<>` — use plain function declarations
+- `cn()` from `@/lib/utils/cn` for class merging
+- `<DialogTitle className="sr-only">` in every Radix Dialog for accessibility
+
+### Data fetching
+- Mutations: always invalidate related queries after success
+- Optimistic updates only when UX demands it (complex forms — skip)
+- `staleTime: 0` for data that changes on every render (e.g., milestones after project selection)
+
+### Forms & validation
+- Zod schemas live in `src/lib/schemas/<domain>.schemas.ts`
+- API routes validate with `.safeParse()`, return 400 on failure
+- Never trust client-sent IDs without auth session check
+
+### Errors
+- Use typed errors from `@/lib/errors`: `NotFoundError`, `UnauthorizedError`, etc.
+- `isAppError()` + `toApiError()` in API route catch blocks
+
+## Testing
+
+### What to test
+- Pure utilities in `src/lib/utils/`
+- Zod schemas (valid + invalid shapes)
+- Error classes and helpers
+- Feature-level search/filter functions
+
+### What NOT to test here
+- E2E / functional flows (separate repo)
+- Next.js routing internals
+- Third-party library behaviour
+
+### Conventions
+- Files: `tests/unit/**/*.test.ts` or `tests/unit/**/*.test.tsx`
+- Use `describe` + `it` blocks (not `test`)
+- `makeProject()` / `makeTask()` factory helpers in test files — no inline object literals repeated
+- Never mock `@/lib/db/client` — tests that need DB use integration tests (separate)
+
+## File naming
+- Components: `kebab-case.tsx`
+- Hooks: `use-kebab-case.ts`
+- Schemas: `<domain>.schemas.ts`
+- Repository files: `<domain>.repository.ts`
+
+## Imports
+- Always use `@/` alias for src-relative imports
+- Group order: React → Next.js → third-party → internal (`@/lib` → `@/features` → `@/components`)
+
+## Do NOT
+- Add `console.log` (use `console.warn`/`console.error` sparingly)
+- Create new `/pages/` directory routes — App Router only
+- Commit `.env.local` or any secrets
+- Skip Zod validation on API input
+- Add Playwright or any E2E tooling to this repo

@@ -1,0 +1,14 @@
+name = "tribus-hub-api"
+main = "src/index.ts"
+compatibility_date = "2026-04-20"
+
+[observability]
+enabled = true
+
+[[d1_databases]]
+binding = "TRIBUS_HUB_DB"
+database_name = "tribus_hub_db"
+database_id = "9c0a94cd-c678-445f-a898-27d2660b6d69"
+
+[vars]
+HUB_API_INTERNAL_SECRET = "be404c78c2ec4c26bb73b441fe1672d6ef7d50f8b7ef7daef2e06580617d44b6"
