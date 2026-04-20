@@ -102,15 +102,13 @@ export function OkrObjectivesPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="max-w-6xl space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Target className="h-5 w-5 text-muted-foreground" />
           <h1 className="text-lg font-semibold text-foreground">Objetivos</h1>
-          {!isLoading && (
-            <span className="text-sm text-muted-foreground">({filtered.length})</span>
-          )}
+          {!isLoading && <span className="text-sm text-muted-foreground">({filtered.length})</span>}
         </div>
         <Button size="sm" onClick={() => setCreateOpen(true)}>
           <Plus className="h-4 w-4" />
@@ -119,11 +117,11 @@ export function OkrObjectivesPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex flex-wrap items-center gap-2">
         <div className="relative">
           <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
           <Input
-            className="pl-8 h-8 w-52 text-sm"
+            className="h-8 w-52 pl-8 text-sm"
             placeholder="Buscar objetivos…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -150,11 +148,13 @@ export function OkrObjectivesPage() {
         >
           <option value="">Todos os ciclos</option>
           {cycles.map((c) => (
-            <option key={c.id} value={c.id}>{c.title}</option>
+            <option key={c.id} value={c.id}>
+              {c.title}
+            </option>
           ))}
         </select>
 
-        <div className="flex items-center gap-1 ml-auto">
+        <div className="ml-auto flex items-center gap-1">
           <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
           <select
             className="h-8 rounded-md border border-input bg-background px-2.5 text-sm"
@@ -171,15 +171,15 @@ export function OkrObjectivesPage() {
       {isLoading && (
         <div className="space-y-2">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-14 bg-muted rounded-xl animate-pulse" />
+            <div key={i} className="h-14 animate-pulse rounded-xl bg-muted" />
           ))}
         </div>
       )}
 
       {!isLoading && filtered.length === 0 && (
-        <div className="text-center py-20">
-          <Target className="h-10 w-10 mx-auto mb-3 text-muted-foreground opacity-30" />
-          <p className="text-sm text-muted-foreground mb-4">
+        <div className="py-20 text-center">
+          <Target className="mx-auto mb-3 h-10 w-10 text-muted-foreground opacity-30" />
+          <p className="mb-4 text-sm text-muted-foreground">
             {search || filterStatus || filterCycle
               ? "Nenhum objetivo corresponde aos filtros."
               : "Nenhum objetivo criado ainda."}
@@ -194,15 +194,25 @@ export function OkrObjectivesPage() {
       )}
 
       {!isLoading && filtered.length > 0 && (
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
           {/* Table header */}
-          <div className="grid grid-cols-[20px_1fr_100px_90px_80px_140px_36px] gap-3 px-5 py-2.5 border-b border-border bg-muted/30">
+          <div className="grid grid-cols-[20px_1fr_100px_90px_80px_140px_36px] gap-3 border-b border-border bg-muted/30 px-5 py-2.5">
             <span />
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Objetivo</span>
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Ciclo</span>
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</span>
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">KRs</span>
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Progresso</span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Objetivo
+            </span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Ciclo
+            </span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Status
+            </span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              KRs
+            </span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Progresso
+            </span>
             <span />
           </div>
 
@@ -269,7 +279,7 @@ function ObjectiveRow({
     <div>
       {/* Objective row */}
       <div
-        className={`grid grid-cols-[20px_1fr_100px_90px_80px_140px_36px] gap-3 px-5 py-3.5 items-center transition-colors cursor-pointer ${
+        className={`grid cursor-pointer grid-cols-[20px_1fr_100px_90px_80px_140px_36px] items-center gap-3 px-5 py-3.5 transition-colors ${
           isExpanded ? "bg-muted/20" : "hover:bg-muted/20"
         }`}
         onClick={(e) => {
@@ -285,8 +295,10 @@ function ObjectiveRow({
             e.stopPropagation();
             if (hasKrs) onToggle();
           }}
-          className={`flex items-center justify-center transition-colors rounded ${
-            hasKrs ? "text-muted-foreground hover:text-foreground cursor-pointer" : "cursor-default opacity-0"
+          className={`flex items-center justify-center rounded transition-colors ${
+            hasKrs
+              ? "cursor-pointer text-muted-foreground hover:text-foreground"
+              : "cursor-default opacity-0"
           }`}
           tabIndex={hasKrs ? 0 : -1}
         >
@@ -296,29 +308,31 @@ function ObjectiveRow({
         </button>
 
         {/* Title: só o texto do link navega; área vazia à direita expande/recolhe */}
-        <div className="min-w-0 flex flex-col items-start gap-0.5">
+        <div className="flex min-w-0 flex-col items-start gap-0.5">
           <Link
             href={`/okr/objectives/${objective.id}`}
             onClick={(e) => e.stopPropagation()}
-            className="text-sm font-medium text-foreground hover:text-primary transition-colors truncate text-left inline-block max-w-full align-top"
+            className="inline-block max-w-full truncate text-left align-top text-sm font-medium text-foreground transition-colors hover:text-primary"
           >
             {objective.title}
           </Link>
           {objective.targetDate && (
-            <p className="text-xs text-muted-foreground mt-0.5 w-full">
+            <p className="mt-0.5 w-full text-xs text-muted-foreground">
               Meta: {formatDate(objective.targetDate)}
             </p>
           )}
         </div>
 
         {/* Cycle */}
-        <span className="text-xs text-muted-foreground truncate">{cycleName}</span>
+        <span className="truncate text-xs text-muted-foreground">{cycleName}</span>
 
         {/* Status */}
         <OkrStatusBadge status={objective.status} />
 
         {/* KRs count */}
-        <span className={`text-sm tabular-nums ${hasKrs ? "text-muted-foreground" : "text-muted-foreground/40"}`}>
+        <span
+          className={`text-sm tabular-nums ${hasKrs ? "text-muted-foreground" : "text-muted-foreground/40"}`}
+        >
           {completedKrs}/{krCount}
         </span>
 
@@ -330,7 +344,7 @@ function ObjectiveRow({
             size="xs"
             className="flex-1"
           />
-          <span className="text-xs tabular-nums text-muted-foreground w-8 text-right shrink-0">
+          <span className="w-8 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
             {Math.round(objective.progressPercent)}%
           </span>
         </div>
@@ -341,7 +355,7 @@ function ObjectiveRow({
             <MoreHorizontal className="h-4 w-4" />
           </Button>
           {menuOpen && (
-            <div className="absolute right-0 top-8 z-10 w-40 rounded-lg border border-border bg-popover shadow-md py-1">
+            <div className="absolute right-0 top-8 z-10 w-40 rounded-lg border border-border bg-popover py-1 shadow-md">
               <Link
                 href={`/okr/objectives/${objective.id}`}
                 className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted/50"
@@ -350,7 +364,7 @@ function ObjectiveRow({
                 Abrir detalhes
               </Link>
               <button
-                className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted/50 w-full text-left text-destructive"
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-destructive hover:bg-muted/50"
                 onClick={onDelete}
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -377,23 +391,23 @@ function KrSubRow({ kr, onUpdate }: { kr: OkrKeyResult; onUpdate: () => void }) 
   const isBoolean = kr.metricType === "boolean";
 
   return (
-    <div className="grid grid-cols-[20px_1fr_100px_90px_80px_140px_36px] gap-3 pl-5 pr-5 py-2.5 items-center border-b border-border/40 last:border-b-0 hover:bg-muted/20 transition-colors">
+    <div className="grid grid-cols-[20px_1fr_100px_90px_80px_140px_36px] items-center gap-3 border-b border-border/40 py-2.5 pl-5 pr-5 transition-colors last:border-b-0 hover:bg-muted/20">
       {/* indent indicator */}
       <div className="flex items-center justify-center">
-        <div className="h-3 w-px bg-border ml-1" />
+        <div className="ml-1 h-3 w-px bg-border" />
       </div>
 
       {/* Title */}
-      <div className="min-w-0 pl-2 border-l border-border/50">
+      <div className="min-w-0 border-l border-border/50 pl-2">
         <Link
           href={`/okr/key-results/${kr.id}`}
-          className="text-sm text-foreground/80 hover:text-primary transition-colors truncate block"
+          className="block truncate text-sm text-foreground/80 transition-colors hover:text-primary"
         >
-          <TrendingUp className="h-3 w-3 inline mr-1.5 text-muted-foreground/60" />
+          <TrendingUp className="mr-1.5 inline h-3 w-3 text-muted-foreground/60" />
           {kr.title}
         </Link>
         {!isBoolean && (
-          <p className="text-xs text-muted-foreground/70 mt-0.5 tabular-nums">
+          <p className="mt-0.5 text-xs tabular-nums text-muted-foreground/70">
             {kr.currentValue} / {kr.targetValue}
             {kr.unit ? ` ${kr.unit}` : ""}
           </p>
@@ -417,7 +431,7 @@ function KrSubRow({ kr, onUpdate }: { kr: OkrKeyResult; onUpdate: () => void }) 
           size="xs"
           className="flex-1"
         />
-        <span className="text-xs tabular-nums text-muted-foreground w-8 text-right shrink-0">
+        <span className="w-8 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
           {Math.round(kr.progressPercent)}%
         </span>
       </div>

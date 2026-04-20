@@ -10,7 +10,8 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     const { id, linkId } = await params;
     const user = await requireAuth();
     const project = await projectsRepo.findProjectById(id);
-    if (!project || project.workspaceId !== user.workspaceId) throw new NotFoundError("Project", id);
+    if (!project || project.workspaceId !== user.workspaceId)
+      throw new NotFoundError("Project", id);
 
     const type = new URL(_req.url).searchParams.get("type");
     if (type === "kr") {

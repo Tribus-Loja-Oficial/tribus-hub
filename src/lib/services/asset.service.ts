@@ -1,5 +1,10 @@
 import * as assetsRepo from "@/lib/repositories/assets.repository";
-import { uploadToR2, deleteFromR2, getSignedDownloadUrl, getPublicUrl } from "@/lib/integrations/r2/r2.service";
+import {
+  uploadToR2,
+  deleteFromR2,
+  getSignedDownloadUrl,
+  getPublicUrl,
+} from "@/lib/integrations/r2/r2.service";
 import { isR2Configured } from "@/lib/integrations/r2/r2.client";
 import { recordAudit } from "./audit.service";
 import { NotFoundError, ValidationError } from "@/lib/errors";
@@ -86,10 +91,7 @@ export async function uploadAsset(
   return { ...asset, url };
 }
 
-export async function getAsset(
-  user: AuthenticatedUser,
-  id: string,
-): Promise<AssetWithUrl> {
+export async function getAsset(user: AuthenticatedUser, id: string): Promise<AssetWithUrl> {
   const asset = await assetsRepo.findAssetById(id);
   if (!asset || asset.workspaceId !== user.workspaceId) {
     throw new NotFoundError("Asset", id);
@@ -103,8 +105,7 @@ export async function listAssets(user: AuthenticatedUser): Promise<AssetWithUrl[
   const list = await assetsRepo.findAssetsByWorkspace(user.workspaceId);
   return Promise.all(
     list.map(async (asset) => {
-      const url =
-        getPublicUrl(asset.objectKey) ?? (await getSignedDownloadUrl(asset.objectKey));
+      const url = getPublicUrl(asset.objectKey) ?? (await getSignedDownloadUrl(asset.objectKey));
       return { ...asset, url };
     }),
   );

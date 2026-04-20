@@ -34,7 +34,9 @@ export async function findLinkedPagesForProject(
     ),
   });
 
-  const pageIds = [...new Set(links.map((l) => pageIdFromLink(l, projectId)).filter(Boolean))] as string[];
+  const pageIds = [
+    ...new Set(links.map((l) => pageIdFromLink(l, projectId)).filter(Boolean)),
+  ] as string[];
   if (pageIds.length === 0) return [];
 
   const rows = await db.query.pages.findMany({

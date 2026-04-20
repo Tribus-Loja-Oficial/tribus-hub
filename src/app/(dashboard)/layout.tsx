@@ -18,7 +18,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <NavigationProgress />
       <NavigationStateProvider>
         <AppSidebar />
-        <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <AppHeader />
           <main className="flex-1 overflow-auto p-6">
             <MainContent>{children}</MainContent>

@@ -28,13 +28,7 @@ function buildSignature(input: {
   nonce: string;
   body: string;
 }) {
-  const canonical = [
-    input.method,
-    input.path,
-    input.timestamp,
-    input.nonce,
-    input.body,
-  ].join("\n");
+  const canonical = [input.method, input.path, input.timestamp, input.nonce, input.body].join("\n");
   return createHmac("sha256", input.secret).update(canonical).digest("hex");
 }
 
@@ -73,9 +67,10 @@ export async function hubApiFetch<T>(input: {
     cache: "no-store",
   });
 
-  const payload = (await res.json().catch(() => null)) as
-    | { data?: T; error?: { message?: string } }
-    | null;
+  const payload = (await res.json().catch(() => null)) as {
+    data?: T;
+    error?: { message?: string };
+  } | null;
 
   if (!res.ok) {
     const message = payload?.error?.message ?? `hub-api request failed: ${res.status}`;

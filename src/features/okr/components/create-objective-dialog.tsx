@@ -9,7 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { OkrCycle } from "@/lib/db/schema";
 
-interface MemberRow { id: string; name: string; email: string }
+interface MemberRow {
+  id: string;
+  name: string;
+  email: string;
+}
 
 interface CreateObjectiveDialogProps {
   open: boolean;
@@ -17,7 +21,11 @@ interface CreateObjectiveDialogProps {
   defaultCycleId?: string;
 }
 
-export function CreateObjectiveDialog({ open, onOpenChange, defaultCycleId }: CreateObjectiveDialogProps) {
+export function CreateObjectiveDialog({
+  open,
+  onOpenChange,
+  defaultCycleId,
+}: CreateObjectiveDialogProps) {
   const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const [cycleId, setCycleId] = useState(defaultCycleId ?? "");
@@ -95,7 +103,9 @@ export function CreateObjectiveDialog({ open, onOpenChange, defaultCycleId }: Cr
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label>Título <span className="text-destructive">*</span></Label>
+            <Label>
+              Título <span className="text-destructive">*</span>
+            </Label>
             <Input
               autoFocus
               value={title}
@@ -105,7 +115,9 @@ export function CreateObjectiveDialog({ open, onOpenChange, defaultCycleId }: Cr
           </div>
 
           <div className="space-y-1.5">
-            <Label>Descrição <span className="text-muted-foreground text-xs">(opcional)</span></Label>
+            <Label>
+              Descrição <span className="text-xs text-muted-foreground">(opcional)</span>
+            </Label>
             <Input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -117,13 +129,15 @@ export function CreateObjectiveDialog({ open, onOpenChange, defaultCycleId }: Cr
             <div className="space-y-1.5">
               <Label>Ciclo</Label>
               <select
-                className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 value={cycleId}
                 onChange={(e) => setCycleId(e.target.value)}
               >
                 <option value="">Sem ciclo</option>
                 {cycles.map((c) => (
-                  <option key={c.id} value={c.id}>{c.title}</option>
+                  <option key={c.id} value={c.id}>
+                    {c.title}
+                  </option>
                 ))}
               </select>
             </div>
@@ -131,13 +145,15 @@ export function CreateObjectiveDialog({ open, onOpenChange, defaultCycleId }: Cr
             <div className="space-y-1.5">
               <Label>Owner</Label>
               <select
-                className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 value={ownerUserId}
                 onChange={(e) => setOwnerUserId(e.target.value)}
               >
                 <option value="">Sem owner</option>
                 {members.map((m) => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -147,7 +163,7 @@ export function CreateObjectiveDialog({ open, onOpenChange, defaultCycleId }: Cr
             <div className="space-y-1.5">
               <Label>Status</Label>
               <select
-                className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
               >
@@ -162,7 +178,7 @@ export function CreateObjectiveDialog({ open, onOpenChange, defaultCycleId }: Cr
             <div className="space-y-1.5">
               <Label>Prioridade</Label>
               <select
-                className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
               >
@@ -181,7 +197,11 @@ export function CreateObjectiveDialog({ open, onOpenChange, defaultCycleId }: Cr
             </div>
             <div className="space-y-1.5">
               <Label>Meta (data)</Label>
-              <Input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} />
+              <Input
+                type="date"
+                value={targetDate}
+                onChange={(e) => setTargetDate(e.target.value)}
+              />
             </div>
           </div>
 
@@ -190,7 +210,7 @@ export function CreateObjectiveDialog({ open, onOpenChange, defaultCycleId }: Cr
               Cancelar
             </Button>
             <Button type="submit" disabled={!title.trim() || mutation.isPending}>
-              {mutation.isPending && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
+              {mutation.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
               {mutation.isPending ? "Criando…" : "Criar objetivo"}
             </Button>
           </div>

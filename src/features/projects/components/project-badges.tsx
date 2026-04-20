@@ -9,10 +9,26 @@ const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
 };
 
 const HEALTH_CONFIG: Record<string, { label: string; className: string; dot: string }> = {
-  on_track: { label: "No rumo", className: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
-  at_risk: { label: "Em risco", className: "bg-yellow-50 text-yellow-700 border-yellow-200", dot: "bg-yellow-500" },
-  blocked: { label: "Bloqueado", className: "bg-red-50 text-red-700 border-red-200", dot: "bg-red-500" },
-  off_track: { label: "Fora do rumo", className: "bg-orange-50 text-orange-700 border-orange-200", dot: "bg-orange-500" },
+  on_track: {
+    label: "No rumo",
+    className: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    dot: "bg-emerald-500",
+  },
+  at_risk: {
+    label: "Em risco",
+    className: "bg-yellow-50 text-yellow-700 border-yellow-200",
+    dot: "bg-yellow-500",
+  },
+  blocked: {
+    label: "Bloqueado",
+    className: "bg-red-50 text-red-700 border-red-200",
+    dot: "bg-red-500",
+  },
+  off_track: {
+    label: "Fora do rumo",
+    className: "bg-orange-50 text-orange-700 border-orange-200",
+    dot: "bg-orange-500",
+  },
 };
 
 const PRIORITY_CONFIG: Record<string, { label: string; className: string }> = {
@@ -31,33 +47,48 @@ const MILESTONE_STATUS_CONFIG: Record<string, { label: string; className: string
 
 function Badge({ className, children }: { className: string; children: React.ReactNode }) {
   return (
-    <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium ${className}`}>
+    <span
+      className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium ${className}`}
+    >
       {children}
     </span>
   );
 }
 
 export function ProjectStatusBadge({ status }: { status: string }) {
-  const cfg = STATUS_CONFIG[status] ?? { label: status, className: "bg-muted text-muted-foreground border-border" };
+  const cfg = STATUS_CONFIG[status] ?? {
+    label: status,
+    className: "bg-muted text-muted-foreground border-border",
+  };
   return <Badge className={cfg.className}>{cfg.label}</Badge>;
 }
 
 export function ProjectHealthBadge({ health }: { health: string }) {
-  const cfg = HEALTH_CONFIG[health] ?? { label: health, className: "bg-muted text-muted-foreground border-border", dot: "bg-muted-foreground" };
+  const cfg = HEALTH_CONFIG[health] ?? {
+    label: health,
+    className: "bg-muted text-muted-foreground border-border",
+    dot: "bg-muted-foreground",
+  };
   return (
     <Badge className={`${cfg.className} whitespace-nowrap`}>
-      <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${cfg.dot}`} />
+      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${cfg.dot}`} />
       {cfg.label}
     </Badge>
   );
 }
 
 export function PriorityBadge({ priority }: { priority: string }) {
-  const cfg = PRIORITY_CONFIG[priority] ?? { label: priority, className: "bg-muted text-muted-foreground border-border" };
+  const cfg = PRIORITY_CONFIG[priority] ?? {
+    label: priority,
+    className: "bg-muted text-muted-foreground border-border",
+  };
   return <Badge className={cfg.className}>{cfg.label}</Badge>;
 }
 
 export function MilestoneStatusBadge({ status }: { status: string }) {
-  const cfg = MILESTONE_STATUS_CONFIG[status] ?? { label: status, className: "bg-muted text-muted-foreground border-border" };
+  const cfg = MILESTONE_STATUS_CONFIG[status] ?? {
+    label: status,
+    className: "bg-muted text-muted-foreground border-border",
+  };
   return <Badge className={cfg.className}>{cfg.label}</Badge>;
 }

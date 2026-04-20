@@ -5,9 +5,7 @@
  * Any remaining direct repository call must be migrated before use.
  */
 function throwDbRemoved(): never {
-  throw new Error(
-    "Direct DB client was removed. Use hub-api endpoints (Cloudflare Worker + D1).",
-  );
+  throw new Error("Direct DB client was removed. Use hub-api endpoints (Cloudflare Worker + D1).");
 }
 
 export const db: any = new Proxy(

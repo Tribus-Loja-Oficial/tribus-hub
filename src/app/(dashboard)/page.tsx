@@ -42,40 +42,43 @@ export default async function HomePage() {
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           Olá, {session?.user?.name?.split(" ")[0]}
         </h1>
-        <p className="text-muted-foreground mt-1">
+        <p className="mt-1 text-muted-foreground">
           Bem-vindo ao Tribus Hub — sua fonte de verdade estratégica e documental.
         </p>
       </div>
 
       <div className="mb-6">
         <PageGuide title="O que é o Tribus Hub?">
-          <p>O Tribus Hub é a fonte de verdade da equipe — tudo em um lugar: conhecimento, projetos, tarefas e arquivos.</p>
+          <p>
+            O Tribus Hub é a fonte de verdade da equipe — tudo em um lugar: conhecimento, projetos,
+            tarefas e arquivos.
+          </p>
           <GuideSection title="Módulos disponíveis:">
-            <GuideList items={[
-              "Knowledge — documentação, wikis e base de conhecimento da equipe;",
-              "Project Manager — projetos, milestones, OKRs e acompanhamento estratégico;",
-              "Tasks — board kanban para execução e acompanhamento do trabalho;",
-              "Assets — repositório de arquivos e materiais internos.",
-            ]} />
+            <GuideList
+              items={[
+                "Knowledge — documentação, wikis e base de conhecimento da equipe;",
+                "Project Manager — projetos, milestones, OKRs e acompanhamento estratégico;",
+                "Tasks — board kanban para execução e acompanhamento do trabalho;",
+                "Assets — repositório de arquivos e materiais internos.",
+              ]}
+            />
           </GuideSection>
         </PageGuide>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {cards.map(({ href, icon: Icon, title, description }) => (
           <Link
             key={href}
             href={href}
-            className="group flex flex-col gap-3 border border-border rounded-lg p-5 bg-card hover:border-primary/40 hover:shadow-sm transition-all"
+            className="group flex flex-col gap-3 rounded-lg border border-border bg-card p-5 transition-all hover:border-primary/40 hover:shadow-sm"
           >
-            <div className="flex items-center justify-center w-9 h-9 rounded-md bg-primary/8 text-primary">
+            <div className="bg-primary/8 flex h-9 w-9 items-center justify-center rounded-md text-primary">
               <Icon className="h-4.5 w-4.5" />
             </div>
             <div>
               <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                {description}
-              </p>
+              <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{description}</p>
             </div>
           </Link>
         ))}

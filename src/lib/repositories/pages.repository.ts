@@ -69,16 +69,9 @@ export async function getMaxSortOrderAmongSiblings(
   return Number(row?.max ?? 0);
 }
 
-export async function findPageBySlug(
-  workspaceId: string,
-  slug: string,
-): Promise<Page | undefined> {
+export async function findPageBySlug(workspaceId: string, slug: string): Promise<Page | undefined> {
   return db.query.pages.findFirst({
-    where: and(
-      eq(pages.workspaceId, workspaceId),
-      eq(pages.slug, slug),
-      isNull(pages.deletedAt),
-    ),
+    where: and(eq(pages.workspaceId, workspaceId), eq(pages.slug, slug), isNull(pages.deletedAt)),
   });
 }
 

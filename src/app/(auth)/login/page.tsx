@@ -5,16 +5,14 @@ export const metadata: Metadata = { title: "Login" };
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="w-full max-w-sm px-4">
         <div className="mb-8 text-center">
-          <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary mb-4">
-            <span className="text-primary-foreground font-bold text-sm">T</span>
+          <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
+            <span className="text-sm font-bold text-primary-foreground">T</span>
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">Tribus Hub</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Plataforma interna
-          </p>
+          <p className="mt-1 text-sm text-muted-foreground">Plataforma interna</p>
         </div>
         <LoginForm />
       </div>

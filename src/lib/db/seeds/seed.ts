@@ -84,7 +84,10 @@ async function seed() {
       .values({
         workspaceId: wid,
         title: p.title,
-        slug: p.title.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""),
+        slug: p.title
+          .toLowerCase()
+          .replace(/\s+/g, "-")
+          .replace(/[^a-z0-9-]/g, ""),
         icon: p.icon,
         excerpt: p.excerpt,
         status: "published",

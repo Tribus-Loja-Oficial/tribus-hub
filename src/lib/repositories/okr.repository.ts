@@ -55,7 +55,11 @@ export function calcObjectiveProgress(krs: OkrKeyResult[]): number {
 export async function cycleSlugExists(workspaceId: string, slug: string): Promise<boolean> {
   const row = await db.query.okrCycles.findFirst({
     columns: { id: true },
-    where: and(eq(okrCycles.workspaceId, workspaceId), eq(okrCycles.slug, slug), isNull(okrCycles.deletedAt)),
+    where: and(
+      eq(okrCycles.workspaceId, workspaceId),
+      eq(okrCycles.slug, slug),
+      isNull(okrCycles.deletedAt),
+    ),
   });
   return !!row;
 }
@@ -63,7 +67,11 @@ export async function cycleSlugExists(workspaceId: string, slug: string): Promis
 export async function objectiveSlugExists(workspaceId: string, slug: string): Promise<boolean> {
   const row = await db.query.okrObjectives.findFirst({
     columns: { id: true },
-    where: and(eq(okrObjectives.workspaceId, workspaceId), eq(okrObjectives.slug, slug), isNull(okrObjectives.deletedAt)),
+    where: and(
+      eq(okrObjectives.workspaceId, workspaceId),
+      eq(okrObjectives.slug, slug),
+      isNull(okrObjectives.deletedAt),
+    ),
   });
   return !!row;
 }
@@ -71,7 +79,11 @@ export async function objectiveSlugExists(workspaceId: string, slug: string): Pr
 export async function krSlugExists(workspaceId: string, slug: string): Promise<boolean> {
   const row = await db.query.okrKeyResults.findFirst({
     columns: { id: true },
-    where: and(eq(okrKeyResults.workspaceId, workspaceId), eq(okrKeyResults.slug, slug), isNull(okrKeyResults.deletedAt)),
+    where: and(
+      eq(okrKeyResults.workspaceId, workspaceId),
+      eq(okrKeyResults.slug, slug),
+      isNull(okrKeyResults.deletedAt),
+    ),
   });
   return !!row;
 }
@@ -153,10 +165,7 @@ export async function findObjectivesByWorkspace(
       isNull(okrObjectives.deletedAt),
       filters?.cycleId ? eq(okrObjectives.cycleId, filters.cycleId) : undefined,
       filters?.status
-        ? eq(
-            okrObjectives.status,
-            filters.status as OkrObjective["status"],
-          )
+        ? eq(okrObjectives.status, filters.status as OkrObjective["status"])
         : undefined,
     ),
     orderBy: [asc(okrObjectives.sortOrder), desc(okrObjectives.createdAt)],
@@ -189,10 +198,7 @@ export async function updateObjective(
 }
 
 export async function softDeleteObjective(id: string): Promise<void> {
-  await db
-    .update(okrObjectives)
-    .set({ deletedAt: new Date() })
-    .where(eq(okrObjectives.id, id));
+  await db.update(okrObjectives).set({ deletedAt: new Date() }).where(eq(okrObjectives.id, id));
 }
 
 export async function archiveObjective(id: string): Promise<void> {
@@ -222,7 +228,9 @@ export async function findKeyResultsByWorkspace(
   });
 }
 
-export async function findKeyResultsByObjectiveIds(objectiveIds: string[]): Promise<OkrKeyResult[]> {
+export async function findKeyResultsByObjectiveIds(
+  objectiveIds: string[],
+): Promise<OkrKeyResult[]> {
   if (objectiveIds.length === 0) return [];
   return db.query.okrKeyResults.findMany({
     where: and(inArray(okrKeyResults.objectiveId, objectiveIds), isNull(okrKeyResults.deletedAt)),
@@ -270,10 +278,7 @@ export async function updateKeyResult(
 }
 
 export async function softDeleteKeyResult(id: string): Promise<void> {
-  await db
-    .update(okrKeyResults)
-    .set({ deletedAt: new Date() })
-    .where(eq(okrKeyResults.id, id));
+  await db.update(okrKeyResults).set({ deletedAt: new Date() }).where(eq(okrKeyResults.id, id));
 }
 
 // ─── Key Result Updates ───────────────────────────────────────────────────────

@@ -26,7 +26,11 @@ import { Button } from "@/components/ui/button";
 import { PageGuide, GuideSection, GuideList } from "@/components/ui/page-guide";
 import { Input } from "@/components/ui/input";
 import type { OkrCycle } from "@/lib/db/schema";
-import type { CycleCardStats, OkrCycleWithStats, ObjectiveWithKRs } from "@/lib/services/okr.service";
+import type {
+  CycleCardStats,
+  OkrCycleWithStats,
+  ObjectiveWithKRs,
+} from "@/lib/services/okr.service";
 import { OkrStatusBadge } from "./okr-status-badge";
 import { OkrProgressBar } from "./okr-progress-bar";
 import { CreateCycleDialog } from "./create-cycle-dialog";
@@ -227,24 +231,25 @@ export function OkrCyclesPage() {
   }
 
   function requestArchive(id: string, title: string) {
-    if (!confirm(`Arquivar o ciclo “${title}”? Ele ficará disponível apenas para consulta.`)) return;
+    if (!confirm(`Arquivar o ciclo “${title}”? Ele ficará disponível apenas para consulta.`))
+      return;
     patchMutation.mutate({ id, status: "archived" });
   }
 
   return (
-    <div className="space-y-8 max-w-6xl">
+    <div className="max-w-6xl space-y-8">
       {/* ── Header executivo ───────────────────────────────────────── */}
       <div className="rounded-2xl border border-border/80 bg-gradient-to-br from-muted/40 via-card to-card p-6 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/12 ring-1 ring-primary/20">
+            <div className="bg-primary/12 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ring-1 ring-primary/20">
               <LayoutGrid className="h-6 w-6 text-primary" />
             </div>
             <div>
               <h1 className="text-xl font-semibold tracking-tight text-foreground">Ciclos OKR</h1>
-              <p className="mt-1 max-w-xl text-sm text-muted-foreground leading-relaxed">
-                Gerencie os períodos estratégicos que organizam objetivos e resultados-chave. Um ciclo ativo
-                define o contexto padrão do OKR Manager e dos filtros do módulo.
+              <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted-foreground">
+                Gerencie os períodos estratégicos que organizam objetivos e resultados-chave. Um
+                ciclo ativo define o contexto padrão do OKR Manager e dos filtros do módulo.
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/80 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
@@ -261,7 +266,11 @@ export function OkrCyclesPage() {
               </div>
             </div>
           </div>
-          <Button size="sm" className="shrink-0 gap-1.5 shadow-sm" onClick={() => setCreateOpen(true)}>
+          <Button
+            size="sm"
+            className="shrink-0 gap-1.5 shadow-sm"
+            onClick={() => setCreateOpen(true)}
+          >
             <Plus className="h-4 w-4" />
             Novo ciclo
           </Button>
@@ -269,14 +278,19 @@ export function OkrCyclesPage() {
       </div>
 
       <PageGuide title="O que são Ciclos OKR?">
-        <p>Um <strong className="text-foreground">ciclo</strong> é o período estratégico que organiza seus OKRs — pode ser mensal, trimestral ou por fase de trabalho.</p>
+        <p>
+          Um <strong className="text-foreground">ciclo</strong> é o período estratégico que organiza
+          seus OKRs — pode ser mensal, trimestral ou por fase de trabalho.
+        </p>
         <GuideSection title="Nesta tela:">
-          <GuideList items={[
-            "cada ciclo agrupa objetivos e KRs de um período específico;",
-            "apenas um ciclo pode estar ativo por vez — ele define o contexto padrão do OKR Manager;",
-            "ciclos encerrados ficam arquivados para consulta histórica;",
-            "ao clicar em um ciclo você vê seus OKRs detalhados.",
-          ]} />
+          <GuideList
+            items={[
+              "cada ciclo agrupa objetivos e KRs de um período específico;",
+              "apenas um ciclo pode estar ativo por vez — ele define o contexto padrão do OKR Manager;",
+              "ciclos encerrados ficam arquivados para consulta histórica;",
+              "ao clicar em um ciclo você vê seus OKRs detalhados.",
+            ]}
+          />
         </GuideSection>
       </PageGuide>
 
@@ -292,8 +306,8 @@ export function OkrCyclesPage() {
           >
             {activeCycle && (
               <>
-                <p className="font-semibold text-foreground truncate">{activeCycle.title}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="truncate font-semibold text-foreground">{activeCycle.title}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
                   {formatShort(activeCycle.startDate)} → {formatShort(activeCycle.endDate)}
                 </p>
                 <div className="mt-2">
@@ -306,9 +320,15 @@ export function OkrCyclesPage() {
             )}
           </SummaryCard>
 
-          <SummaryCard title="Total de ciclos" icon={CalendarRange} iconClass="text-sky-600 dark:text-sky-400">
+          <SummaryCard
+            title="Total de ciclos"
+            icon={CalendarRange}
+            iconClass="text-sky-600 dark:text-sky-400"
+          >
             <p className="text-2xl font-bold tabular-nums text-foreground">{cycles.length}</p>
-            <p className="text-xs text-muted-foreground mt-1">Inclui planejados, ativos e encerrados</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Inclui planejados, ativos e encerrados
+            </p>
           </SummaryCard>
 
           <SummaryCard
@@ -320,8 +340,8 @@ export function OkrCyclesPage() {
           >
             {nextPlanned && (
               <>
-                <p className="font-semibold text-foreground truncate">{nextPlanned.title}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="truncate font-semibold text-foreground">{nextPlanned.title}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
                   Início previsto {formatD(nextPlanned.startDate)}
                 </p>
               </>
@@ -339,11 +359,15 @@ export function OkrCyclesPage() {
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
                   <p className="text-muted-foreground">Objetivos</p>
-                  <p className="font-semibold tabular-nums text-foreground">{activeStats.objectiveCount}</p>
+                  <p className="font-semibold tabular-nums text-foreground">
+                    {activeStats.objectiveCount}
+                  </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Key results</p>
-                  <p className="font-semibold tabular-nums text-foreground">{activeStats.keyResultCount}</p>
+                  <p className="font-semibold tabular-nums text-foreground">
+                    {activeStats.keyResultCount}
+                  </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Em risco</p>
@@ -355,7 +379,9 @@ export function OkrCyclesPage() {
                 </div>
                 <div>
                   <p className="text-muted-foreground">Média KRs</p>
-                  <p className="font-semibold tabular-nums text-foreground">{activeStats.avgKrProgress}%</p>
+                  <p className="font-semibold tabular-nums text-foreground">
+                    {activeStats.avgKrProgress}%
+                  </p>
                 </div>
               </div>
             )}
@@ -366,17 +392,17 @@ export function OkrCyclesPage() {
       {/* ── Filtros ─────────────────────────────────────────────────── */}
       {!isLoading && cycles.length > 0 && (
         <div className="flex flex-col gap-3 rounded-xl border border-border/80 bg-muted/20 p-3 sm:flex-row sm:flex-wrap sm:items-center">
-          <div className="relative flex-1 min-w-[200px]">
+          <div className="relative min-w-[200px] flex-1">
             <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
             <Input
-              className="h-9 pl-8 text-sm bg-background"
+              className="h-9 bg-background pl-8 text-sm"
               placeholder="Buscar por nome do ciclo…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Filter className="h-3.5 w-3.5 text-muted-foreground hidden sm:block" />
+            <Filter className="hidden h-3.5 w-3.5 text-muted-foreground sm:block" />
             <select
               className="h-9 rounded-lg border border-input bg-background px-2 text-sm"
               value={statusFilter}
@@ -435,7 +461,7 @@ export function OkrCyclesPage() {
       {isLoading && (
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-36 bg-muted rounded-xl animate-pulse" />
+            <div key={i} className="h-36 animate-pulse rounded-xl bg-muted" />
           ))}
         </div>
       )}
@@ -447,8 +473,8 @@ export function OkrCyclesPage() {
           </div>
           <h2 className="mt-4 text-base font-semibold text-foreground">Nenhum ciclo ainda</h2>
           <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
-            Os ciclos definem em qual janela de tempo seus OKRs valem. Crie o primeiro para começar a alinhar
-            objetivos e key results ao ritmo da empresa.
+            Os ciclos definem em qual janela de tempo seus OKRs valem. Crie o primeiro para começar
+            a alinhar objetivos e key results ao ritmo da empresa.
           </p>
           <Button className="mt-6" onClick={() => setCreateOpen(true)}>
             <Plus className="h-4 w-4" />
@@ -462,13 +488,13 @@ export function OkrCyclesPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-sm font-semibold text-foreground">Todos os ciclos</h2>
-            <span className="text-xs text-muted-foreground tabular-nums">
+            <span className="text-xs tabular-nums text-muted-foreground">
               {filteredSorted.length} exibido{filteredSorted.length !== 1 ? "s" : ""}
             </span>
           </div>
 
           {filteredSorted.length === 0 && (
-            <p className="text-sm text-muted-foreground py-8 text-center rounded-xl border border-border bg-card">
+            <p className="rounded-xl border border-border bg-card py-8 text-center text-sm text-muted-foreground">
               Nenhum ciclo corresponde aos filtros.{" "}
               <button
                 type="button"
@@ -488,7 +514,8 @@ export function OkrCyclesPage() {
           {filteredSorted.map((cycle) => {
             const { progress, caption } = getTemporalLine(cycle);
             const isPatchingThis =
-              patchMutation.isPending && (patchMutation.variables as { id: string })?.id === cycle.id;
+              patchMutation.isPending &&
+              (patchMutation.variables as { id: string })?.id === cycle.id;
             const s = resolveCycleStats(cycle);
             const riskObj = s.objectivesAtRisk + s.objectivesOffTrack;
             const riskKr = s.krsAtRisk + s.krsOffTrack;
@@ -497,7 +524,7 @@ export function OkrCyclesPage() {
               <div
                 key={cycle.id}
                 className={cn(
-                  "rounded-2xl border transition-all overflow-hidden",
+                  "overflow-hidden rounded-2xl border transition-all",
                   cycleCardTone(cycle.status),
                 )}
               >
@@ -518,7 +545,8 @@ export function OkrCyclesPage() {
                         }
                         className={cn(
                           "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border/80 bg-background text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-                          expandedCycleId === cycle.id && "border-primary/40 bg-primary/5 text-primary",
+                          expandedCycleId === cycle.id &&
+                            "border-primary/40 bg-primary/5 text-primary",
                         )}
                       >
                         <ChevronRight
@@ -529,35 +557,37 @@ export function OkrCyclesPage() {
                         />
                       </button>
                       <div className="min-w-0 flex-1 space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Link
-                        href={`/okr/cycles/${cycle.id}`}
-                        className="text-lg font-semibold text-foreground hover:text-primary transition-colors"
-                      >
-                        {cycle.title}
-                      </Link>
-                      <CycleStatusBadge status={cycle.status} />
-                      {cycle.status === "active" && (
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
-                          Ciclo em foco
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      <span className="tabular-nums">{formatD(cycle.startDate)}</span>
-                      <span className="mx-1.5 text-muted-foreground/60">→</span>
-                      <span className="tabular-nums">{formatD(cycle.endDate)}</span>
-                    </p>
-                    {cycle.description && (
-                      <p className="text-xs text-muted-foreground line-clamp-2">{cycle.description}</p>
-                    )}
-                    <Link
-                      href={`/okr/cycles/${cycle.id}`}
-                      className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                    >
-                      Ver detalhes do ciclo
-                      <ExternalLink className="h-3 w-3" />
-                    </Link>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Link
+                            href={`/okr/cycles/${cycle.id}`}
+                            className="text-lg font-semibold text-foreground transition-colors hover:text-primary"
+                          >
+                            {cycle.title}
+                          </Link>
+                          <CycleStatusBadge status={cycle.status} />
+                          {cycle.status === "active" && (
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+                              Ciclo em foco
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          <span className="tabular-nums">{formatD(cycle.startDate)}</span>
+                          <span className="mx-1.5 text-muted-foreground/60">→</span>
+                          <span className="tabular-nums">{formatD(cycle.endDate)}</span>
+                        </p>
+                        {cycle.description && (
+                          <p className="line-clamp-2 text-xs text-muted-foreground">
+                            {cycle.description}
+                          </p>
+                        )}
+                        <Link
+                          href={`/okr/cycles/${cycle.id}`}
+                          className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                        >
+                          Ver detalhes do ciclo
+                          <ExternalLink className="h-3 w-3" />
+                        </Link>
                       </div>
                     </div>
                   </div>
@@ -566,7 +596,9 @@ export function OkrCyclesPage() {
                   <div className="w-full shrink-0 space-y-2 lg:w-[220px]">
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-medium text-muted-foreground">Tempo do período</span>
-                      <span className="tabular-nums font-semibold text-foreground">{progress}%</span>
+                      <span className="font-semibold tabular-nums text-foreground">
+                        {progress}%
+                      </span>
                     </div>
                     <OkrProgressBar
                       percent={progress}
@@ -579,7 +611,7 @@ export function OkrCyclesPage() {
 
                   {/* C — OKRs */}
                   <div className="w-full shrink-0 lg:w-[240px]">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                    <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                       Resumo no ciclo
                     </p>
                     <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
@@ -651,7 +683,7 @@ export function OkrCyclesPage() {
                       </Button>
                     )}
                     {cycle.status === "archived" && (
-                      <p className="text-[11px] text-center text-muted-foreground px-1">
+                      <p className="px-1 text-center text-[11px] text-muted-foreground">
                         Arquivado — use o menu para reabrir se necessário.
                       </p>
                     )}
@@ -663,7 +695,7 @@ export function OkrCyclesPage() {
                         className="w-full"
                         onClick={() => setMenuOpen(menuOpen === cycle.id ? null : cycle.id)}
                       >
-                        <MoreHorizontal className="h-4 w-4 mr-1" />
+                        <MoreHorizontal className="mr-1 h-4 w-4" />
                         Mais ações
                       </Button>
                       {menuOpen === cycle.id && (
@@ -676,14 +708,14 @@ export function OkrCyclesPage() {
                             <ChevronRight className="h-3.5 w-3.5" />
                             Ver detalhes
                           </Link>
-                          <div className="border-t border-border my-1" />
+                          <div className="my-1 border-t border-border" />
                           <p className="px-3 py-1 text-[10px] font-semibold uppercase text-muted-foreground">
                             Status
                           </p>
                           {cycle.status !== "planned" && (
                             <button
                               type="button"
-                              className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted/50 text-left"
+                              className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-muted/50"
                               onClick={() => {
                                 patchMutation.mutate({ id: cycle.id, status: "planned" });
                                 setMenuOpen(null);
@@ -696,7 +728,7 @@ export function OkrCyclesPage() {
                           {cycle.status !== "active" && cycle.status !== "archived" && (
                             <button
                               type="button"
-                              className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted/50 text-left"
+                              className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-muted/50"
                               onClick={() => {
                                 requestActivate(cycle.id);
                                 setMenuOpen(null);
@@ -709,7 +741,7 @@ export function OkrCyclesPage() {
                           {cycle.status !== "closed" && cycle.status !== "archived" && (
                             <button
                               type="button"
-                              className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted/50 text-left"
+                              className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-muted/50"
                               onClick={() => {
                                 requestClose(cycle.id, cycle.title);
                                 setMenuOpen(null);
@@ -722,7 +754,7 @@ export function OkrCyclesPage() {
                           {cycle.status !== "archived" && (
                             <button
                               type="button"
-                              className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted/50 text-left"
+                              className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-muted/50"
                               onClick={() => {
                                 requestArchive(cycle.id, cycle.title);
                                 setMenuOpen(null);
@@ -735,7 +767,7 @@ export function OkrCyclesPage() {
                           {(cycle.status === "closed" || cycle.status === "archived") && (
                             <button
                               type="button"
-                              className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted/50 text-left"
+                              className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-muted/50"
                               onClick={() => {
                                 if (
                                   confirm(
@@ -751,12 +783,16 @@ export function OkrCyclesPage() {
                               Reabrir (planejado)
                             </button>
                           )}
-                          <div className="border-t border-border my-1" />
+                          <div className="my-1 border-t border-border" />
                           <button
                             type="button"
                             className="flex w-full items-center gap-2 px-3 py-1.5 text-sm text-destructive hover:bg-muted/50"
                             onClick={() => {
-                              if (confirm("Remover este ciclo? Objetivos vinculados podem ficar sem ciclo."))
+                              if (
+                                confirm(
+                                  "Remover este ciclo? Objetivos vinculados podem ficar sem ciclo.",
+                                )
+                              )
                                 deleteMutation.mutate(cycle.id);
                               setMenuOpen(null);
                             }}
@@ -814,19 +850,21 @@ function CycleExpandedObjectives({
         <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           Objetivos neste ciclo
         </p>
-        <span className="text-[11px] text-muted-foreground tabular-nums">
+        <span className="text-[11px] tabular-nums text-muted-foreground">
           {objectiveCount} cadastrado{objectiveCount !== 1 ? "s" : ""}
         </span>
       </div>
       {isLoading && (
         <div className="space-y-2">
           {[1, 2].map((i) => (
-            <div key={i} className="h-11 rounded-lg bg-muted/80 animate-pulse" />
+            <div key={i} className="h-11 animate-pulse rounded-lg bg-muted/80" />
           ))}
         </div>
       )}
       {isError && (
-        <p className="text-xs text-destructive">Não foi possível carregar os objetivos. Tente novamente.</p>
+        <p className="text-xs text-destructive">
+          Não foi possível carregar os objetivos. Tente novamente.
+        </p>
       )}
       {!isLoading && !isError && list.length === 0 && (
         <p className="text-sm text-muted-foreground">
@@ -844,12 +882,12 @@ function CycleExpandedObjectives({
                 href={`/okr/objectives/${obj.id}`}
                 className="flex flex-col gap-1.5 rounded-lg border border-border/70 bg-card px-3 py-2.5 transition-colors hover:bg-muted/40 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
               >
-                <span className="min-w-0 flex-1 font-medium text-sm text-foreground truncate">
+                <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
                   {obj.title}
                 </span>
                 <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
                   <OkrStatusBadge status={obj.status} />
-                  <span className="text-xs text-muted-foreground tabular-nums">
+                  <span className="text-xs tabular-nums text-muted-foreground">
                     {Math.round(obj.progressPercent)}% · {obj.keyResults.length} KR
                     {obj.keyResults.length !== 1 ? "s" : ""}
                   </span>
@@ -885,11 +923,7 @@ function SummaryCard({
         <span className="text-[11px] font-semibold uppercase tracking-wide">{title}</span>
       </div>
       <div className="mt-3">
-        {empty ? (
-          <p className="text-sm text-muted-foreground">{emptyLabel}</p>
-        ) : (
-          children
-        )}
+        {empty ? <p className="text-sm text-muted-foreground">{emptyLabel}</p> : children}
       </div>
     </div>
   );

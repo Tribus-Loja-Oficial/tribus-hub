@@ -100,9 +100,7 @@ export async function findTasksByWorkspace(
   });
 }
 
-export async function findTasksByColumn(
-  columnId: string,
-): Promise<Task[]> {
+export async function findTasksByColumn(columnId: string): Promise<Task[]> {
   return db.query.tasks.findMany({
     where: and(eq(tasks.columnId, columnId), isNull(tasks.deletedAt)),
     orderBy: [asc(tasks.sortOrder)],
@@ -144,10 +142,7 @@ export async function reorderTasksInColumn(
 ): Promise<void> {
   await db.transaction(async (tx) => {
     for (const { id, sortOrder } of updates) {
-      await tx
-        .update(tasks)
-        .set({ sortOrder, updatedAt: new Date() })
-        .where(eq(tasks.id, id));
+      await tx.update(tasks).set({ sortOrder, updatedAt: new Date() }).where(eq(tasks.id, id));
     }
   });
 }

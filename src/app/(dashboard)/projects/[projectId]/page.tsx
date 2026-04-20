@@ -3,10 +3,6 @@ import { ProjectDetailView } from "@/features/projects/components/project-detail
 
 export const metadata: Metadata = { title: "Projeto" };
 
-export default function ProjectDetailPage({
-  params,
-}: {
-  params: Promise<{ projectId: string }>;
-}) {
+export default function ProjectDetailPage({ params }: { params: Promise<{ projectId: string }> }) {
   return <ProjectDetailView paramsPromise={params} />;
 }

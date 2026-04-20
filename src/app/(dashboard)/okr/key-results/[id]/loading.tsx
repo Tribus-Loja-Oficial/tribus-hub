@@ -2,11 +2,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function KeyResultDetailLoading() {
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="max-w-4xl space-y-6">
       <Skeleton className="h-4 w-20" />
 
       {/* Header card */}
-      <div className="rounded-xl border border-border p-6 space-y-4">
+      <div className="space-y-4 rounded-xl border border-border p-6">
         <div className="flex items-start gap-4">
           <div className="flex-1 space-y-2">
             <Skeleton className="h-6 w-3/4" />
@@ -15,7 +15,7 @@ export default function KeyResultDetailLoading() {
               <Skeleton className="h-5 w-20 rounded-full" />
             </div>
           </div>
-          <Skeleton className="h-8 w-28 rounded-md shrink-0" />
+          <Skeleton className="h-8 w-28 shrink-0 rounded-md" />
         </div>
 
         {/* Values */}
@@ -38,15 +38,15 @@ export default function KeyResultDetailLoading() {
       </div>
 
       {/* Updates timeline */}
-      <div className="rounded-xl border border-border overflow-hidden">
-        <div className="px-5 py-4 border-b border-border">
+      <div className="overflow-hidden rounded-xl border border-border">
+        <div className="border-b border-border px-5 py-4">
           <Skeleton className="h-4 w-40" />
         </div>
         <div className="divide-y divide-border">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="px-5 py-3 flex items-start gap-3">
-              <Skeleton className="h-5 w-5 rounded-full shrink-0 mt-0.5" />
-              <div className="space-y-1.5 flex-1">
+            <div key={i} className="flex items-start gap-3 px-5 py-3">
+              <Skeleton className="mt-0.5 h-5 w-5 shrink-0 rounded-full" />
+              <div className="flex-1 space-y-1.5">
                 <Skeleton className="h-3.5 w-3/4" />
                 <Skeleton className="h-3 w-32" />
                 <Skeleton className="h-3 w-20" />

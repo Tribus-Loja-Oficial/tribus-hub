@@ -35,10 +35,14 @@ const typeIcon = {
 
 const typeHref = (result: SearchResult) => {
   switch (result.type) {
-    case "page": return `/knowledge/${result.id}`;
-    case "project": return `/projects/${result.id}`;
-    case "task": return `/tasks`;
-    default: return "/";
+    case "page":
+      return `/knowledge/${result.id}`;
+    case "project":
+      return `/projects/${result.id}`;
+    case "task":
+      return `/tasks`;
+    default:
+      return "/";
   }
 };
 
@@ -83,12 +87,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
   });
 
   const allResults = data
-    ? [
-        ...data.data.pages,
-        ...data.data.projects,
-        ...data.data.tasks,
-        ...data.data.milestones,
-      ]
+    ? [...data.data.pages, ...data.data.projects, ...data.data.tasks, ...data.data.milestones]
     : [];
 
   const handleSelect = (result: SearchResult) => {
@@ -99,26 +98,26 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
   return (
     <DialogPrimitive.Root open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm animate-fade-in" />
-        <DialogPrimitive.Content className="fixed left-[50%] top-[20%] z-50 w-full max-w-xl translate-x-[-50%] bg-background border border-border rounded-xl shadow-2xl animate-fade-in overflow-hidden">
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 animate-fade-in bg-black/40 backdrop-blur-sm" />
+        <DialogPrimitive.Content className="fixed left-[50%] top-[20%] z-50 w-full max-w-xl translate-x-[-50%] animate-fade-in overflow-hidden rounded-xl border border-border bg-background shadow-2xl">
           <DialogPrimitive.Title className="sr-only">
             Buscar páginas, projetos e tarefas
           </DialogPrimitive.Title>
           <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-            <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+            <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
             <input
               ref={inputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar páginas, projetos, tarefas..."
-              className="flex-1 bg-transparent outline-none text-sm text-foreground placeholder:text-muted-foreground"
+              className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
             />
             {isFetching && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
           </div>
 
           <div className="max-h-80 overflow-y-auto py-1">
             {query.length >= 2 && !isFetching && allResults.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-8">
+              <p className="py-8 text-center text-sm text-muted-foreground">
                 Nenhum resultado para "{query}"
               </p>
             )}
@@ -129,16 +128,16 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
                 <button
                   key={result.id}
                   onClick={() => handleSelect(result)}
-                  className="flex items-center gap-3 w-full px-4 py-2.5 text-left hover:bg-accent transition-colors"
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-accent"
                 >
-                  <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{result.title}</p>
+                    <p className="truncate text-sm font-medium text-foreground">{result.title}</p>
                     {result.excerpt && (
-                      <p className="text-xs text-muted-foreground truncate">{result.excerpt}</p>
+                      <p className="truncate text-xs text-muted-foreground">{result.excerpt}</p>
                     )}
                   </div>
-                  <span className="ml-auto text-xs text-muted-foreground/60 shrink-0 capitalize">
+                  <span className="ml-auto shrink-0 text-xs capitalize text-muted-foreground/60">
                     {result.type}
                   </span>
                 </button>
@@ -146,7 +145,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
             })}
 
             {query.length < 2 && (
-              <p className="text-xs text-muted-foreground text-center py-8">
+              <p className="py-8 text-center text-xs text-muted-foreground">
                 Digite ao menos 2 caracteres para buscar
               </p>
             )}

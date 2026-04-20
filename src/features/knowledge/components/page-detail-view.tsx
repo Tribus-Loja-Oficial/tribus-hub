@@ -80,7 +80,7 @@ function PanelSection({
     <div className="border-b border-border/50 last:border-0">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 w-full px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+        className="flex w-full items-center gap-1.5 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60 transition-colors hover:text-muted-foreground"
       >
         <Icon className="h-3 w-3 shrink-0" />
         <span className="flex-1 text-left">{title}</span>
@@ -124,19 +124,18 @@ function PageContextPanel({ page, pageId }: { page: Page; pageId: string }) {
   };
 
   return (
-    <div className="w-full h-full py-4">
-
+    <div className="h-full w-full py-4">
       {/* Section: outline */}
       {outline.length > 0 && (
         <PanelSection icon={AlignLeft} title="Índice" defaultOpen={true}>
-          <nav className="px-3 space-y-0.5">
+          <nav className="space-y-0.5 px-3">
             {outline.map((item) => (
               <div
                 key={item.id}
-                className="text-xs text-muted-foreground/70 hover:text-foreground transition-colors truncate cursor-pointer leading-relaxed"
+                className="cursor-pointer truncate text-xs leading-relaxed text-muted-foreground/70 transition-colors hover:text-foreground"
                 style={{ paddingLeft: `${(item.level - 1) * 10}px` }}
               >
-                <Hash className="h-2.5 w-2.5 inline mr-1 opacity-40" />
+                <Hash className="mr-1 inline h-2.5 w-2.5 opacity-40" />
                 {item.text}
               </div>
             ))}
@@ -146,31 +145,44 @@ function PageContextPanel({ page, pageId }: { page: Page; pageId: string }) {
 
       {/* Properties */}
       <PanelSection icon={Info} title="Propriedades" defaultOpen={true}>
-        <dl className="px-3 space-y-2 text-xs">
+        <dl className="space-y-2 px-3 text-xs">
           <div className="flex items-center justify-between gap-2">
-            <dt className="text-muted-foreground/60 shrink-0">Status</dt>
+            <dt className="shrink-0 text-muted-foreground/60">Status</dt>
             <dd>
-              <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-medium", STATUS_COLOR[page.status] ?? "bg-muted text-muted-foreground")}>
+              <span
+                className={cn(
+                  "rounded px-1.5 py-0.5 text-[10px] font-medium",
+                  STATUS_COLOR[page.status] ?? "bg-muted text-muted-foreground",
+                )}
+              >
                 {STATUS_LABEL[page.status] ?? page.status}
               </span>
             </dd>
           </div>
           <div className="flex items-center justify-between gap-2">
-            <dt className="text-muted-foreground/60 shrink-0">Criado</dt>
-            <dd className="text-muted-foreground text-right truncate" title={format(new Date(page.createdAt), "dd/MM/yyyy HH:mm")}>
+            <dt className="shrink-0 text-muted-foreground/60">Criado</dt>
+            <dd
+              className="truncate text-right text-muted-foreground"
+              title={format(new Date(page.createdAt), "dd/MM/yyyy HH:mm")}
+            >
               {formatDistanceToNow(new Date(page.createdAt), { addSuffix: true, locale: ptBR })}
             </dd>
           </div>
           <div className="flex items-center justify-between gap-2">
-            <dt className="text-muted-foreground/60 shrink-0">Editado</dt>
-            <dd className="text-muted-foreground text-right truncate" title={format(new Date(page.updatedAt), "dd/MM/yyyy HH:mm")}>
+            <dt className="shrink-0 text-muted-foreground/60">Editado</dt>
+            <dd
+              className="truncate text-right text-muted-foreground"
+              title={format(new Date(page.updatedAt), "dd/MM/yyyy HH:mm")}
+            >
               {formatDistanceToNow(new Date(page.updatedAt), { addSuffix: true, locale: ptBR })}
             </dd>
           </div>
           {page.excerpt && (
             <div className="pt-1">
-              <dt className="text-muted-foreground/60 mb-0.5">Resumo</dt>
-              <dd className="text-muted-foreground/80 line-clamp-3 leading-relaxed">{page.excerpt}</dd>
+              <dt className="mb-0.5 text-muted-foreground/60">Resumo</dt>
+              <dd className="line-clamp-3 leading-relaxed text-muted-foreground/80">
+                {page.excerpt}
+              </dd>
             </div>
           )}
         </dl>
@@ -179,13 +191,14 @@ function PageContextPanel({ page, pageId }: { page: Page; pageId: string }) {
       {/* Revisions */}
       {revisions.length > 0 && (
         <PanelSection icon={Clock} title="Revisões" defaultOpen={false}>
-          <div className="px-3 space-y-1">
+          <div className="space-y-1 px-3">
             {revisions.slice(0, 8).map((rev) => (
               <div key={rev.id} className="flex items-center gap-2 py-1">
-                <RotateCcw className="h-3 w-3 text-muted-foreground/40 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[11px] text-muted-foreground truncate">
-                    v{rev.version}{rev.changeReason ? ` · ${rev.changeReason}` : ""}
+                <RotateCcw className="h-3 w-3 shrink-0 text-muted-foreground/40" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[11px] text-muted-foreground">
+                    v{rev.version}
+                    {rev.changeReason ? ` · ${rev.changeReason}` : ""}
                   </p>
                   <p className="text-[10px] text-muted-foreground/50">
                     {format(new Date(rev.createdAt), "dd MMM, HH:mm", { locale: ptBR })}
@@ -199,17 +212,17 @@ function PageContextPanel({ page, pageId }: { page: Page; pageId: string }) {
 
       {/* Quick actions */}
       <PanelSection icon={FileText} title="Ações" defaultOpen={true}>
-        <div className="px-3 space-y-1">
+        <div className="space-y-1 px-3">
           <button
             onClick={copyLink}
-            className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors"
+            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
           >
             {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
             {copied ? "Link copiado!" : "Copiar link"}
           </button>
           <Link
             href={`/api/knowledge/pages/${pageId}/archive`}
-            className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors"
+            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
           >
             <Archive className="h-3 w-3" />
             Arquivar página
@@ -250,7 +263,7 @@ function ResizeHandle({ onDrag }: { onDrag: (dx: number) => void }) {
 
   return (
     <div
-      className="hidden lg:flex w-3 shrink-0 cursor-col-resize items-center justify-center self-stretch touch-none select-none"
+      className="hidden w-3 shrink-0 cursor-col-resize touch-none select-none items-center justify-center self-stretch lg:flex"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -281,17 +294,17 @@ function KnowledgeDetailShell({
   const [rightWidth, setRightWidth] = useState(256);
 
   return (
-    <div className="flex flex-col gap-0 lg:flex-row lg:items-start -mr-6">
+    <div className="-mr-6 flex flex-col gap-0 lg:flex-row lg:items-start">
       {/* Left: tree nav */}
       <aside
         style={{ width: leftWidth }}
-        className="hidden lg:block shrink-0 rounded-xl border border-border bg-card/30 p-2 sticky top-0 self-start max-h-[calc(100vh-3.25rem)] overflow-y-auto"
+        className="sticky top-0 hidden max-h-[calc(100vh-3.25rem)] shrink-0 self-start overflow-y-auto rounded-xl border border-border bg-card/30 p-2 lg:block"
       >
         <KnowledgeTreeDnd variant="sidebar" highlightPageId={pageId} showBackLink />
       </aside>
 
       {/* Mobile left panel */}
-      <aside className="lg:hidden w-full shrink-0 rounded-xl border border-border bg-card/30 p-2 max-h-48 overflow-y-auto mb-4">
+      <aside className="mb-4 max-h-48 w-full shrink-0 overflow-y-auto rounded-xl border border-border bg-card/30 p-2 lg:hidden">
         <KnowledgeTreeDnd variant="sidebar" highlightPageId={pageId} showBackLink />
       </aside>
 
@@ -303,8 +316,10 @@ function KnowledgeDetailShell({
       {/* Right: context panel — flush to screen edge */}
       {page && (
         <>
-          <ResizeHandle onDrag={(dx) => setRightWidth((w) => Math.max(180, Math.min(480, w - dx)))} />
-          <div className="hidden lg:block shrink-0 self-stretch" style={{ width: rightWidth }}>
+          <ResizeHandle
+            onDrag={(dx) => setRightWidth((w) => Math.max(180, Math.min(480, w - dx)))}
+          />
+          <div className="hidden shrink-0 self-stretch lg:block" style={{ width: rightWidth }}>
             <div className="sticky top-0 h-[calc(100vh-3.25rem)] overflow-y-auto border-l border-border bg-card/50">
               <PageContextPanel page={page} pageId={pageId} />
             </div>
@@ -391,12 +406,12 @@ export function PageDetailView({ paramsPromise }: PageDetailViewProps) {
             <div key={i} className="h-5 animate-pulse rounded bg-muted/60" />
           ))}
         </div>
-        <div className="min-w-0 flex-1 max-w-[700px] space-y-4 animate-pulse">
-          <div className="h-8 rounded bg-muted w-2/3" />
-          <div className="h-4 rounded bg-muted w-full" />
-          <div className="h-4 rounded bg-muted w-5/6" />
+        <div className="min-w-0 max-w-[700px] flex-1 animate-pulse space-y-4">
+          <div className="h-8 w-2/3 rounded bg-muted" />
+          <div className="h-4 w-full rounded bg-muted" />
+          <div className="h-4 w-5/6 rounded bg-muted" />
         </div>
-        <div className="hidden lg:block w-52 space-y-2 shrink-0">
+        <div className="hidden w-52 shrink-0 space-y-2 lg:block">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="h-5 animate-pulse rounded bg-muted/60" />
           ))}
@@ -406,7 +421,7 @@ export function PageDetailView({ paramsPromise }: PageDetailViewProps) {
   }
 
   const pageData = data?.data;
-  if (!pageData) return <div className="text-muted-foreground text-sm">Página não encontrada.</div>;
+  if (!pageData) return <div className="text-sm text-muted-foreground">Página não encontrada.</div>;
 
   if (isFolder) {
     const children = childrenRes?.data ?? [];
@@ -422,16 +437,16 @@ export function PageDetailView({ paramsPromise }: PageDetailViewProps) {
             value={localTitle}
             onChange={(e) => setLocalTitle(e.target.value)}
             onBlur={handleTitleBlur}
-            className="text-2xl font-bold border-none shadow-none focus-visible:ring-0 px-0 h-auto text-foreground"
+            className="h-auto border-none px-0 text-2xl font-bold text-foreground shadow-none focus-visible:ring-0"
             placeholder="Nome da pasta"
           />
           <div className="rounded-xl border border-border bg-muted/15 p-4">
-            <p className="text-sm font-medium text-foreground mb-3">Conteúdo nesta pasta</p>
+            <p className="mb-3 text-sm font-medium text-foreground">Conteúdo nesta pasta</p>
             {childrenLoading && <p className="text-xs text-muted-foreground">Carregando…</p>}
             {!childrenLoading && children.length === 0 && (
               <p className="text-sm text-muted-foreground">
                 Nenhuma subpágina ou subpasta. Organize na{" "}
-                <Link href="/knowledge" className="text-primary font-medium hover:underline">
+                <Link href="/knowledge" className="font-medium text-primary hover:underline">
                   lista Knowledge
                 </Link>{" "}
                 ou pelo menu de cada item no índice.

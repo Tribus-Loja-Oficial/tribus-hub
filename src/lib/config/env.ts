@@ -35,9 +35,7 @@ const envSchema = z.object({
   UPLOAD_MAX_SIZE_BYTES: z.coerce.number().default(52_428_800), // 50MB
   UPLOAD_ALLOWED_MIME_TYPES: z
     .string()
-    .default(
-      "image/jpeg,image/png,image/webp,image/gif,application/pdf,text/plain",
-    ),
+    .default("image/jpeg,image/png,image/webp,image/gif,application/pdf,text/plain"),
 
   // Email (optional)
   EMAIL_FROM: z.string().email().optional(),

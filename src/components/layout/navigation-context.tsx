@@ -35,7 +35,8 @@ export function NavigationStateProvider({ children }: { children: React.ReactNod
         href.startsWith("mailto:") ||
         href.startsWith("tel:") ||
         href === pathname
-      ) return;
+      )
+        return;
 
       setPendingPathname(href);
     }

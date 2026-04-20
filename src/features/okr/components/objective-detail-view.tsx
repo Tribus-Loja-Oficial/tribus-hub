@@ -4,15 +4,7 @@ import { useState } from "react";
 import { use } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  Target,
-  TrendingUp,
-  Plus,
-  RefreshCw,
-  Pencil,
-  Trash2,
-} from "lucide-react";
+import { ArrowLeft, Target, TrendingUp, Plus, RefreshCw, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { OkrObjective, OkrKeyResult, OkrCycle } from "@/lib/db/schema";
 import { OkrStatusBadge, OkrPriorityBadge } from "./okr-status-badge";
@@ -88,9 +80,9 @@ export function ObjectiveDetailView({ objectiveId }: ObjectiveDetailViewProps) {
 
   if (isLoading) {
     return (
-      <div className="space-y-4 max-w-4xl">
-        <div className="h-8 w-48 bg-muted rounded animate-pulse" />
-        <div className="h-32 bg-muted rounded-xl animate-pulse" />
+      <div className="max-w-4xl space-y-4">
+        <div className="h-8 w-48 animate-pulse rounded bg-muted" />
+        <div className="h-32 animate-pulse rounded-xl bg-muted" />
       </div>
     );
   }
@@ -98,7 +90,7 @@ export function ObjectiveDetailView({ objectiveId }: ObjectiveDetailViewProps) {
   const objective = data?.data;
   if (!objective) {
     return (
-      <div className="text-center py-20">
+      <div className="py-20 text-center">
         <p className="text-muted-foreground">Objetivo não encontrado.</p>
         <Link href="/okr/okrs">
           <Button variant="outline" className="mt-4">
@@ -110,25 +102,27 @@ export function ObjectiveDetailView({ objectiveId }: ObjectiveDetailViewProps) {
   }
 
   const cycles = cyclesRes?.data ?? [];
-  const cycleName = objective.cycleId ? (cycles.find((c) => c.id === objective.cycleId)?.title ?? "—") : "—";
+  const cycleName = objective.cycleId
+    ? (cycles.find((c) => c.id === objective.cycleId)?.title ?? "—")
+    : "—";
   const krs = objective.keyResults;
   const onTrackKrs = krs.filter((kr) => kr.status === "on_track").length;
   const atRiskKrs = krs.filter((kr) => kr.status === "at_risk").length;
   const completedKrs = krs.filter((kr) => kr.status === "completed").length;
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="max-w-4xl space-y-6">
       {/* Back */}
       <Link
         href="/okr/okrs"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
         OKRs
       </Link>
 
       {/* Header card */}
-      <div className="rounded-xl border border-border bg-card p-6 space-y-5">
+      <div className="space-y-5 rounded-xl border border-border bg-card p-6">
         <div className="flex items-start gap-4">
           <MiniProgressRing
             percent={objective.progressPercent}
@@ -136,12 +130,12 @@ export function ObjectiveDetailView({ objectiveId }: ObjectiveDetailViewProps) {
             strokeWidth={4}
             status={objective.status}
           />
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0 flex-1">
             <h1 className="text-xl font-bold text-foreground">{objective.title}</h1>
             {objective.descriptionText && (
-              <p className="text-sm text-muted-foreground mt-1">{objective.descriptionText}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{objective.descriptionText}</p>
             )}
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
+            <div className="mt-2 flex flex-wrap items-center gap-2">
               {editingStatus ? (
                 <select
                   autoFocus
@@ -167,7 +161,7 @@ export function ObjectiveDetailView({ objectiveId }: ObjectiveDetailViewProps) {
         </div>
 
         {/* Meta grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2 border-t border-border">
+        <div className="grid grid-cols-2 gap-4 border-t border-border pt-2 sm:grid-cols-4">
           <MetaItem label="Ciclo" value={cycleName} />
           <MetaItem label="Início" value={formatDate(objective.startDate)} />
           <MetaItem label="Data meta" value={formatDate(objective.targetDate)} />
@@ -202,11 +196,11 @@ export function ObjectiveDetailView({ objectiveId }: ObjectiveDetailViewProps) {
       )}
 
       {/* Key Results */}
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
-        <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <div className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            <span className="font-medium text-sm">Key Results</span>
+            <span className="text-sm font-medium">Key Results</span>
             <span className="text-xs text-muted-foreground">({krs.length})</span>
           </div>
           <Button size="sm" variant="outline" onClick={() => setCreateKrOpen(true)}>
@@ -217,8 +211,8 @@ export function ObjectiveDetailView({ objectiveId }: ObjectiveDetailViewProps) {
 
         {krs.length === 0 ? (
           <div className="py-10 text-center">
-            <TrendingUp className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-30" />
-            <p className="text-sm text-muted-foreground mb-3">Nenhum key result ainda.</p>
+            <TrendingUp className="mx-auto mb-2 h-8 w-8 text-muted-foreground opacity-30" />
+            <p className="mb-3 text-sm text-muted-foreground">Nenhum key result ainda.</p>
             <Button variant="outline" size="sm" onClick={() => setCreateKrOpen(true)}>
               <Plus className="h-4 w-4" />
               Adicionar KR
@@ -229,19 +223,19 @@ export function ObjectiveDetailView({ objectiveId }: ObjectiveDetailViewProps) {
             {krs.map((kr) => (
               <div
                 key={kr.id}
-                className="flex items-center gap-4 px-5 py-4 hover:bg-muted/20 transition-colors"
+                className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/20"
               >
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <Link
                     href={`/okr/key-results/${kr.id}`}
-                    className="text-sm font-medium text-foreground hover:text-primary transition-colors truncate block"
+                    className="block truncate text-sm font-medium text-foreground transition-colors hover:text-primary"
                   >
                     {kr.title}
                   </Link>
-                  <div className="flex items-center gap-3 mt-1.5">
+                  <div className="mt-1.5 flex items-center gap-3">
                     <OkrStatusBadge status={kr.status} />
                     {kr.metricType !== "boolean" && (
-                      <span className="text-xs text-muted-foreground tabular-nums">
+                      <span className="text-xs tabular-nums text-muted-foreground">
                         {kr.currentValue} / {kr.targetValue}
                         {kr.unit ? ` ${kr.unit}` : ""}
                       </span>
@@ -260,7 +254,7 @@ export function ObjectiveDetailView({ objectiveId }: ObjectiveDetailViewProps) {
                     className="mt-2"
                   />
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex shrink-0 items-center gap-1">
                   <Button
                     size="sm"
                     variant="ghost"
@@ -307,8 +301,10 @@ export function ObjectiveDetailView({ objectiveId }: ObjectiveDetailViewProps) {
 function MetaItem({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium">{label}</p>
-      <p className="text-sm font-medium text-foreground mt-0.5">{value}</p>
+      <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-0.5 text-sm font-medium text-foreground">{value}</p>
     </div>
   );
 }

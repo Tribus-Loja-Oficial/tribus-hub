@@ -23,7 +23,8 @@
     "test:coverage": "vitest run --coverage",
     "test:staged": "node scripts/vitest-staged.js",
     "dev:hub-api": "npm run dev --workspace @tribus/hub-api",
-    "deploy:hub-api": "npm run deploy --workspace @tribus/hub-api"
+    "deploy:hub-api": "npm run deploy --workspace @tribus/hub-api",
+    "prepare": "husky"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.7.4",

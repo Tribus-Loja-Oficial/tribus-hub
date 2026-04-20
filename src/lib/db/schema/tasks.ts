@@ -15,12 +15,7 @@ import { users } from "./users";
 import { projects } from "./projects";
 import { milestones } from "./projects";
 
-export const taskPriorityEnum = pgEnum("task_priority", [
-  "low",
-  "medium",
-  "high",
-  "urgent",
-]);
+export const taskPriorityEnum = pgEnum("task_priority", ["low", "medium", "high", "urgent"]);
 
 export const taskColumns = pgTable("task_columns", {
   id: text("id")

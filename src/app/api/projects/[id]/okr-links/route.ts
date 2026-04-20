@@ -11,7 +11,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
     const { id } = await params;
     const user = await requireAuth();
     const project = await projectsRepo.findProjectById(id);
-    if (!project || project.workspaceId !== user.workspaceId) throw new NotFoundError("Project", id);
+    if (!project || project.workspaceId !== user.workspaceId)
+      throw new NotFoundError("Project", id);
     const [objectiveLinks, krLinks] = await Promise.all([
       projectsRepo.findOkrObjectiveLinksByProject(id),
       projectsRepo.findOkrKrLinksByProject(id),
@@ -27,7 +28,8 @@ export async function POST(request: NextRequest, { params }: Params) {
     const { id } = await params;
     const user = await requireAuth();
     const project = await projectsRepo.findProjectById(id);
-    if (!project || project.workspaceId !== user.workspaceId) throw new NotFoundError("Project", id);
+    if (!project || project.workspaceId !== user.workspaceId)
+      throw new NotFoundError("Project", id);
 
     const body = await request.json();
     const { type } = body as { type?: string };

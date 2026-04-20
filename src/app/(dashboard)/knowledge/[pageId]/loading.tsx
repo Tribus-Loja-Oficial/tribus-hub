@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function KnowledgePageLoading() {
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="max-w-3xl space-y-6">
       <Skeleton className="h-10 w-64" />
       <div className="space-y-3">
         {Array.from({ length: 8 }).map((_, i) => (

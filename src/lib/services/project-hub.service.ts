@@ -34,9 +34,9 @@ export async function getProjectHub(user: AuthenticatedUser, projectId: string) 
     keyResults: krByObjective.get(o.id) ?? [],
   }));
 
-  const projectTasks = (
-    await tasksRepo.findTasksByWorkspace(user.workspaceId, { projectId })
-  ).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  const projectTasks = (await tasksRepo.findTasksByWorkspace(user.workspaceId, { projectId })).sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+  );
 
   return {
     project,

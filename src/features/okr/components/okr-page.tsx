@@ -196,19 +196,14 @@ export function OkrPage() {
   );
 
   const hasNonDefaultTableState = Boolean(
-    filterStatuses.size > 0 ||
-      filterCycleIds.size > 0 ||
-      search.trim() ||
-      sort.field !== null,
+    filterStatuses.size > 0 || filterCycleIds.size > 0 || search.trim() || sort.field !== null,
   );
 
   /** Cabeçalhos visíveis com filtros/ordenação ativos ou quando há linhas (busca incluída). */
-  const showColumnHeaders =
-    !isLoading && (filtered.length > 0 || hasNonDefaultTableState);
+  const showColumnHeaders = !isLoading && (filtered.length > 0 || hasNonDefaultTableState);
 
   const totalKrs = sortedFiltered.reduce((s, o) => s + o.keyResults.length, 0);
-  const allExpanded =
-    sortedFiltered.length > 0 && sortedFiltered.every((o) => expanded.has(o.id));
+  const allExpanded = sortedFiltered.length > 0 && sortedFiltered.every((o) => expanded.has(o.id));
 
   function handleSortClick(field: OkrListSortField) {
     setSort((prev) =>
@@ -248,24 +243,24 @@ export function OkrPage() {
   }
 
   return (
-    <div className="space-y-5 max-w-[1120px]">
+    <div className="max-w-[1120px] space-y-5">
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/10 shrink-0">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
             <Target className="h-[18px] w-[18px] text-primary" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-foreground leading-tight">OKRs</h1>
+            <h1 className="text-lg font-semibold leading-tight text-foreground">OKRs</h1>
             {!isLoading && (
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="mt-0.5 text-xs text-muted-foreground">
                 {sortedFiltered.length} objetivo{sortedFiltered.length !== 1 ? "s" : ""} ·{" "}
                 {totalKrs} key result{totalKrs !== 1 ? "s" : ""}
               </p>
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex shrink-0 items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setCreateObjOpen(true)}>
             <Plus className="h-3.5 w-3.5" />
             Objetivo
@@ -285,33 +280,61 @@ export function OkrPage() {
 
       <PageGuide title="O que são OKRs nesta tela?">
         <p className="text-foreground/95">
-          <strong className="text-foreground">OKR</strong> é uma forma prática de transformar prioridade em acompanhamento.
+          <strong className="text-foreground">OKR</strong> é uma forma prática de transformar
+          prioridade em acompanhamento.
         </p>
         <GuideSection>
-          <p><strong className="text-foreground">Objetivo:</strong> descreve o que a Tribus quer alcançar.</p>
-          <p><strong className="text-foreground">Key results (KRs):</strong> mostram, com números ou métricas, se esse avanço está acontecendo.</p>
-          <p><strong className="text-foreground">Ciclo:</strong> é o período em que esses OKRs são acompanhados, como um mês, trimestre ou fase de trabalho.</p>
+          <p>
+            <strong className="text-foreground">Objetivo:</strong> descreve o que a Tribus quer
+            alcançar.
+          </p>
+          <p>
+            <strong className="text-foreground">Key results (KRs):</strong> mostram, com números ou
+            métricas, se esse avanço está acontecendo.
+          </p>
+          <p>
+            <strong className="text-foreground">Ciclo:</strong> é o período em que esses OKRs são
+            acompanhados, como um mês, trimestre ou fase de trabalho.
+          </p>
         </GuideSection>
         <GuideSection title="Nesta tela:">
-          <GuideList items={[
-            "cada objetivo aparece como item principal;",
-            "ao expandir, você vê os KRs ligados a ele;",
-            "o progresso do objetivo depende do avanço dos seus KRs;",
-            "o ciclo ajuda a organizar e filtrar os OKRs por período.",
-          ]} />
+          <GuideList
+            items={[
+              "cada objetivo aparece como item principal;",
+              "ao expandir, você vê os KRs ligados a ele;",
+              "o progresso do objetivo depende do avanço dos seus KRs;",
+              "o ciclo ajuda a organizar e filtrar os OKRs por período.",
+            ]}
+          />
         </GuideSection>
         <GuideExamples>
-          <div><p className="text-foreground font-medium">Objetivo: aumentar as vendas da loja no trimestre</p><p className="mt-0.5"><span className="text-foreground/90">KRs:</span> faturar R$ X, vender Y peças, aumentar a taxa de conversão do site.</p></div>
-          <div><p className="text-foreground font-medium">Objetivo: estruturar melhor a operação da marca</p><p className="mt-0.5"><span className="text-foreground/90">KRs:</span> cadastrar 100% dos produtos no padrão definido, concluir a documentação dos processos principais.</p></div>
+          <div>
+            <p className="font-medium text-foreground">
+              Objetivo: aumentar as vendas da loja no trimestre
+            </p>
+            <p className="mt-0.5">
+              <span className="text-foreground/90">KRs:</span> faturar R$ X, vender Y peças,
+              aumentar a taxa de conversão do site.
+            </p>
+          </div>
+          <div>
+            <p className="font-medium text-foreground">
+              Objetivo: estruturar melhor a operação da marca
+            </p>
+            <p className="mt-0.5">
+              <span className="text-foreground/90">KRs:</span> cadastrar 100% dos produtos no padrão
+              definido, concluir a documentação dos processos principais.
+            </p>
+          </div>
         </GuideExamples>
       </PageGuide>
 
       {/* ── Filters ─────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex flex-wrap items-center gap-2">
         <div className="relative">
           <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
-            className="pl-8 h-8 w-48 text-sm"
+            className="h-8 w-48 pl-8 text-sm"
             placeholder="Buscar…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -333,7 +356,7 @@ export function OkrPage() {
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 text-xs text-muted-foreground hover:text-foreground ml-auto gap-1.5"
+            className="ml-auto h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
             onClick={toggleAll}
           >
             {allExpanded ? (
@@ -353,14 +376,14 @@ export function OkrPage() {
       {isLoading && (
         <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-[54px] bg-muted rounded-xl animate-pulse" />
+            <div key={i} className="h-[54px] animate-pulse rounded-xl bg-muted" />
           ))}
         </div>
       )}
 
       {/* ── Lista: cabeçalhos sempre que filtros/ordem/dados existirem; vazio encaixado abaixo ─ */}
       {!isLoading && showColumnHeaders && (
-        <div className="rounded-xl border border-border bg-card/50 shadow-sm overflow-hidden">
+        <div className="overflow-hidden rounded-xl border border-border bg-card/50 shadow-sm">
           <div
             className="border-b border-primary/15 bg-gradient-to-b from-muted/55 via-muted/25 to-background shadow-[inset_0_1px_0_0_hsl(var(--border)/0.45)]"
             role="row"
@@ -386,14 +409,17 @@ export function OkrPage() {
                       <ArrowDown className="h-3 w-3 shrink-0 text-primary" aria-hidden />
                     )
                   ) : (
-                    <ArrowUpDown className="h-3 w-3 shrink-0 text-muted-foreground/40" aria-hidden />
+                    <ArrowUpDown
+                      className="h-3 w-3 shrink-0 text-muted-foreground/40"
+                      aria-hidden
+                    />
                   )}
                 </button>
               </div>
               <div
                 className={`flex items-center justify-between gap-1 border-r border-border/60 px-1 ${COL_CYCLE}`}
               >
-                <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/60 truncate pl-0.5">
+                <span className="truncate pl-0.5 text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/60">
                   Ciclo
                 </span>
                 <DropdownMenu.Root>
@@ -402,7 +428,7 @@ export function OkrPage() {
                       <button
                         type="button"
                         className={cn(
-                          "relative h-7 w-7 shrink-0 inline-flex items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-background/90 hover:text-foreground",
+                          "relative inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-background/90 hover:text-foreground",
                           filterCycleIds.size > 0
                             ? "border-primary/40 bg-primary/10 text-primary shadow-sm"
                             : "border-border/60 bg-background/40",
@@ -420,13 +446,13 @@ export function OkrPage() {
                   </div>
                   <DropdownMenu.Portal>
                     <DropdownMenu.Content
-                      className="min-w-[13rem] rounded-lg border border-border bg-popover p-1 shadow-lg z-[200]"
+                      className="z-[200] min-w-[13rem] rounded-lg border border-border bg-popover p-1 shadow-lg"
                       sideOffset={4}
                       align="end"
                       data-menu
                     >
                       <DropdownMenu.Item
-                        className="text-xs px-2 py-1.5 rounded outline-none cursor-pointer hover:bg-accent"
+                        className="cursor-pointer rounded px-2 py-1.5 text-xs outline-none hover:bg-accent"
                         onSelect={() => setFilterCycleIds(new Set())}
                       >
                         Limpar seleção
@@ -436,9 +462,8 @@ export function OkrPage() {
                         <DropdownMenu.CheckboxItem
                           key={c.id}
                           className={cn(
-                            "relative flex items-center gap-2 pl-8 pr-2 py-1.5 text-xs rounded-sm",
-                            filterCycleIds.has(c.id) &&
-                              "bg-primary/12 text-foreground font-medium",
+                            "relative flex items-center gap-2 rounded-sm py-1.5 pl-8 pr-2 text-xs",
+                            filterCycleIds.has(c.id) && "bg-primary/12 font-medium text-foreground",
                           )}
                           checked={filterCycleIds.has(c.id)}
                           onCheckedChange={(checked) => {
@@ -474,7 +499,7 @@ export function OkrPage() {
                     sort.field === "status" && "bg-background/90 shadow-sm ring-1 ring-border/60",
                   )}
                 >
-                  <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/75 truncate">
+                  <span className="truncate text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/75">
                     Status
                   </span>
                   {sort.field === "status" ? (
@@ -484,7 +509,10 @@ export function OkrPage() {
                       <ArrowDown className="h-3 w-3 shrink-0 text-primary" aria-hidden />
                     )
                   ) : (
-                    <ArrowUpDown className="h-3 w-3 shrink-0 text-muted-foreground/40" aria-hidden />
+                    <ArrowUpDown
+                      className="h-3 w-3 shrink-0 text-muted-foreground/40"
+                      aria-hidden
+                    />
                   )}
                 </button>
                 <DropdownMenu.Root>
@@ -493,7 +521,7 @@ export function OkrPage() {
                       <button
                         type="button"
                         className={cn(
-                          "relative h-7 w-7 shrink-0 inline-flex items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-background/90 hover:text-foreground",
+                          "relative inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-background/90 hover:text-foreground",
                           filterStatuses.size > 0
                             ? "border-primary/40 bg-primary/10 text-primary shadow-sm"
                             : "border-border/60 bg-background/40",
@@ -511,13 +539,13 @@ export function OkrPage() {
                   </div>
                   <DropdownMenu.Portal>
                     <DropdownMenu.Content
-                      className="min-w-[12rem] rounded-lg border border-border bg-popover p-1 shadow-lg z-[200]"
+                      className="z-[200] min-w-[12rem] rounded-lg border border-border bg-popover p-1 shadow-lg"
                       sideOffset={4}
                       align="end"
                       data-menu
                     >
                       <DropdownMenu.Item
-                        className="text-xs px-2 py-1.5 rounded outline-none cursor-pointer hover:bg-accent"
+                        className="cursor-pointer rounded px-2 py-1.5 text-xs outline-none hover:bg-accent"
                         onSelect={() => setFilterStatuses(new Set())}
                       >
                         Limpar seleção
@@ -527,9 +555,9 @@ export function OkrPage() {
                         <DropdownMenu.CheckboxItem
                           key={opt.value}
                           className={cn(
-                            "relative flex items-center pl-8 pr-2 py-1.5 text-xs rounded-sm",
+                            "relative flex items-center rounded-sm py-1.5 pl-8 pr-2 text-xs",
                             filterStatuses.has(opt.value) &&
-                              "bg-primary/12 text-foreground font-medium",
+                              "bg-primary/12 font-medium text-foreground",
                           )}
                           checked={filterStatuses.has(opt.value)}
                           onCheckedChange={(checked) => {
@@ -578,7 +606,10 @@ export function OkrPage() {
                       <ArrowDown className="h-3 w-3 shrink-0 text-primary" aria-hidden />
                     )
                   ) : (
-                    <ArrowUpDown className="h-3 w-3 shrink-0 text-muted-foreground/40" aria-hidden />
+                    <ArrowUpDown
+                      className="h-3 w-3 shrink-0 text-muted-foreground/40"
+                      aria-hidden
+                    />
                   )}
                 </button>
               </div>
@@ -601,7 +632,10 @@ export function OkrPage() {
                       <ArrowDown className="h-3 w-3 shrink-0 text-primary" aria-hidden />
                     )
                   ) : (
-                    <ArrowUpDown className="h-3 w-3 shrink-0 text-muted-foreground/40" aria-hidden />
+                    <ArrowUpDown
+                      className="h-3 w-3 shrink-0 text-muted-foreground/40"
+                      aria-hidden
+                    />
                   )}
                 </button>
               </div>
@@ -611,15 +645,15 @@ export function OkrPage() {
 
           {sortedFiltered.length === 0 ? (
             <div className="border-t border-border bg-background px-4 py-16 text-center">
-              <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-muted mx-auto mb-4">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-muted">
                 <Target className="h-6 w-6 text-muted-foreground/60" />
               </div>
-              <p className="text-sm font-medium text-foreground mb-1">Nenhum resultado</p>
-              <p className="text-xs text-muted-foreground mb-4 max-w-xs mx-auto">
+              <p className="mb-1 text-sm font-medium text-foreground">Nenhum resultado</p>
+              <p className="mx-auto mb-4 max-w-xs text-xs text-muted-foreground">
                 Tente ajustar os filtros ou{" "}
                 <button
                   type="button"
-                  className="text-primary font-medium underline-offset-4 hover:underline"
+                  className="font-medium text-primary underline-offset-4 hover:underline"
                   onClick={clearAllFiltersAndSort}
                 >
                   limpar filtros e ordenação
@@ -664,12 +698,13 @@ export function OkrPage() {
       {/* ── Empty (workspace sem objetivos e sem filtros) ───────────────── */}
       {!isLoading && !showColumnHeaders && sortedFiltered.length === 0 && (
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-muted mb-4">
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-muted">
             <Target className="h-6 w-6 text-muted-foreground/60" />
           </div>
-          <p className="text-sm font-medium text-foreground mb-1">Nenhum objetivo ainda</p>
-          <p className="text-xs text-muted-foreground mb-6 max-w-xs">
-            Crie seu primeiro objetivo estratégico e adicione key results para acompanhar o progresso.
+          <p className="mb-1 text-sm font-medium text-foreground">Nenhum objetivo ainda</p>
+          <p className="mb-6 max-w-xs text-xs text-muted-foreground">
+            Crie seu primeiro objetivo estratégico e adicione key results para acompanhar o
+            progresso.
           </p>
           <Button size="sm" onClick={() => setCreateObjOpen(true)}>
             <Plus className="h-3.5 w-3.5" />
@@ -742,8 +777,8 @@ function ObjectiveBlock({
       <div
         className={cn(
           OKR_OBJECTIVE_GRID_CLASS,
-          "cursor-pointer select-none px-4 py-3 transition-colors rounded-xl",
-          isExpanded ? "bg-muted/30 rounded-b-none" : "bg-card hover:bg-muted/20",
+          "cursor-pointer select-none rounded-xl px-4 py-3 transition-colors",
+          isExpanded ? "rounded-b-none bg-muted/30" : "bg-card hover:bg-muted/20",
         )}
         style={{ borderLeft: `3px solid ${accentColor}` }}
         onClick={(e) => {
@@ -760,25 +795,23 @@ function ObjectiveBlock({
           />
         </div>
 
-        <div className="min-w-0 flex flex-col items-start gap-0.5 border-r border-border/60 px-1">
+        <div className="flex min-w-0 flex-col items-start gap-0.5 border-r border-border/60 px-1">
           <Link
             href={`/okr/objectives/${objective.id}`}
             onClick={(e) => e.stopPropagation()}
-            className="text-sm font-semibold text-foreground hover:text-primary transition-colors leading-snug inline-block max-w-full truncate text-left align-top"
+            className="inline-block max-w-full truncate text-left align-top text-sm font-semibold leading-snug text-foreground transition-colors hover:text-primary"
           >
             {objective.title}
           </Link>
           {objective.descriptionText && (
-            <p className="text-xs text-muted-foreground truncate max-w-full leading-tight w-full">
+            <p className="w-full max-w-full truncate text-xs leading-tight text-muted-foreground">
               {objective.descriptionText}
             </p>
           )}
         </div>
 
-        <div
-          className={`flex items-center border-r border-border/60 px-1 ${COL_CYCLE} min-w-0`}
-        >
-          <span className="text-xs text-muted-foreground truncate w-full">
+        <div className={`flex items-center border-r border-border/60 px-1 ${COL_CYCLE} min-w-0`}>
+          <span className="w-full truncate text-xs text-muted-foreground">
             {cycle?.title ?? "—"}
           </span>
         </div>
@@ -788,21 +821,21 @@ function ObjectiveBlock({
         </div>
 
         <div className={`flex items-center border-r border-border/60 px-2 ${COL_METRIC} min-w-0`}>
-          <span className="text-xs text-muted-foreground tabular-nums truncate">
+          <span className="truncate text-xs tabular-nums text-muted-foreground">
             {completedKrs}/{krCount} KR{krCount !== 1 ? "s" : ""}
           </span>
         </div>
 
         <div
-          className={`flex items-center gap-2 min-w-0 border-r border-border/60 px-1 ${COL_PROGRESS}`}
+          className={`flex min-w-0 items-center gap-2 border-r border-border/60 px-1 ${COL_PROGRESS}`}
         >
           <OkrProgressBar
             percent={objective.progressPercent}
             status={objective.status}
             size="xs"
-            className="flex-1 min-w-0"
+            className="min-w-0 flex-1"
           />
-          <span className="text-xs tabular-nums font-medium text-foreground/70 w-9 text-right shrink-0">
+          <span className="w-9 shrink-0 text-right text-xs font-medium tabular-nums text-foreground/70">
             {Math.round(objective.progressPercent)}%
           </span>
         </div>
@@ -813,7 +846,7 @@ function ObjectiveBlock({
 
         <div
           data-menu
-          className={`${COL_ACTIONS} flex items-center justify-end gap-0.5 relative`}
+          className={`${COL_ACTIONS} relative flex items-center justify-end gap-0.5`}
           onClick={(e) => e.stopPropagation()}
         >
           <Button
@@ -825,33 +858,31 @@ function ObjectiveBlock({
           >
             <Plus className="h-3.5 w-3.5" />
           </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-7 w-7 p-0"
-            onClick={onObjMenuToggle}
-          >
+          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={onObjMenuToggle}>
             <MoreHorizontal className="h-4 w-4" />
           </Button>
           {objMenuOpen && (
-            <div data-menu className="absolute right-0 top-8 z-20 w-44 rounded-lg border border-border bg-popover shadow-lg py-1">
+            <div
+              data-menu
+              className="absolute right-0 top-8 z-20 w-44 rounded-lg border border-border bg-popover py-1 shadow-lg"
+            >
               <Link
                 href={`/okr/objectives/${objective.id}`}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted/60 transition-colors"
+                className="flex items-center gap-2 px-3 py-1.5 text-sm transition-colors hover:bg-muted/60"
               >
                 <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
                 Ver detalhes
               </Link>
               <button
-                className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted/60 w-full text-left transition-colors"
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors hover:bg-muted/60"
                 onClick={onAddKr}
               >
                 <Plus className="h-3.5 w-3.5 text-muted-foreground" />
                 Adicionar KR
               </button>
-              <div className="border-t border-border my-1" />
+              <div className="my-1 border-t border-border" />
               <button
-                className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted/60 w-full text-left text-destructive transition-colors"
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-destructive transition-colors hover:bg-muted/60"
                 onClick={onDeleteObj}
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -864,16 +895,13 @@ function ObjectiveBlock({
 
       {/* KR rows (expanded) */}
       {isExpanded && (
-        <div className="border-t border-border/60 rounded-b-xl overflow-hidden">
+        <div className="overflow-hidden rounded-b-xl border-t border-border/60">
           {krs.length === 0 ? (
-            <div className="flex items-center gap-3 px-4 py-4 pl-12 bg-muted/10">
-              <TrendingUp className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+            <div className="flex items-center gap-3 bg-muted/10 px-4 py-4 pl-12">
+              <TrendingUp className="h-4 w-4 shrink-0 text-muted-foreground/40" />
               <p className="text-xs text-muted-foreground/60">
                 Nenhum key result ainda.{" "}
-                <button
-                  className="text-primary hover:underline font-medium"
-                  onClick={onAddKr}
-                >
+                <button className="font-medium text-primary hover:underline" onClick={onAddKr}>
                   Adicionar o primeiro
                 </button>
               </p>
@@ -892,10 +920,10 @@ function ObjectiveBlock({
                 />
               ))}
               {/* Inline add KR */}
-              <div className="flex items-center gap-2 px-4 py-2 pl-12 bg-muted/5 border-t border-border/30">
+              <div className="flex items-center gap-2 border-t border-border/30 bg-muted/5 px-4 py-2 pl-12">
                 <button
                   onClick={onAddKr}
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground/60 hover:text-primary transition-colors"
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground/60 transition-colors hover:text-primary"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   Adicionar key result
@@ -939,38 +967,38 @@ function KrRow({ kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete }: KrRow
       <div className="min-w-0 border-r border-border/60 px-1 pl-3">
         <Link
           href={`/okr/key-results/${kr.id}`}
-          className="text-sm text-foreground/80 hover:text-primary transition-colors truncate block leading-snug"
+          className="block truncate text-sm leading-snug text-foreground/80 transition-colors hover:text-primary"
           onClick={(e) => e.stopPropagation()}
         >
           {kr.title}
         </Link>
       </div>
 
-      <div className={`flex items-center border-r border-border/60 px-1 ${COL_CYCLE}`} aria-hidden />
+      <div
+        className={`flex items-center border-r border-border/60 px-1 ${COL_CYCLE}`}
+        aria-hidden
+      />
 
       <div className={`flex items-center border-r border-border/60 px-1 ${COL_STATUS}`}>
         <OkrStatusBadge status={kr.status} />
       </div>
 
       <div className={`flex items-center border-r border-border/60 px-2 ${COL_METRIC} min-w-0`}>
-        <span
-          className="text-xs tabular-nums text-muted-foreground truncate block"
-          title={metric}
-        >
+        <span className="block truncate text-xs tabular-nums text-muted-foreground" title={metric}>
           {metric}
         </span>
       </div>
 
       <div
-        className={`flex items-center gap-2 min-w-0 border-r border-border/60 px-1 ${COL_PROGRESS}`}
+        className={`flex min-w-0 items-center gap-2 border-r border-border/60 px-1 ${COL_PROGRESS}`}
       >
         <OkrProgressBar
           percent={kr.progressPercent}
           status={kr.status}
           size="xs"
-          className="flex-1 min-w-0"
+          className="min-w-0 flex-1"
         />
-        <span className="text-xs tabular-nums text-muted-foreground w-9 text-right shrink-0">
+        <span className="w-9 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
           {Math.round(kr.progressPercent)}%
         </span>
       </div>
@@ -979,7 +1007,7 @@ function KrRow({ kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete }: KrRow
         <span className="text-xs text-muted-foreground">{targetDate ?? "—"}</span>
       </div>
 
-      <div data-menu className={`${COL_ACTIONS} flex items-center justify-end gap-0.5 relative`}>
+      <div data-menu className={`${COL_ACTIONS} relative flex items-center justify-end gap-0.5`}>
         <Button
           size="sm"
           variant="ghost"
@@ -993,24 +1021,27 @@ function KrRow({ kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete }: KrRow
           <MoreHorizontal className="h-4 w-4" />
         </Button>
         {menuOpen && (
-          <div data-menu className="absolute right-0 top-8 z-20 w-44 rounded-lg border border-border bg-popover shadow-lg py-1">
+          <div
+            data-menu
+            className="absolute right-0 top-8 z-20 w-44 rounded-lg border border-border bg-popover py-1 shadow-lg"
+          >
             <Link
               href={`/okr/key-results/${kr.id}`}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted/60 transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 text-sm transition-colors hover:bg-muted/60"
             >
               <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
               Ver detalhes
             </Link>
             <button
-              className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted/60 w-full text-left transition-colors"
+              className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors hover:bg-muted/60"
               onClick={onUpdate}
             >
               <RefreshCw className="h-3.5 w-3.5 text-muted-foreground" />
               Atualizar progresso
             </button>
-            <div className="border-t border-border my-1" />
+            <div className="my-1 border-t border-border" />
             <button
-              className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted/60 w-full text-left text-destructive transition-colors"
+              className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-destructive transition-colors hover:bg-muted/60"
               onClick={onDelete}
             >
               <Trash2 className="h-3.5 w-3.5" />

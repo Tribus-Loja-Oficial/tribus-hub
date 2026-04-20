@@ -35,11 +35,11 @@ function ToolbarButton({ active, disabled, onClick, title, children }: ToolbarBu
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "p-1.5 rounded transition-colors",
+        "rounded p-1.5 transition-colors",
         active
           ? "bg-accent text-accent-foreground"
           : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-        disabled && "opacity-40 pointer-events-none",
+        disabled && "pointer-events-none opacity-40",
       )}
     >
       {children}
@@ -48,7 +48,7 @@ function ToolbarButton({ active, disabled, onClick, title, children }: ToolbarBu
 }
 
 function Divider() {
-  return <div className="w-px h-5 bg-border mx-1" />;
+  return <div className="mx-1 h-5 w-px bg-border" />;
 }
 
 interface EditorToolbarProps {
@@ -66,7 +66,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   };
 
   return (
-    <div className="flex items-center flex-wrap gap-0.5 border border-border rounded-md px-1.5 py-1 bg-background">
+    <div className="flex flex-wrap items-center gap-0.5 rounded-md border border-border bg-background px-1.5 py-1">
       <ToolbarButton
         active={editor.isActive("bold")}
         onClick={() => editor.chain().focus().toggleBold().run()}
@@ -166,11 +166,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       >
         <Minus className="h-3.5 w-3.5" />
       </ToolbarButton>
-      <ToolbarButton
-        active={editor.isActive("link")}
-        onClick={setLink}
-        title="Link"
-      >
+      <ToolbarButton active={editor.isActive("link")} onClick={setLink} title="Link">
         <Link2 className="h-3.5 w-3.5" />
       </ToolbarButton>
     </div>

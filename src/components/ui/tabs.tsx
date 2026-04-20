@@ -6,10 +6,7 @@ import { cn } from "@/lib/utils/cn";
 
 const Tabs = TabsPrimitive.Root;
 
-const TabsList = ({
-  className,
-  ...props
-}: ComponentPropsWithoutRef<typeof TabsPrimitive.List>) => (
+const TabsList = ({ className, ...props }: ComponentPropsWithoutRef<typeof TabsPrimitive.List>) => (
   <TabsPrimitive.List
     className={cn(
       "inline-flex h-10 items-center justify-start gap-1 rounded-lg border border-border bg-muted/30 p-1 text-muted-foreground",

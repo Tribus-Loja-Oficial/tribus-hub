@@ -50,7 +50,13 @@ export function CreateCycleDialog({ open, onOpenChange }: CreateCycleDialogProps
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim() || !startDate || !endDate) return;
-    mutation.mutate({ title: title.trim(), startDate, endDate, description: description.trim() || undefined, status });
+    mutation.mutate({
+      title: title.trim(),
+      startDate,
+      endDate,
+      description: description.trim() || undefined,
+      status,
+    });
   }
 
   return (
@@ -61,7 +67,9 @@ export function CreateCycleDialog({ open, onOpenChange }: CreateCycleDialogProps
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label>Título <span className="text-destructive">*</span></Label>
+            <Label>
+              Título <span className="text-destructive">*</span>
+            </Label>
             <Input
               autoFocus
               value={title}
@@ -72,11 +80,15 @@ export function CreateCycleDialog({ open, onOpenChange }: CreateCycleDialogProps
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Início <span className="text-destructive">*</span></Label>
+              <Label>
+                Início <span className="text-destructive">*</span>
+              </Label>
               <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             </div>
             <div className="space-y-1.5">
-              <Label>Fim <span className="text-destructive">*</span></Label>
+              <Label>
+                Fim <span className="text-destructive">*</span>
+              </Label>
               <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </div>
           </div>
@@ -84,7 +96,7 @@ export function CreateCycleDialog({ open, onOpenChange }: CreateCycleDialogProps
           <div className="space-y-1.5">
             <Label>Status</Label>
             <select
-              className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
               value={status}
               onChange={(e) => setStatus(e.target.value as "planned" | "active")}
             >
@@ -94,7 +106,9 @@ export function CreateCycleDialog({ open, onOpenChange }: CreateCycleDialogProps
           </div>
 
           <div className="space-y-1.5">
-            <Label>Descrição <span className="text-muted-foreground text-xs">(opcional)</span></Label>
+            <Label>
+              Descrição <span className="text-xs text-muted-foreground">(opcional)</span>
+            </Label>
             <Input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -110,7 +124,7 @@ export function CreateCycleDialog({ open, onOpenChange }: CreateCycleDialogProps
               type="submit"
               disabled={!title.trim() || !startDate || !endDate || mutation.isPending}
             >
-              {mutation.isPending && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
+              {mutation.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
               {mutation.isPending ? "Criando…" : "Criar ciclo"}
             </Button>
           </div>

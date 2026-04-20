@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SettingsLoading() {
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="max-w-2xl space-y-6">
       <Skeleton className="h-6 w-36" />
       <div className="space-y-4">
         {Array.from({ length: 4 }).map((_, i) => (

@@ -33,8 +33,5 @@ export async function updateUser(id: string, data: Partial<NewUser>): Promise<Us
 }
 
 export async function updateLastLogin(id: string): Promise<void> {
-  await db
-    .update(users)
-    .set({ lastLoginAt: new Date() })
-    .where(eq(users.id, id));
+  await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, id));
 }

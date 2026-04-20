@@ -22,12 +22,7 @@ export const projectStatusEnum = pgEnum("project_status", [
   "cancelled",
 ]);
 
-export const projectPriorityEnum = pgEnum("project_priority", [
-  "low",
-  "medium",
-  "high",
-  "urgent",
-]);
+export const projectPriorityEnum = pgEnum("project_priority", ["low", "medium", "high", "urgent"]);
 
 export const objectiveStatusEnum = pgEnum("objective_status", [
   "not_started",
@@ -164,9 +159,15 @@ export const milestones = pgTable("milestones", {
 export const pmProjectOkrObjectiveLinks = pgTable(
   "pm_project_okr_objective_links",
   {
-    id: text("id").primaryKey().$defaultFn(() => createId()),
-    projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
-    okrObjectiveId: text("okr_objective_id").notNull().references(() => okrObjectives.id, { onDelete: "cascade" }),
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    okrObjectiveId: text("okr_objective_id")
+      .notNull()
+      .references(() => okrObjectives.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
@@ -177,9 +178,15 @@ export const pmProjectOkrObjectiveLinks = pgTable(
 export const pmProjectOkrKrLinks = pgTable(
   "pm_project_okr_kr_links",
   {
-    id: text("id").primaryKey().$defaultFn(() => createId()),
-    projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
-    okrKrId: text("okr_kr_id").notNull().references(() => okrKeyResults.id, { onDelete: "cascade" }),
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    okrKrId: text("okr_kr_id")
+      .notNull()
+      .references(() => okrKeyResults.id, { onDelete: "cascade" }),
     relationType: okrLinkRelationTypeEnum("relation_type").notNull().default("contributes_to"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },

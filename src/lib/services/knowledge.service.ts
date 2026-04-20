@@ -110,11 +110,7 @@ export interface UpdatePageInput {
   changeReason?: string;
 }
 
-export async function updatePage(
-  user: AuthenticatedUser,
-  id: string,
-  input: UpdatePageInput,
-) {
+export async function updatePage(user: AuthenticatedUser, id: string, input: UpdatePageInput) {
   const existing = await pagesRepo.findPageById(id);
   if (!existing || existing.workspaceId !== user.workspaceId) {
     throw new NotFoundError("Page", id);
@@ -294,9 +290,7 @@ type PageNode = Awaited<ReturnType<typeof pagesRepo.findPageById>> & {
   children: PageNode[];
 };
 
-function buildTree(
-  allPages: Awaited<ReturnType<typeof pagesRepo.findPagesByWorkspace>>,
-) {
+function buildTree(allPages: Awaited<ReturnType<typeof pagesRepo.findPagesByWorkspace>>) {
   const map = new Map<string, PageNode>();
   const roots: PageNode[] = [];
 

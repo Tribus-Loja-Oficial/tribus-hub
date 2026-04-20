@@ -55,9 +55,7 @@ export function LoginForm() {
           autoComplete="email"
           {...register("email")}
         />
-        {errors.email && (
-          <p className="text-xs text-destructive">{errors.email.message}</p>
-        )}
+        {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
       </div>
 
       <div className="space-y-1.5">
@@ -68,13 +66,11 @@ export function LoginForm() {
           autoComplete="current-password"
           {...register("password")}
         />
-        {errors.password && (
-          <p className="text-xs text-destructive">{errors.password.message}</p>
-        )}
+        {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
       </div>
 
       {error && (
-        <div className="rounded-md bg-destructive/10 border border-destructive/20 px-3 py-2">
+        <div className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2">
           <p className="text-sm text-destructive">{error}</p>
         </div>
       )}

@@ -47,10 +47,7 @@ export interface MoveTaskInput {
   sortOrder: number;
 }
 
-export async function moveTask(
-  user: AuthenticatedUser,
-  input: MoveTaskInput,
-): Promise<void> {
+export async function moveTask(user: AuthenticatedUser, input: MoveTaskInput): Promise<void> {
   const task = await tasksRepo.findTaskById(input.taskId);
   if (!task || task.workspaceId !== user.workspaceId) {
     throw new NotFoundError("Task", input.taskId);

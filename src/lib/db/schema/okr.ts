@@ -46,12 +46,7 @@ export const okrMetricTypeEnum = pgEnum("okr_metric_type", [
   "custom",
 ]);
 
-export const okrPriorityEnum = pgEnum("okr_priority", [
-  "low",
-  "medium",
-  "high",
-  "critical",
-]);
+export const okrPriorityEnum = pgEnum("okr_priority", ["low", "medium", "high", "critical"]);
 
 // ─── okr_cycles ─────────────────────────────────────────────────────────────
 

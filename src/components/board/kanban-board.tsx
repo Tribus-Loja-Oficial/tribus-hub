@@ -38,16 +38,10 @@ export function KanbanBoard({ data, onTaskOpen, onQuickAdd }: KanbanBoardProps) 
     setBoardData(data);
   }, [data]);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-  );
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const moveMutation = useMutation({
-    mutationFn: async (payload: {
-      taskId: string;
-      targetColumnId: string;
-      sortOrder: number;
-    }) => {
+    mutationFn: async (payload: { taskId: string; targetColumnId: string; sortOrder: number }) => {
       const res = await fetch("/api/tasks/move", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -67,17 +61,13 @@ export function KanbanBoard({ data, onTaskOpen, onQuickAdd }: KanbanBoardProps) 
 
   const findColumn = useCallback(
     (id: string) => {
-      return boardData.columns.find(
-        (col) => col.id === id || col.tasks.some((t) => t.id === id),
-      );
+      return boardData.columns.find((col) => col.id === id || col.tasks.some((t) => t.id === id));
     },
     [boardData.columns],
   );
 
   function handleDragStart(event: DragStartEvent) {
-    const task = boardData.columns
-      .flatMap((c) => c.tasks)
-      .find((t) => t.id === event.active.id);
+    const task = boardData.columns.flatMap((c) => c.tasks).find((t) => t.id === event.active.id);
     setActiveTask(task ?? null);
   }
 
@@ -85,9 +75,7 @@ export function KanbanBoard({ data, onTaskOpen, onQuickAdd }: KanbanBoardProps) 
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const activeColumn = boardData.columns.find((c) =>
-      c.tasks.some((t) => t.id === active.id),
-    );
+    const activeColumn = boardData.columns.find((c) => c.tasks.some((t) => t.id === active.id));
     const overColumn =
       boardData.columns.find((c) => c.id === over.id) ||
       boardData.columns.find((c) => c.tasks.some((t) => t.id === over.id));
@@ -142,7 +130,7 @@ export function KanbanBoard({ data, onTaskOpen, onQuickAdd }: KanbanBoardProps) 
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-4 overflow-x-auto pb-4 h-full">
+      <div className="flex h-full gap-4 overflow-x-auto pb-4">
         <SortableContext
           items={boardData.columns.map((c) => c.id)}
           strategy={horizontalListSortingStrategy}
@@ -159,9 +147,7 @@ export function KanbanBoard({ data, onTaskOpen, onQuickAdd }: KanbanBoardProps) 
         </SortableContext>
       </div>
 
-      <DragOverlay>
-        {activeTask && <TaskCard task={activeTask} isDragging />}
-      </DragOverlay>
+      <DragOverlay>{activeTask && <TaskCard task={activeTask} isDragging />}</DragOverlay>
     </DndContext>
   );
 }

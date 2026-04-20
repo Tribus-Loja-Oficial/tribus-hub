@@ -11,7 +11,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     const { id, milestoneId } = await params;
     const user = await requireAuth();
     const project = await projectsRepo.findProjectById(id);
-    if (!project || project.workspaceId !== user.workspaceId) throw new NotFoundError("Project", id);
+    if (!project || project.workspaceId !== user.workspaceId)
+      throw new NotFoundError("Project", id);
     const body = await request.json();
     const input = updateMilestoneSchema.parse(body);
     const milestone = await projectsRepo.updateMilestone(milestoneId, input);
@@ -26,7 +27,8 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     const { id, milestoneId } = await params;
     const user = await requireAuth();
     const project = await projectsRepo.findProjectById(id);
-    if (!project || project.workspaceId !== user.workspaceId) throw new NotFoundError("Project", id);
+    if (!project || project.workspaceId !== user.workspaceId)
+      throw new NotFoundError("Project", id);
     await projectsRepo.softDeleteMilestone(milestoneId);
     return NextResponse.json({ data: null });
   } catch (err) {

@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function CyclesLoading() {
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="max-w-5xl space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -15,7 +15,10 @@ export default function CyclesLoading() {
       {/* Cycle cards */}
       <div className="space-y-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="rounded-xl border border-border px-5 py-4 flex items-center gap-5">
+          <div
+            key={i}
+            className="flex items-center gap-5 rounded-xl border border-border px-5 py-4"
+          >
             <div className="flex-1 space-y-1.5">
               <div className="flex items-center gap-2">
                 <Skeleton className="h-4 w-36" />
@@ -23,14 +26,14 @@ export default function CyclesLoading() {
               </div>
               <Skeleton className="h-3 w-48" />
             </div>
-            <div className="w-40 space-y-1.5 shrink-0">
+            <div className="w-40 shrink-0 space-y-1.5">
               <div className="flex justify-between">
                 <Skeleton className="h-3 w-10" />
                 <Skeleton className="h-3 w-8" />
               </div>
               <Skeleton className="h-2 w-full rounded-full" />
             </div>
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex shrink-0 items-center gap-1">
               <Skeleton className="h-7 w-20 rounded-md" />
               <Skeleton className="h-7 w-7 rounded-md" />
             </div>

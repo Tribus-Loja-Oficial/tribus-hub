@@ -103,7 +103,10 @@ export function TaskBoardPage() {
           if (!matchesDueFilter(t, dueFilter)) return false;
           if (searchQuery) {
             const q = searchQuery.trim().toLowerCase();
-            const hay = [t.title, col.name, col.slug, t.priority].filter(Boolean).join("\n").toLowerCase();
+            const hay = [t.title, col.name, col.slug, t.priority]
+              .filter(Boolean)
+              .join("\n")
+              .toLowerCase();
             if (!hay.includes(q)) return false;
           }
           return true;
@@ -152,30 +155,31 @@ export function TaskBoardPage() {
     setFormOpen(true);
   };
 
-  const hasAdvancedFilters =
-    !!priorityFilter || !!labelFilter || !!assigneeFilter || !!dueFilter;
+  const hasAdvancedFilters = !!priorityFilter || !!labelFilter || !!assigneeFilter || !!dueFilter;
 
   return (
-    <div className="flex flex-col h-full min-h-0">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-2">
-          <CheckSquare className="h-5 w-5 text-muted-foreground shrink-0" />
+          <CheckSquare className="h-5 w-5 shrink-0 text-muted-foreground" />
           <div>
-            <h1 className="text-xl font-semibold text-foreground tracking-tight">Tasks</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <h1 className="text-xl font-semibold tracking-tight text-foreground">Tasks</h1>
+            <p className="mt-0.5 text-xs text-muted-foreground">
               Board, lista, filtros por projeto, milestone, prioridade, etiqueta, responsável e
               vencimento.
             </p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex rounded-lg border border-border p-0.5 bg-muted/30">
+          <div className="flex rounded-lg border border-border bg-muted/30 p-0.5">
             <button
               type="button"
               onClick={() => setView("board")}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
-                view === "board" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground",
+                view === "board"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground",
               )}
             >
               <Kanban className="h-3.5 w-3.5" />
@@ -186,7 +190,9 @@ export function TaskBoardPage() {
               onClick={() => setView("list")}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
-                view === "list" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground",
+                view === "list"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground",
               )}
             >
               <LayoutList className="h-3.5 w-3.5" />
@@ -200,10 +206,10 @@ export function TaskBoardPage() {
         </div>
       </div>
 
-<div className="space-y-3 mb-5">
+      <div className="mb-5 space-y-3">
         {/* Search */}
         <div className="relative w-full max-w-sm">
-          <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+          <Search className="pointer-events-none absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
           <input
             type="text"
             placeholder="Buscar por título, coluna, prioridade…"
@@ -326,7 +332,7 @@ export function TaskBoardPage() {
               setAssigneeFilter("");
               setDueFilter("");
             }}
-            className="text-xs text-primary hover:underline w-fit"
+            className="w-fit text-xs text-primary hover:underline"
           >
             Limpar filtros avançados
           </button>
@@ -337,10 +343,10 @@ export function TaskBoardPage() {
         <div className="flex gap-4">
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="w-72 shrink-0">
-              <div className="h-6 bg-muted rounded w-24 mb-3 animate-pulse" />
+              <div className="mb-3 h-6 w-24 animate-pulse rounded bg-muted" />
               <div className="space-y-2">
                 {Array.from({ length: 2 }).map((_, j) => (
-                  <div key={j} className="h-20 bg-muted rounded animate-pulse" />
+                  <div key={j} className="h-20 animate-pulse rounded bg-muted" />
                 ))}
               </div>
             </div>
@@ -348,7 +354,7 @@ export function TaskBoardPage() {
         </div>
       )}
 
-      {error && <div className="text-destructive text-sm">Erro ao carregar o board.</div>}
+      {error && <div className="text-sm text-destructive">Erro ao carregar o board.</div>}
 
       {filteredBoard && view === "board" && (
         <KanbanBoard
@@ -359,105 +365,134 @@ export function TaskBoardPage() {
       )}
 
       {filteredBoard && view === "list" && (
-        <div className="rounded-xl border border-border overflow-hidden bg-card/30">
+        <div className="overflow-hidden rounded-xl border border-border bg-card/30">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted/30 text-left text-xs text-muted-foreground uppercase tracking-wide">
+              <tr className="border-b border-border bg-muted/30 text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <th className="px-4 py-3 font-medium">Título</th>
-                <th className="px-4 py-3 font-medium hidden md:table-cell">Projeto</th>
-                <th className="px-4 py-3 font-medium hidden lg:table-cell">Milestone</th>
+                <th className="hidden px-4 py-3 font-medium md:table-cell">Projeto</th>
+                <th className="hidden px-4 py-3 font-medium lg:table-cell">Milestone</th>
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium">Prioridade</th>
-                <th className="px-4 py-3 font-medium hidden sm:table-cell">Responsável</th>
-                <th className="px-4 py-3 font-medium hidden sm:table-cell">Etiquetas</th>
+                <th className="hidden px-4 py-3 font-medium sm:table-cell">Responsável</th>
+                <th className="hidden px-4 py-3 font-medium sm:table-cell">Etiquetas</th>
                 <th className="px-4 py-3 font-medium">Prazo</th>
               </tr>
             </thead>
             <tbody>
               {flatRows.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground text-sm">
+                  <td colSpan={8} className="px-4 py-12 text-center text-sm text-muted-foreground">
                     Nenhuma tarefa com estes filtros.
                   </td>
                 </tr>
               )}
               {flatRows.map(({ task, columnName }) => {
                 const taskProject = projects.find((p) => p.id === task.projectId);
-                const overdue = task.dueDate && !task.completedAt
-                  ? isBefore(startOfDay(new Date(task.dueDate)), startOfDay(new Date()))
-                  : false;
+                const overdue =
+                  task.dueDate && !task.completedAt
+                    ? isBefore(startOfDay(new Date(task.dueDate)), startOfDay(new Date()))
+                    : false;
                 return (
                   <tr
                     key={task.id}
-                    className="border-b border-border/60 hover:bg-accent/40 cursor-pointer transition-colors"
+                    className="cursor-pointer border-b border-border/60 transition-colors hover:bg-accent/40"
                     onClick={() => openEdit(task)}
                   >
                     <td className="px-4 py-2.5">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className={cn(
-                          "w-1.5 h-1.5 rounded-full shrink-0",
-                          task.completedAt ? "bg-emerald-500" : overdue ? "bg-red-400" : "bg-muted-foreground/30",
-                        )} />
-                        <span className={cn(
-                          "font-medium truncate",
-                          task.completedAt ? "text-muted-foreground line-through" : "text-foreground",
-                        )}>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <div
+                          className={cn(
+                            "h-1.5 w-1.5 shrink-0 rounded-full",
+                            task.completedAt
+                              ? "bg-emerald-500"
+                              : overdue
+                                ? "bg-red-400"
+                                : "bg-muted-foreground/30",
+                          )}
+                        />
+                        <span
+                          className={cn(
+                            "truncate font-medium",
+                            task.completedAt
+                              ? "text-muted-foreground line-through"
+                              : "text-foreground",
+                          )}
+                        >
                           {task.title}
                         </span>
                       </div>
                     </td>
-                    <td className="px-4 py-2.5 text-muted-foreground text-xs hidden md:table-cell truncate max-w-[140px]">
+                    <td className="hidden max-w-[140px] truncate px-4 py-2.5 text-xs text-muted-foreground md:table-cell">
                       {taskProject?.title ?? "—"}
                     </td>
-                    <td className="px-4 py-2.5 hidden lg:table-cell">
+                    <td className="hidden px-4 py-2.5 lg:table-cell">
                       {task.milestoneId ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground bg-amber-50 border border-amber-200/60 rounded px-1.5 py-0.5">
-                          <span className="h-1.5 w-1.5 rounded-full bg-amber-400 shrink-0" />
-                          <span className="truncate max-w-[100px]">Milestone</span>
+                        <span className="inline-flex items-center gap-1 rounded border border-amber-200/60 bg-amber-50 px-1.5 py-0.5 text-[11px] text-muted-foreground">
+                          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
+                          <span className="max-w-[100px] truncate">Milestone</span>
                         </span>
                       ) : (
                         <span className="text-xs text-muted-foreground/40">—</span>
                       )}
                     </td>
                     <td className="px-4 py-2.5">
-                      <span className="text-[11px] bg-muted text-muted-foreground rounded px-1.5 py-0.5">
+                      <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
                         {columnName}
                       </span>
                     </td>
                     <td className="px-4 py-2.5">
-                      <span className={cn(
-                        "text-[11px] font-medium rounded px-1.5 py-0.5",
-                        task.priority === "urgent" ? "bg-red-50 text-red-700 border border-red-200" :
-                        task.priority === "high" ? "bg-orange-50 text-orange-700 border border-orange-200" :
-                        task.priority === "medium" ? "bg-blue-50 text-blue-700 border border-blue-100" :
-                        "bg-muted text-muted-foreground border border-border",
-                      )}>
-                        {task.priority === "urgent" ? "Urgente" : task.priority === "high" ? "Alta" : task.priority === "medium" ? "Média" : "Baixa"}
+                      <span
+                        className={cn(
+                          "rounded px-1.5 py-0.5 text-[11px] font-medium",
+                          task.priority === "urgent"
+                            ? "border border-red-200 bg-red-50 text-red-700"
+                            : task.priority === "high"
+                              ? "border border-orange-200 bg-orange-50 text-orange-700"
+                              : task.priority === "medium"
+                                ? "border border-blue-100 bg-blue-50 text-blue-700"
+                                : "border border-border bg-muted text-muted-foreground",
+                        )}
+                      >
+                        {task.priority === "urgent"
+                          ? "Urgente"
+                          : task.priority === "high"
+                            ? "Alta"
+                            : task.priority === "medium"
+                              ? "Média"
+                              : "Baixa"}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground hidden sm:table-cell">
+                    <td className="hidden px-4 py-2.5 text-xs text-muted-foreground sm:table-cell">
                       {task.assigneeUserId
-                        ? members.find((m) => m.id === task.assigneeUserId)?.name?.split(" ")[0] ?? "—"
+                        ? (members.find((m) => m.id === task.assigneeUserId)?.name?.split(" ")[0] ??
+                          "—")
                         : "—"}
                     </td>
-                    <td className="px-4 py-2.5 hidden sm:table-cell">
+                    <td className="hidden px-4 py-2.5 sm:table-cell">
                       {task.labels?.length ? (
                         <div className="flex flex-wrap gap-1">
                           {task.labels.slice(0, 2).map((l) => (
-                            <span key={l.id} className="text-[10px] bg-muted rounded px-1.5 py-0.5">{l.name}</span>
+                            <span key={l.id} className="rounded bg-muted px-1.5 py-0.5 text-[10px]">
+                              {l.name}
+                            </span>
                           ))}
                           {task.labels.length > 2 && (
-                            <span className="text-[10px] text-muted-foreground/60">+{task.labels.length - 2}</span>
+                            <span className="text-[10px] text-muted-foreground/60">
+                              +{task.labels.length - 2}
+                            </span>
                           )}
                         </div>
                       ) : (
                         <span className="text-xs text-muted-foreground/40">—</span>
                       )}
                     </td>
-                    <td className={cn(
-                      "px-4 py-2.5 text-xs tabular-nums",
-                      overdue ? "text-red-500 font-medium" : "text-muted-foreground",
-                    )}>
+                    <td
+                      className={cn(
+                        "px-4 py-2.5 text-xs tabular-nums",
+                        overdue ? "font-medium text-red-500" : "text-muted-foreground",
+                      )}
+                    >
                       {task.dueDate
                         ? format(new Date(task.dueDate), "dd MMM yy", { locale: ptBR })
                         : "—"}

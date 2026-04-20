@@ -106,17 +106,26 @@ export const OKR_OKRS_LIST_SEARCH_EXTRACTORS: OkrOkrsSearchTextExtractor[] = [
     OBJECTIVE_STATUS_LABELS[objective.status] ?? objective.status,
     objective.status,
   ],
-  ({ objective }) => [String(Math.round(objective.progressPercent)), String(objective.progressPercent)],
+  ({ objective }) => [
+    String(Math.round(objective.progressPercent)),
+    String(objective.progressPercent),
+  ],
   ({ objective }) => [
     objective.priority,
     PRIORITY_LABELS[objective.priority] ?? objective.priority,
   ],
   ({ cycleTitle }) => (cycleTitle ? [cycleTitle] : []),
-  ({ objective }) => [...dateSearchChunks(objective.targetDate), ...dateSearchChunks(objective.startDate)],
+  ({ objective }) => [
+    ...dateSearchChunks(objective.targetDate),
+    ...dateSearchChunks(objective.startDate),
+  ],
   ({ objective }) => objective.keyResults.flatMap((kr) => collectKeyResultSearchText(kr)),
 ];
 
-function flattenSearchText(args: OkrOkrsListSearchArgs, extractors: OkrOkrsSearchTextExtractor[]): string {
+function flattenSearchText(
+  args: OkrOkrsListSearchArgs,
+  extractors: OkrOkrsSearchTextExtractor[],
+): string {
   const chunks: string[] = [];
   for (const fn of extractors) {
     for (const s of fn(args)) {

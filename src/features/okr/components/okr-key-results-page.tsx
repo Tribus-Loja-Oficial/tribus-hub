@@ -119,15 +119,13 @@ export function OkrKeyResultsPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="max-w-6xl space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-muted-foreground" />
           <h1 className="text-lg font-semibold text-foreground">Key Results</h1>
-          {!isLoading && (
-            <span className="text-sm text-muted-foreground">({filtered.length})</span>
-          )}
+          {!isLoading && <span className="text-sm text-muted-foreground">({filtered.length})</span>}
         </div>
         <Button size="sm" onClick={() => setCreateOpen(true)}>
           <Plus className="h-4 w-4" />
@@ -136,11 +134,11 @@ export function OkrKeyResultsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex flex-wrap items-center gap-2">
         <div className="relative">
           <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
           <Input
-            className="pl-8 h-8 w-52 text-sm"
+            className="h-8 w-52 pl-8 text-sm"
             placeholder="Buscar key results…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -167,14 +165,16 @@ export function OkrKeyResultsPage() {
         >
           <option value="">Todos os ciclos</option>
           {cycles.map((c) => (
-            <option key={c.id} value={c.id}>{c.title}</option>
+            <option key={c.id} value={c.id}>
+              {c.title}
+            </option>
           ))}
         </select>
 
         <Button
           size="sm"
           variant={groupByObjective ? "secondary" : "ghost"}
-          className="h-8 text-xs ml-auto"
+          className="ml-auto h-8 text-xs"
           onClick={() => setGroupByObjective((p) => !p)}
         >
           Agrupar por objetivo
@@ -184,15 +184,15 @@ export function OkrKeyResultsPage() {
       {isLoading && (
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-16 bg-muted rounded-xl animate-pulse" />
+            <div key={i} className="h-16 animate-pulse rounded-xl bg-muted" />
           ))}
         </div>
       )}
 
       {!isLoading && filtered.length === 0 && (
-        <div className="text-center py-20">
-          <TrendingUp className="h-10 w-10 mx-auto mb-3 text-muted-foreground opacity-30" />
-          <p className="text-sm text-muted-foreground mb-4">
+        <div className="py-20 text-center">
+          <TrendingUp className="mx-auto mb-3 h-10 w-10 text-muted-foreground opacity-30" />
+          <p className="mb-4 text-sm text-muted-foreground">
             {search || filterStatus || filterCycle
               ? "Nenhum key result corresponde aos filtros."
               : "Nenhum key result criado ainda."}
@@ -206,8 +206,9 @@ export function OkrKeyResultsPage() {
         </div>
       )}
 
-      {!isLoading && filtered.length > 0 && (
-        groupByObjective ? (
+      {!isLoading &&
+        filtered.length > 0 &&
+        (groupByObjective ? (
           <div className="space-y-4">
             {Array.from(grouped.entries()).map(([objectiveId, krs]) => {
               const objective = objectiveMap.get(objectiveId);
@@ -217,28 +218,31 @@ export function OkrKeyResultsPage() {
                 : 0;
 
               return (
-                <div key={objectiveId} className="rounded-xl border border-border bg-card overflow-hidden">
+                <div
+                  key={objectiveId}
+                  className="overflow-hidden rounded-xl border border-border bg-card"
+                >
                   {/* Objective header */}
                   <button
-                    className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-muted/30 transition-colors text-left"
+                    className="flex w-full items-center gap-4 px-5 py-3.5 text-left transition-colors hover:bg-muted/30"
                     onClick={() => toggleExpanded(objectiveId)}
                   >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-foreground">
                         {objective?.title ?? "Objetivo desconhecido"}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
+                      <p className="mt-0.5 text-xs text-muted-foreground">
                         {krs.length} key result{krs.length !== 1 ? "s" : ""}
                       </p>
                     </div>
-                    <div className="w-36 flex items-center gap-2 shrink-0">
+                    <div className="flex w-36 shrink-0 items-center gap-2">
                       <OkrProgressBar
                         percent={avgProgress}
                         status={objective?.status}
                         size="xs"
                         className="flex-1"
                       />
-                      <span className="text-xs tabular-nums text-muted-foreground w-8 text-right">
+                      <span className="w-8 text-right text-xs tabular-nums text-muted-foreground">
                         {Math.round(avgProgress)}%
                       </span>
                     </div>
@@ -249,7 +253,7 @@ export function OkrKeyResultsPage() {
 
                   {/* KRs */}
                   {isOpen && (
-                    <div className="border-t border-border divide-y divide-border">
+                    <div className="divide-y divide-border border-t border-border">
                       {krs.map((kr) => (
                         <KrRow
                           key={kr.id}
@@ -273,7 +277,7 @@ export function OkrKeyResultsPage() {
             })}
           </div>
         ) : (
-          <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="overflow-hidden rounded-xl border border-border bg-card">
             <div className="divide-y divide-border">
               {filtered.map((kr) => (
                 <KrRow
@@ -295,8 +299,7 @@ export function OkrKeyResultsPage() {
               ))}
             </div>
           </div>
-        )
-      )}
+        ))}
 
       <CreateKeyResultDialog open={createOpen} onOpenChange={setCreateOpen} />
       <UpdateKeyResultDialog
@@ -318,24 +321,32 @@ interface KrRowProps {
   onUpdate: () => void;
 }
 
-function KrRow({ kr, showObjective, objectiveName, menuOpen, onMenuToggle, onDelete, onUpdate }: KrRowProps) {
+function KrRow({
+  kr,
+  showObjective,
+  objectiveName,
+  menuOpen,
+  onMenuToggle,
+  onDelete,
+  onUpdate,
+}: KrRowProps) {
   const metricLabel = METRIC_LABELS[kr.metricType] ?? kr.metricType;
   const isBoolean = kr.metricType === "boolean";
 
   return (
-    <div className="flex items-center gap-4 px-5 py-3.5 hover:bg-muted/20 transition-colors">
+    <div className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-muted/20">
       {/* Title */}
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0 flex-1">
         <Link
           href={`/okr/key-results/${kr.id}`}
-          className="text-sm font-medium text-foreground hover:text-primary transition-colors truncate block"
+          className="block truncate text-sm font-medium text-foreground transition-colors hover:text-primary"
         >
           {kr.title}
         </Link>
         {showObjective && objectiveName && (
-          <p className="text-xs text-muted-foreground mt-0.5 truncate">{objectiveName}</p>
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">{objectiveName}</p>
         )}
-        <div className="flex items-center gap-2 mt-1">
+        <div className="mt-1 flex items-center gap-2">
           <span className="text-[11px] text-muted-foreground">{metricLabel}</span>
           {kr.unit && <span className="text-[11px] text-muted-foreground">· {kr.unit}</span>}
         </div>
@@ -343,13 +354,15 @@ function KrRow({ kr, showObjective, objectiveName, menuOpen, onMenuToggle, onDel
 
       {/* Values */}
       {!isBoolean ? (
-        <div className="text-right shrink-0">
+        <div className="shrink-0 text-right">
           <p className="text-sm font-semibold tabular-nums text-foreground">{kr.currentValue}</p>
-          <p className="text-xs text-muted-foreground tabular-nums">de {kr.targetValue}</p>
+          <p className="text-xs tabular-nums text-muted-foreground">de {kr.targetValue}</p>
         </div>
       ) : (
         <div className="shrink-0">
-          <span className={`text-xs font-medium ${kr.currentValue >= 1 ? "text-emerald-600" : "text-muted-foreground"}`}>
+          <span
+            className={`text-xs font-medium ${kr.currentValue >= 1 ? "text-emerald-600" : "text-muted-foreground"}`}
+          >
             {kr.currentValue >= 1 ? "Concluído" : "Pendente"}
           </span>
         </div>
@@ -359,20 +372,20 @@ function KrRow({ kr, showObjective, objectiveName, menuOpen, onMenuToggle, onDel
       <OkrStatusBadge status={kr.status} />
 
       {/* Progress */}
-      <div className="w-28 flex items-center gap-2 shrink-0">
+      <div className="flex w-28 shrink-0 items-center gap-2">
         <OkrProgressBar
           percent={kr.progressPercent}
           status={kr.status}
           size="xs"
           className="flex-1"
         />
-        <span className="text-xs tabular-nums text-muted-foreground w-8 text-right">
+        <span className="w-8 text-right text-xs tabular-nums text-muted-foreground">
           {Math.round(kr.progressPercent)}%
         </span>
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-1 shrink-0 relative">
+      <div className="relative flex shrink-0 items-center gap-1">
         <Button
           size="sm"
           variant="ghost"
@@ -385,7 +398,7 @@ function KrRow({ kr, showObjective, objectiveName, menuOpen, onMenuToggle, onDel
           <MoreHorizontal className="h-4 w-4" />
         </Button>
         {menuOpen && (
-          <div className="absolute right-0 top-8 z-10 w-40 rounded-lg border border-border bg-popover shadow-md py-1">
+          <div className="absolute right-0 top-8 z-10 w-40 rounded-lg border border-border bg-popover py-1 shadow-md">
             <Link
               href={`/okr/key-results/${kr.id}`}
               className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted/50"
@@ -394,7 +407,7 @@ function KrRow({ kr, showObjective, objectiveName, menuOpen, onMenuToggle, onDel
               Abrir
             </Link>
             <button
-              className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted/50 w-full text-left text-destructive"
+              className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-destructive hover:bg-muted/50"
               onClick={onDelete}
             >
               <Trash2 className="h-3.5 w-3.5" />

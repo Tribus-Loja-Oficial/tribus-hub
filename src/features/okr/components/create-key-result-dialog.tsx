@@ -10,7 +10,11 @@ import { Label } from "@/components/ui/label";
 import type { OkrObjective } from "@/lib/db/schema";
 
 type ObjectiveWithKRs = OkrObjective & { keyResults: unknown[] };
-interface MemberRow { id: string; name: string; email: string }
+interface MemberRow {
+  id: string;
+  name: string;
+  email: string;
+}
 
 interface CreateKeyResultDialogProps {
   open: boolean;
@@ -115,7 +119,9 @@ export function CreateKeyResultDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label>Título <span className="text-destructive">*</span></Label>
+            <Label>
+              Título <span className="text-destructive">*</span>
+            </Label>
             <Input
               autoFocus
               value={title}
@@ -126,15 +132,19 @@ export function CreateKeyResultDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Objetivo <span className="text-destructive">*</span></Label>
+              <Label>
+                Objetivo <span className="text-destructive">*</span>
+              </Label>
               <select
-                className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 value={objectiveId}
                 onChange={(e) => setObjectiveId(e.target.value)}
               >
                 <option value="">Selecione…</option>
                 {objectives.map((o) => (
-                  <option key={o.id} value={o.id}>{o.title}</option>
+                  <option key={o.id} value={o.id}>
+                    {o.title}
+                  </option>
                 ))}
               </select>
             </div>
@@ -142,13 +152,15 @@ export function CreateKeyResultDialog({
             <div className="space-y-1.5">
               <Label>Owner</Label>
               <select
-                className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 value={ownerUserId}
                 onChange={(e) => setOwnerUserId(e.target.value)}
               >
                 <option value="">Sem owner</option>
                 {members.map((m) => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -158,7 +170,7 @@ export function CreateKeyResultDialog({
             <div className="space-y-1.5">
               <Label>Tipo de métrica</Label>
               <select
-                className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 value={metricType}
                 onChange={(e) => setMetricType(e.target.value)}
               >
@@ -214,7 +226,7 @@ export function CreateKeyResultDialog({
             <div className="space-y-1.5">
               <Label>Status</Label>
               <select
-                className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
               >
@@ -227,7 +239,11 @@ export function CreateKeyResultDialog({
             </div>
             <div className="space-y-1.5">
               <Label>Data meta</Label>
-              <Input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} />
+              <Input
+                type="date"
+                value={targetDate}
+                onChange={(e) => setTargetDate(e.target.value)}
+              />
             </div>
           </div>
 
@@ -236,7 +252,7 @@ export function CreateKeyResultDialog({
               Cancelar
             </Button>
             <Button type="submit" disabled={!title.trim() || !objectiveId || mutation.isPending}>
-              {mutation.isPending && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
+              {mutation.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
               {mutation.isPending ? "Criando…" : "Criar key result"}
             </Button>
           </div>

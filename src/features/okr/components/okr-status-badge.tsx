@@ -77,7 +77,10 @@ const PRIORITY_CONFIG: Record<string, { label: string; className: string }> = {
 };
 
 export function OkrPriorityBadge({ priority, className }: OkrPriorityBadgeProps) {
-  const config = PRIORITY_CONFIG[priority] ?? { label: priority, className: "bg-zinc-100 text-zinc-500" };
+  const config = PRIORITY_CONFIG[priority] ?? {
+    label: priority,
+    className: "bg-zinc-100 text-zinc-500",
+  };
   return (
     <span
       className={cn(

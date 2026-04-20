@@ -62,9 +62,9 @@ export function CycleDetailView({ cycleId }: CycleDetailViewProps) {
 
   if (cycleLoading) {
     return (
-      <div className="space-y-4 max-w-4xl">
-        <div className="h-8 w-48 bg-muted rounded animate-pulse" />
-        <div className="h-40 bg-muted rounded-xl animate-pulse" />
+      <div className="max-w-4xl space-y-4">
+        <div className="h-8 w-48 animate-pulse rounded bg-muted" />
+        <div className="h-40 animate-pulse rounded-xl bg-muted" />
       </div>
     );
   }
@@ -72,10 +72,12 @@ export function CycleDetailView({ cycleId }: CycleDetailViewProps) {
   const cycle = cycleRes?.data;
   if (!cycle) {
     return (
-      <div className="text-center py-20">
+      <div className="py-20 text-center">
         <p className="text-muted-foreground">Ciclo não encontrado.</p>
         <Link href="/okr/cycles">
-          <Button variant="outline" className="mt-4">Voltar para ciclos</Button>
+          <Button variant="outline" className="mt-4">
+            Voltar para ciclos
+          </Button>
         </Link>
       </div>
     );
@@ -99,18 +101,18 @@ export function CycleDetailView({ cycleId }: CycleDetailViewProps) {
       : 0;
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="max-w-4xl space-y-6">
       {/* Back */}
       <Link
         href="/okr/cycles"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
         Ciclos
       </Link>
 
       {/* Header */}
-      <div className="rounded-xl border border-border bg-card p-6 space-y-5">
+      <div className="space-y-5 rounded-xl border border-border bg-card p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
@@ -118,25 +120,28 @@ export function CycleDetailView({ cycleId }: CycleDetailViewProps) {
               <h1 className="text-xl font-bold text-foreground">{cycle.title}</h1>
               <OkrStatusBadge status={cycle.status} size="md" />
             </div>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="mt-1 text-sm text-muted-foreground">
               {format(new Date(cycle.startDate), "dd MMM yyyy", { locale: ptBR })} →{" "}
               {format(new Date(cycle.endDate), "dd MMM yyyy", { locale: ptBR })}
               {cycle.status === "active" && daysLeft > 0 && (
-                <> · <span className="font-medium text-foreground">{daysLeft} dias restantes</span></>
+                <>
+                  {" "}
+                  · <span className="font-medium text-foreground">{daysLeft} dias restantes</span>
+                </>
               )}
             </p>
             {cycle.description && (
-              <p className="text-sm text-muted-foreground mt-2">{cycle.description}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{cycle.description}</p>
             )}
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex shrink-0 items-center gap-2">
             {cycle.status === "planned" && (
               <Button
                 size="sm"
                 onClick={() => patchMutation.mutate({ status: "active" })}
                 disabled={patchMutation.isPending}
               >
-                <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                <CheckCircle className="mr-1 h-3.5 w-3.5" />
                 Ativar
               </Button>
             )}
@@ -163,35 +168,46 @@ export function CycleDetailView({ cycleId }: CycleDetailViewProps) {
         </div>
 
         {/* KPI grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2 border-t border-border">
+        <div className="grid grid-cols-2 gap-4 border-t border-border pt-2 sm:grid-cols-4">
           <div>
-            <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium">Objetivos</p>
-            <p className="text-2xl font-bold mt-0.5">{objectives.length}</p>
+            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              Objetivos
+            </p>
+            <p className="mt-0.5 text-2xl font-bold">{objectives.length}</p>
           </div>
           <div>
-            <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium">No rumo</p>
-            <p className="text-2xl font-bold text-emerald-600 mt-0.5">{onTrackObj}</p>
+            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              No rumo
+            </p>
+            <p className="mt-0.5 text-2xl font-bold text-emerald-600">{onTrackObj}</p>
           </div>
           <div>
-            <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium">Em risco</p>
-            <p className="text-2xl font-bold text-amber-600 mt-0.5">{atRiskObj}</p>
+            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              Em risco
+            </p>
+            <p className="mt-0.5 text-2xl font-bold text-amber-600">{atRiskObj}</p>
           </div>
           <div>
-            <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium">KRs concluídos</p>
-            <p className="text-2xl font-bold text-blue-600 mt-0.5">
-              {completedKrs}<span className="text-sm text-muted-foreground font-normal">/{totalKrs}</span>
+            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              KRs concluídos
+            </p>
+            <p className="mt-0.5 text-2xl font-bold text-blue-600">
+              {completedKrs}
+              <span className="text-sm font-normal text-muted-foreground">/{totalKrs}</span>
             </p>
           </div>
         </div>
       </div>
 
       {/* Objectives */}
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
-        <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <div className="flex items-center gap-2">
             <Target className="h-4 w-4 text-muted-foreground" />
-            <span className="font-medium text-sm">Objetivos do ciclo</span>
-            {!objLoading && <span className="text-xs text-muted-foreground">({objectives.length})</span>}
+            <span className="text-sm font-medium">Objetivos do ciclo</span>
+            {!objLoading && (
+              <span className="text-xs text-muted-foreground">({objectives.length})</span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">Progresso médio:</span>
@@ -200,14 +216,14 @@ export function CycleDetailView({ cycleId }: CycleDetailViewProps) {
         </div>
 
         {objLoading ? (
-          <div className="p-5 space-y-3">
+          <div className="space-y-3 p-5">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-16 bg-muted rounded animate-pulse" />
+              <div key={i} className="h-16 animate-pulse rounded bg-muted" />
             ))}
           </div>
         ) : objectives.length === 0 ? (
           <div className="py-10 text-center">
-            <Target className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-30" />
+            <Target className="mx-auto mb-2 h-8 w-8 text-muted-foreground opacity-30" />
             <p className="text-sm text-muted-foreground">Nenhum objetivo neste ciclo.</p>
             <Link href="/okr/objectives">
               <Button variant="outline" size="sm" className="mt-3">
@@ -221,30 +237,26 @@ export function CycleDetailView({ cycleId }: CycleDetailViewProps) {
               <Link
                 key={obj.id}
                 href={`/okr/objectives/${obj.id}`}
-                className="flex items-center gap-4 px-5 py-4 hover:bg-muted/20 transition-colors"
+                className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/20"
               >
-                <MiniProgressRing
-                  percent={obj.progressPercent}
-                  size={36}
-                  status={obj.status}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{obj.title}</p>
-                  <div className="flex items-center gap-2 mt-1">
+                <MiniProgressRing percent={obj.progressPercent} size={36} status={obj.status} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-foreground">{obj.title}</p>
+                  <div className="mt-1 flex items-center gap-2">
                     <OkrStatusBadge status={obj.status} />
                     <span className="text-xs text-muted-foreground">
                       {obj.keyResults.length} KR{obj.keyResults.length !== 1 ? "s" : ""}
                     </span>
                   </div>
                 </div>
-                <div className="w-28 flex items-center gap-2 shrink-0">
+                <div className="flex w-28 shrink-0 items-center gap-2">
                   <OkrProgressBar
                     percent={obj.progressPercent}
                     status={obj.status}
                     size="xs"
                     className="flex-1"
                   />
-                  <span className="text-xs tabular-nums text-muted-foreground w-8 text-right">
+                  <span className="w-8 text-right text-xs tabular-nums text-muted-foreground">
                     {Math.round(obj.progressPercent)}%
                   </span>
                 </div>

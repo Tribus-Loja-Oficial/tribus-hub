@@ -197,10 +197,7 @@ export async function listObjectives(
   }));
 }
 
-export async function getObjective(
-  user: AuthenticatedUser,
-  id: string,
-): Promise<ObjectiveWithKRs> {
+export async function getObjective(user: AuthenticatedUser, id: string): Promise<ObjectiveWithKRs> {
   const objective = await okrRepo.findObjectiveById(id);
   if (!objective || objective.workspaceId !== user.workspaceId) {
     throw new NotFoundError("Objective", id);
@@ -213,7 +210,10 @@ export async function createObjective(
   user: AuthenticatedUser,
   input: CreateObjectiveInput,
 ): Promise<OkrObjective> {
-  const slug = await resolveSlug((s) => okrRepo.objectiveSlugExists(user.workspaceId, s), input.title);
+  const slug = await resolveSlug(
+    (s) => okrRepo.objectiveSlugExists(user.workspaceId, s),
+    input.title,
+  );
   return okrRepo.createObjective({
     workspaceId: user.workspaceId,
     cycleId: input.cycleId ?? null,

@@ -9,7 +9,9 @@ export function isR2Configured(): boolean {
 
 export function getR2Client(): S3Client {
   if (!isR2Configured()) {
-    throw new Error("R2 não configurado: defina R2_ACCOUNT_ID, R2_ACCESS_KEY_ID e R2_SECRET_ACCESS_KEY no .env.local");
+    throw new Error(
+      "R2 não configurado: defina R2_ACCOUNT_ID, R2_ACCESS_KEY_ID e R2_SECRET_ACCESS_KEY no .env.local",
+    );
   }
   if (!client) {
     client = new S3Client({

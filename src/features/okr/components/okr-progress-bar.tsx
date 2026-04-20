@@ -36,14 +36,14 @@ export function OkrProgressBar({
 
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <div className={cn("flex-1 rounded-full bg-muted overflow-hidden", heights[size])}>
+      <div className={cn("flex-1 overflow-hidden rounded-full bg-muted", heights[size])}>
         <div
           className={cn("h-full rounded-full transition-all duration-300", trackColor)}
           style={{ width: `${clamped}%` }}
         />
       </div>
       {showLabel && (
-        <span className="text-xs font-medium text-muted-foreground tabular-nums w-9 text-right shrink-0">
+        <span className="w-9 shrink-0 text-right text-xs font-medium tabular-nums text-muted-foreground">
           {Math.round(clamped)}%
         </span>
       )}

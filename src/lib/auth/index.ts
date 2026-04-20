@@ -70,8 +70,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (token) {
         session.user.id = token["id"] as string;
         (session.user as { role: string }).role = token["role"] as string;
-        (session.user as { workspaceId: string }).workspaceId =
-          token["workspaceId"] as string;
+        (session.user as { workspaceId: string }).workspaceId = token["workspaceId"] as string;
       }
       return session;
     },

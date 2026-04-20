@@ -136,7 +136,10 @@ function cloneNodes(nodes: PageNode[]): PageNode[] {
   return nodes.map((n) => ({ ...n, children: cloneNodes(n.children) }));
 }
 
-function detachPage(nodes: PageNode[], id: string): { next: PageNode[]; detached: PageNode | null } {
+function detachPage(
+  nodes: PageNode[],
+  id: string,
+): { next: PageNode[]; detached: PageNode | null } {
   let detached: PageNode | null = null;
   function walk(list: PageNode[]): PageNode[] {
     const out: PageNode[] = [];
@@ -163,7 +166,11 @@ function attachUnder(list: PageNode[], parentId: string | null, node: PageNode):
   );
 }
 
-function optimisticReparentTree(tree: PageNode[], pageId: string, newParentId: string | null): PageNode[] {
+function optimisticReparentTree(
+  tree: PageNode[],
+  pageId: string,
+  newParentId: string | null,
+): PageNode[] {
   const base = cloneNodes(tree);
   const { next, detached } = detachPage(base, pageId);
   if (!detached) return tree;
@@ -259,13 +266,7 @@ function optimisticInsertAtIndex(
 /** Invisible hit target so “mover para a raiz” still works without a visible drop strip. */
 function RootDropTarget() {
   const { setNodeRef } = useDroppable({ id: DROP_ROOT });
-  return (
-    <div
-      ref={setNodeRef}
-      className="h-2 w-full shrink-0"
-      aria-hidden
-    />
-  );
+  return <div ref={setNodeRef} className="h-2 w-full shrink-0" aria-hidden />;
 }
 
 function InsertDropZone({
@@ -290,11 +291,7 @@ function InsertDropZone({
   const showLine = dragActive && isOver && !gapBlocked;
 
   return (
-    <div
-      ref={setNodeRef}
-      className="relative z-[1] h-3 w-full shrink-0 -my-1.5"
-      aria-hidden
-    >
+    <div ref={setNodeRef} className="relative z-[1] -my-1.5 h-3 w-full shrink-0" aria-hidden>
       {showLine ? (
         <div
           className="pointer-events-none absolute right-2 top-1/2 z-[2] h-[3px] -translate-y-1/2 rounded-full bg-primary shadow-[0_0_0_1px_hsl(var(--primary)/0.35)]"
@@ -337,7 +334,12 @@ function TreeRow({
     disabled: dropBlocked,
   });
 
-  const { attributes, listeners, setNodeRef: setDragRef, isDragging } = useDraggable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setDragRef,
+    isDragging,
+  } = useDraggable({
     id: dragId(node.id),
   });
 
@@ -352,7 +354,7 @@ function TreeRow({
           setDragRef(el);
         }}
         className={cn(
-          "group flex items-center gap-1 rounded-md pr-1 transition-colors border border-transparent",
+          "group flex items-center gap-1 rounded-md border border-transparent pr-1 transition-colors",
           "hover:bg-accent/50",
           isNestOver && !dropBlocked && "border-primary/50 bg-primary/10 ring-1 ring-primary/25",
           rowHighlighted && "border-primary/35 bg-primary/5 ring-1 ring-primary/20",
@@ -365,13 +367,13 @@ function TreeRow({
           {...listeners}
           {...attributes}
           className={cn(
-            "shrink-0 flex items-center justify-center rounded p-1 text-muted-foreground/40",
-            "touch-none cursor-grab active:cursor-grabbing hover:bg-muted/80 hover:text-muted-foreground",
+            "flex shrink-0 items-center justify-center rounded p-1 text-muted-foreground/40",
+            "cursor-grab touch-none hover:bg-muted/80 hover:text-muted-foreground active:cursor-grabbing",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
           )}
           aria-label="Arrastar para reordenar"
         >
-          <GripVertical className="h-3.5 w-3.5 pointer-events-none" aria-hidden />
+          <GripVertical className="pointer-events-none h-3.5 w-3.5" aria-hidden />
         </button>
 
         {node.isFolder ? (
@@ -379,7 +381,7 @@ function TreeRow({
             type="button"
             onClick={() => toggle(node.id)}
             onPointerDown={(e) => e.stopPropagation()}
-            className="p-0.5 rounded text-muted-foreground hover:text-foreground shrink-0"
+            className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground"
             aria-expanded={isOpen}
             aria-label={isOpen ? "Recolher pasta" : "Expandir pasta"}
           >
@@ -390,7 +392,7 @@ function TreeRow({
                 <ChevronRight className="h-3.5 w-3.5" />
               )
             ) : (
-              <span className="inline-block w-3.5 h-3.5" />
+              <span className="inline-block h-3.5 w-3.5" />
             )}
           </button>
         ) : (
@@ -398,15 +400,15 @@ function TreeRow({
         )}
 
         {node.isFolder ? (
-          <Folder className="h-3.5 w-3.5 text-amber-600/90 shrink-0" />
+          <Folder className="h-3.5 w-3.5 shrink-0 text-amber-600/90" />
         ) : (
-          <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         )}
 
         {node.isFolder ? (
           <Link
             href={`/knowledge/${node.id}`}
-            className="flex-1 min-w-0 text-sm py-1.5 font-medium text-foreground/90 hover:text-foreground truncate"
+            className="min-w-0 flex-1 truncate py-1.5 text-sm font-medium text-foreground/90 hover:text-foreground"
           >
             {node.icon ? <span className="mr-1">{node.icon}</span> : null}
             {node.title}
@@ -414,7 +416,7 @@ function TreeRow({
         ) : (
           <Link
             href={`/knowledge/${node.id}`}
-            className="flex-1 min-w-0 text-sm py-1.5 text-foreground/80 hover:text-foreground truncate"
+            className="min-w-0 flex-1 truncate py-1.5 text-sm text-foreground/80 hover:text-foreground"
           >
             {node.icon ? <span className="mr-1">{node.icon}</span> : null}
             {node.title}
@@ -426,7 +428,7 @@ function TreeRow({
             <button
               type="button"
               onPointerDown={(e) => e.stopPropagation()}
-              className="p-1.5 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground shrink-0 sm:opacity-70 sm:group-hover:opacity-100"
+              className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground sm:opacity-70 sm:group-hover:opacity-100"
               aria-label="Ações"
             >
               <MoreHorizontal className="h-3.5 w-3.5" />
@@ -434,12 +436,12 @@ function TreeRow({
           </DropdownMenu.Trigger>
           <DropdownMenu.Portal>
             <DropdownMenu.Content
-              className="min-w-[12rem] rounded-lg border border-border bg-popover p-1 shadow-lg z-[100]"
+              className="z-[100] min-w-[12rem] rounded-lg border border-border bg-popover p-1 shadow-lg"
               sideOffset={4}
               align="end"
             >
               <DropdownMenu.Item
-                className="flex items-center gap-2 text-sm px-2 py-1.5 rounded outline-none cursor-pointer hover:bg-accent"
+                className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm outline-none hover:bg-accent"
                 onSelect={() => {
                   setTimeout(() => onCreateChild(node.id, false), 0);
                 }}
@@ -448,7 +450,7 @@ function TreeRow({
                 Nova subpágina aqui
               </DropdownMenu.Item>
               <DropdownMenu.Item
-                className="flex items-center gap-2 text-sm px-2 py-1.5 rounded outline-none cursor-pointer hover:bg-accent"
+                className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm outline-none hover:bg-accent"
                 onSelect={() => {
                   setTimeout(() => onCreateChild(node.id, true), 0);
                 }}
@@ -458,7 +460,7 @@ function TreeRow({
               </DropdownMenu.Item>
               <DropdownMenu.Separator className="my-1 h-px bg-border" />
               <DropdownMenu.Item
-                className="flex items-center gap-2 text-sm px-2 py-1.5 rounded outline-none cursor-pointer hover:bg-accent"
+                className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm outline-none hover:bg-accent"
                 onSelect={() => {
                   setTimeout(() => onOpenMenu(node, "rename"), 0);
                 }}
@@ -467,7 +469,7 @@ function TreeRow({
                 Renomear
               </DropdownMenu.Item>
               <DropdownMenu.Item
-                className="flex items-center gap-2 text-sm px-2 py-1.5 rounded outline-none cursor-pointer text-destructive hover:bg-destructive/10"
+                className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm text-destructive outline-none hover:bg-destructive/10"
                 onSelect={() => {
                   setTimeout(() => onOpenMenu(node, "delete"), 0);
                 }}
@@ -699,16 +701,13 @@ export function KnowledgeTreeDnd({
       const dragged = findNode(data, vars.pageId);
       if (!dragged) throw new Error("Item não encontrado");
       const siblingNodes =
-        vars.parentPageId === null
-          ? data
-          : (findNode(data, vars.parentPageId)?.children ?? []);
+        vars.parentPageId === null ? data : (findNode(data, vars.parentPageId)?.children ?? []);
       const newOrder = siblingNodes.map((n) => n.id);
       if (newOrder.length === 0 || !newOrder.includes(vars.pageId)) {
         throw new Error("Estado inválido para reordenar");
       }
 
-      const needsReparent =
-        (vars.sourceParentPageId ?? null) !== (vars.parentPageId ?? null);
+      const needsReparent = (vars.sourceParentPageId ?? null) !== (vars.parentPageId ?? null);
 
       if (!needsReparent) {
         const res = await fetch("/api/knowledge/pages/reorder", {
@@ -862,8 +861,7 @@ export function KnowledgeTreeDnd({
       const nestTarget = overStr.slice("nest:".length);
       if (!nestTarget || nestTarget === pageId) return;
       if (currentParent === nestTarget) {
-        const ch =
-          nestTarget === null ? tree : (findNode(tree, nestTarget)?.children ?? []);
+        const ch = nestTarget === null ? tree : (findNode(tree, nestTarget)?.children ?? []);
         const ids = ch.map((c) => c.id);
         if (ids.length === 0 || ids[ids.length - 1] === pageId) return;
         const without = ids.filter((id) => id !== pageId);
@@ -936,10 +934,7 @@ export function KnowledgeTreeDnd({
             {Array.from({ length: isPage ? 6 : 4 }).map((_, i) => (
               <div
                 key={i}
-                className={cn(
-                  "rounded bg-muted/60 animate-pulse",
-                  isPage ? "h-8" : "h-6",
-                )}
+                className={cn("animate-pulse rounded bg-muted/60", isPage ? "h-8" : "h-6")}
               />
             ))}
           </div>
@@ -948,7 +943,7 @@ export function KnowledgeTreeDnd({
         {!isLoading && tree.length === 0 && (
           <div
             className={cn(
-              "rounded-xl border border-dashed border-border bg-muted/20 text-center px-4",
+              "rounded-xl border border-dashed border-border bg-muted/20 px-4 text-center",
               isPage ? "py-16" : "py-8",
             )}
           >
@@ -961,8 +956,8 @@ export function KnowledgeTreeDnd({
             <p className="text-sm font-medium text-foreground">Nenhum conteúdo ainda</p>
             <p
               className={cn(
-                "text-muted-foreground mt-1 mx-auto",
-                isPage ? "text-xs max-w-sm" : "text-[11px] max-w-[14rem]",
+                "mx-auto mt-1 text-muted-foreground",
+                isPage ? "max-w-sm text-xs" : "max-w-[14rem] text-[11px]",
               )}
             >
               Crie uma pasta ou página na raiz; depois use o menu de cada item para aninhar.
@@ -980,27 +975,33 @@ export function KnowledgeTreeDnd({
 
         {/* Search results — flat filtered list, no DND */}
         {searchResults !== null && (
-          <div className="rounded-xl border border-border bg-card/30 overflow-hidden shadow-sm">
-            <div className="border-b border-border px-3 py-2 bg-muted/20 flex items-center justify-between">
+          <div className="overflow-hidden rounded-xl border border-border bg-card/30 shadow-sm">
+            <div className="flex items-center justify-between border-b border-border bg-muted/20 px-3 py-2">
               <span className="text-xs font-medium text-muted-foreground">
                 {searchResults.length} resultado{searchResults.length !== 1 ? "s" : ""}
               </span>
             </div>
-            <div className="p-2 max-h-[min(70vh,560px)] overflow-y-auto">
+            <div className="max-h-[min(70vh,560px)] overflow-y-auto p-2">
               {searchResults.length === 0 ? (
-                <p className="text-xs text-muted-foreground/60 px-2 py-3">Nenhum resultado encontrado.</p>
+                <p className="px-2 py-3 text-xs text-muted-foreground/60">
+                  Nenhum resultado encontrado.
+                </p>
               ) : (
                 searchResults.map((node) => (
                   <Link
                     key={node.id}
                     href={`/knowledge/${node.id}`}
-                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground/80 hover:bg-muted/50 hover:text-foreground transition-colors"
+                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground/80 transition-colors hover:bg-muted/50 hover:text-foreground"
                   >
-                    {node.isFolder
-                      ? <Folder className="h-3.5 w-3.5 shrink-0 text-amber-500/70" />
-                      : <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
-                    }
-                    <span className="truncate">{node.icon ? `${node.icon} ` : ""}{node.title}</span>
+                    {node.isFolder ? (
+                      <Folder className="h-3.5 w-3.5 shrink-0 text-amber-500/70" />
+                    ) : (
+                      <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
+                    )}
+                    <span className="truncate">
+                      {node.icon ? `${node.icon} ` : ""}
+                      {node.title}
+                    </span>
                   </Link>
                 ))
               )}
@@ -1017,16 +1018,16 @@ export function KnowledgeTreeDnd({
           >
             <div
               className={cn(
-                "rounded-xl border border-border bg-card/30 overflow-hidden",
+                "overflow-hidden rounded-xl border border-border bg-card/30",
                 isPage && "shadow-sm",
               )}
             >
               {isPage ? (
-                <div className="border-b border-border px-3 py-2 bg-muted/20">
+                <div className="border-b border-border bg-muted/20 px-3 py-2">
                   <span className="text-xs font-medium text-muted-foreground">Estrutura</span>
                 </div>
               ) : (
-                <div className="border-b border-border px-2 py-1.5 bg-muted/20">
+                <div className="border-b border-border bg-muted/20 px-2 py-1.5">
                   <span className="text-[11px] font-medium text-muted-foreground">Índice</span>
                 </div>
               )}
@@ -1073,7 +1074,7 @@ export function KnowledgeTreeDnd({
 
             <DragOverlay dropAnimation={null} modifiers={[knowledgeDragOverlayOffset]}>
               {activeDragNode ? (
-                <div className="pointer-events-none flex max-w-[min(220px,calc(100vw-2rem))] cursor-grabbing items-center gap-1.5 rounded-md border border-border bg-popover/92 px-2 py-1 text-xs shadow-md backdrop-blur-sm">
+                <div className="bg-popover/92 pointer-events-none flex max-w-[min(220px,calc(100vw-2rem))] cursor-grabbing items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs shadow-md backdrop-blur-sm">
                   {activeDragNode.isFolder ? (
                     <Folder className="h-3.5 w-3.5 shrink-0 text-amber-600" />
                   ) : (
@@ -1110,7 +1111,7 @@ export function KnowledgeTreeDnd({
             className="space-y-4"
           >
             {createParentId ? (
-              <p className="text-xs text-muted-foreground rounded-md bg-muted/50 px-2 py-1.5">
+              <p className="rounded-md bg-muted/50 px-2 py-1.5 text-xs text-muted-foreground">
                 Será criado <strong>dentro</strong> do item pai selecionado (pasta ou página).
               </p>
             ) : (

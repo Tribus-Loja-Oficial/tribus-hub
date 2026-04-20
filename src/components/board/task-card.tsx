@@ -22,8 +22,14 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ task, isDragging, onOpen }: TaskCardProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging: isSortableDragging } =
-    useSortable({ id: task.id });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging: isSortableDragging,
+  } = useSortable({ id: task.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -37,26 +43,26 @@ export function TaskCard({ task, isDragging, onOpen }: TaskCardProps) {
       {...attributes}
       {...listeners}
       className={cn(
-        "group bg-card border border-border rounded-md p-2.5 shadow-sm hover:shadow-md hover:border-border/80 transition-all cursor-grab active:cursor-grabbing touch-none",
+        "group cursor-grab touch-none rounded-md border border-border bg-card p-2.5 shadow-sm transition-all hover:border-border/80 hover:shadow-md active:cursor-grabbing",
         (isDragging || isSortableDragging) && "opacity-50 shadow-lg ring-2 ring-primary/20",
       )}
     >
       <div className="flex items-start gap-2">
-        <GripVertical className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/30 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <GripVertical className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/30 opacity-0 transition-opacity group-hover:opacity-100" />
         <button
           type="button"
-          className="flex-1 min-w-0 text-left rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-grab active:cursor-grabbing"
+          className="min-w-0 flex-1 cursor-grab rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing"
           onClick={() => onOpen?.(task)}
         >
-          <p className="text-sm font-medium text-foreground leading-snug line-clamp-2">
+          <p className="line-clamp-2 text-sm font-medium leading-snug text-foreground">
             {task.title}
           </p>
 
-          <div className="flex items-center gap-2 mt-2 flex-wrap">
+          <div className="mt-2 flex flex-wrap items-center gap-2">
             {task.priority && (
               <span
                 className={cn(
-                  "text-xs px-1.5 py-0.5 rounded font-medium",
+                  "rounded px-1.5 py-0.5 text-xs font-medium",
                   priorityColors[task.priority] ?? "",
                 )}
               >
@@ -71,11 +77,11 @@ export function TaskCard({ task, isDragging, onOpen }: TaskCardProps) {
               </div>
             )}
             {task.labels && task.labels.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-1.5">
+              <div className="mt-1.5 flex flex-wrap gap-1">
                 {task.labels.map((lab) => (
                   <span
                     key={lab.id}
-                    className="text-[10px] font-medium px-1.5 py-0 rounded border border-border/80 bg-muted/50 text-muted-foreground"
+                    className="rounded border border-border/80 bg-muted/50 px-1.5 py-0 text-[10px] font-medium text-muted-foreground"
                     style={
                       lab.colorToken
                         ? { borderColor: lab.colorToken, color: lab.colorToken }

@@ -43,27 +43,27 @@ export function AppBreadcrumbs() {
 
   if (pathname === "/okr" || pathname === "/okr/") {
     return (
-      <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-sm min-w-0">
-        <span className="flex items-center gap-1 min-w-0">
+      <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1 text-sm">
+        <span className="flex min-w-0 items-center gap-1">
           <Link
             href="/"
-            className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+            className="inline-flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground"
           >
             <Home className="h-3.5 w-3.5 shrink-0" />
             <span className="hidden sm:inline">Início</span>
           </Link>
         </span>
-        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
-        <span className="flex items-center gap-1 min-w-0">
+        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
+        <span className="flex min-w-0 items-center gap-1">
           <Link
             href="/okr"
-            className="text-muted-foreground hover:text-foreground transition-colors truncate max-w-[140px]"
+            className="max-w-[140px] truncate text-muted-foreground transition-colors hover:text-foreground"
           >
             OKR Manager
           </Link>
         </span>
-        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
-        <span className="font-medium text-foreground truncate max-w-[200px] sm:max-w-[280px]">
+        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
+        <span className="max-w-[200px] truncate font-medium text-foreground sm:max-w-[280px]">
           Dashboard
         </span>
       </nav>
@@ -95,7 +95,7 @@ export function AppBreadcrumbs() {
               : prev === "cycles"
                 ? "Ciclo"
                 : "Detalhe"
-      : SEGMENT_LABELS[seg] ?? seg.charAt(0).toUpperCase() + seg.slice(1);
+      : (SEGMENT_LABELS[seg] ?? seg.charAt(0).toUpperCase() + seg.slice(1));
     crumbs.push({ href: acc, label });
   }
 
@@ -109,19 +109,19 @@ export function AppBreadcrumbs() {
   }
 
   return (
-    <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-sm min-w-0">
+    <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1 text-sm">
       {crumbs.map((c, idx) => (
-        <span key={c.href} className="flex items-center gap-1 min-w-0">
-          {idx > 0 && <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />}
+        <span key={c.href} className="flex min-w-0 items-center gap-1">
+          {idx > 0 && <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />}
           {idx === crumbs.length - 1 ? (
-            <span className="font-medium text-foreground truncate max-w-[200px] sm:max-w-[280px]">
+            <span className="max-w-[200px] truncate font-medium text-foreground sm:max-w-[280px]">
               {c.label}
             </span>
           ) : (
             <Link
               href={c.href}
               className={cn(
-                "text-muted-foreground hover:text-foreground transition-colors truncate max-w-[140px]",
+                "max-w-[140px] truncate text-muted-foreground transition-colors hover:text-foreground",
                 idx === 0 && "inline-flex items-center gap-1",
               )}
             >

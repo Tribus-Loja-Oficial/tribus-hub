@@ -89,7 +89,7 @@ export function RichEditor({
   return (
     <div className={cn("flex flex-col", className)}>
       {editable && (
-        <div className="flex items-center justify-between mb-2">
+        <div className="mb-2 flex items-center justify-between">
           <EditorToolbar editor={editor} />
           {saveStatus && (
             <span
@@ -111,11 +111,11 @@ export function RichEditor({
         className={cn(
           "prose prose-sm max-w-none flex-1",
           "prose-headings:font-semibold prose-headings:text-foreground",
-          "prose-p:text-foreground prose-p:leading-relaxed",
-          "prose-code:bg-muted prose-code:rounded prose-code:px-1",
+          "prose-p:leading-relaxed prose-p:text-foreground",
+          "prose-code:rounded prose-code:bg-muted prose-code:px-1",
           "prose-blockquote:border-l-primary prose-blockquote:text-muted-foreground",
           "focus-within:outline-none",
-          "[&_.tiptap]:outline-none [&_.tiptap]:min-h-[200px]",
+          "[&_.tiptap]:min-h-[200px] [&_.tiptap]:outline-none",
         )}
       />
     </div>

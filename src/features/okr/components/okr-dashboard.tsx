@@ -33,13 +33,7 @@ import { OkrProgressBar, MiniProgressRing } from "./okr-progress-bar";
 import { CreateCycleDialog } from "./create-cycle-dialog";
 import { CreateObjectiveDialog } from "./create-objective-dialog";
 import { CreateKeyResultDialog } from "./create-key-result-dialog";
-import {
-  format,
-  differenceInDays,
-  isAfter,
-  isBefore,
-  formatDistanceToNow,
-} from "date-fns";
+import { format, differenceInDays, isAfter, isBefore, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils/cn";
 
@@ -76,16 +70,20 @@ interface StatCardProps {
 
 function StatCard({ label, value, sub, icon: Icon, iconClassName, href }: StatCardProps) {
   const inner = (
-    <div className="rounded-xl border border-border bg-card p-5 space-y-3 hover:border-primary/20 hover:shadow-sm transition-all">
+    <div className="space-y-3 rounded-xl border border-border bg-card p-5 transition-all hover:border-primary/20 hover:shadow-sm">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
-        <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${iconClassName ?? "bg-muted"}`}>
+        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          {label}
+        </span>
+        <div
+          className={`flex h-8 w-8 items-center justify-center rounded-lg ${iconClassName ?? "bg-muted"}`}
+        >
           <Icon className="h-4 w-4" />
         </div>
       </div>
       <div>
-        <p className="text-2xl font-bold text-foreground tabular-nums">{value}</p>
-        {sub && <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{sub}</p>}
+        <p className="text-2xl font-bold tabular-nums text-foreground">{value}</p>
+        {sub && <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{sub}</p>}
       </div>
     </div>
   );
@@ -132,14 +130,14 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
             <Target className="h-5 w-5 text-primary" />
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-xl font-semibold text-foreground">OKR Manager</h1>
               {selectedCycleTitle && (
-                <span className="text-[11px] font-medium uppercase tracking-wide rounded-md border border-primary/25 bg-primary/10 px-2 py-0.5 text-primary">
+                <span className="rounded-md border border-primary/25 bg-primary/10 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-primary">
                   {selectedCycleTitle}
                 </span>
               )}
@@ -155,7 +153,7 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
         <div className="flex flex-wrap items-center gap-2">
           {allCycles.length > 0 && (
             <select
-              className="h-9 rounded-lg border border-input bg-background px-3 text-sm text-foreground min-w-[11rem]"
+              className="h-9 min-w-[11rem] rounded-lg border border-input bg-background px-3 text-sm text-foreground"
               value={selectedCycleId}
               onChange={(e) => setSelectedCycleId(e.target.value)}
               aria-label="Filtrar por ciclo"
@@ -185,37 +183,42 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
       </div>
 
       <PageGuide title="O que é o Dashboard OKR?">
-        <p>Visão executiva da saúde estratégica do workspace. Mostra indicadores consolidados de todos os objetivos e key results.</p>
+        <p>
+          Visão executiva da saúde estratégica do workspace. Mostra indicadores consolidados de
+          todos os objetivos e key results.
+        </p>
         <GuideSection title="Nesta tela:">
-          <GuideList items={[
-            "cartões de métricas resumem o total de objetivos, KRs e progresso geral;",
-            "o painel de atenção destaca OKRs em risco ou atrasados;",
-            "o gráfico de progresso mostra a evolução ao longo do ciclo;",
-            "use o filtro de ciclo (canto superior direito) para focar em um período específico.",
-          ]} />
+          <GuideList
+            items={[
+              "cartões de métricas resumem o total de objetivos, KRs e progresso geral;",
+              "o painel de atenção destaca OKRs em risco ou atrasados;",
+              "o gráfico de progresso mostra a evolução ao longo do ciclo;",
+              "use o filtro de ciclo (canto superior direito) para focar em um período específico.",
+            ]}
+          />
         </GuideSection>
       </PageGuide>
 
       {isLoading && (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-28 bg-muted rounded-xl animate-pulse" />
+              <div key={i} className="h-28 animate-pulse rounded-xl bg-muted" />
             ))}
           </div>
-          <div className="h-24 bg-muted rounded-xl animate-pulse" />
+          <div className="h-24 animate-pulse rounded-xl bg-muted" />
         </div>
       )}
 
       {!isLoading && (
         <>
           {activeCycle && (
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
-              <div className="px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
+            <div className="overflow-hidden rounded-xl border border-border bg-card">
+              <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
                 <div className="flex items-center gap-3">
-                  <CalendarRange className="h-5 w-5 text-primary shrink-0" />
+                  <CalendarRange className="h-5 w-5 shrink-0 text-primary" />
                   <div>
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="font-semibold text-foreground">{activeCycle.title}</span>
                       <OkrStatusBadge status={activeCycle.status} />
                     </div>
@@ -225,15 +228,17 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
                         <>
                           {" "}
                           ·{" "}
-                          <span className="font-medium text-foreground">{daysLeft} dias restantes</span>
+                          <span className="font-medium text-foreground">
+                            {daysLeft} dias restantes
+                          </span>
                         </>
                       )}
                     </span>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 min-w-48">
+                <div className="flex min-w-48 items-center gap-4">
                   <div className="flex-1">
-                    <div className="flex justify-between text-xs mb-1.5">
+                    <div className="mb-1.5 flex justify-between text-xs">
                       <span className="text-muted-foreground">Tempo decorrido do ciclo</span>
                       <span className="font-semibold tabular-nums">{cycleTimeProgress}%</span>
                     </div>
@@ -251,7 +256,7 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
 
           {stats && (
             <>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
                 <StatCard
                   label="Objetivos"
                   value={stats.totalObjectives}
@@ -285,51 +290,54 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
               </div>
 
               <div className="rounded-xl border border-border bg-gradient-to-b from-muted/40 to-card p-5 shadow-sm">
-                <div className="flex items-center gap-2 mb-4">
+                <div className="mb-4 flex items-center gap-2">
                   <Gauge className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm font-semibold text-foreground">Saúde dos objetivos</span>
                   <span className="text-xs text-muted-foreground">(status no escopo atual)</span>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
                   <HealthPill label="No rumo" value={stats.onTrackObjectives} tone="emerald" />
                   <HealthPill label="Em risco" value={stats.atRiskObjectives} tone="amber" />
                   <HealthPill label="Fora do rumo" value={stats.offTrackObjectives} tone="rose" />
                   <HealthPill label="Rascunho" value={stats.draftObjectives} tone="slate" />
                   <HealthPill label="Concluídos" value={stats.completedObjectives} tone="sky" />
                 </div>
-                <p className="text-[11px] text-muted-foreground mt-3 border-t border-border/60 pt-3">
-                  KRs: {stats.onTrackKrs} no rumo · {stats.atRiskKrs} em risco · {stats.offTrackKrs} fora ·{" "}
-                  {stats.draftKrs} rascunho
+                <p className="mt-3 border-t border-border/60 pt-3 text-[11px] text-muted-foreground">
+                  KRs: {stats.onTrackKrs} no rumo · {stats.atRiskKrs} em risco · {stats.offTrackKrs}{" "}
+                  fora · {stats.draftKrs} rascunho
                 </p>
               </div>
 
               {cyclePace && activeCycle && (
                 <div className="rounded-xl border border-primary/20 bg-primary/[0.04] p-5">
-                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex items-center gap-2">
-                      <Zap className="h-4 w-4 text-primary shrink-0" />
+                      <Zap className="h-4 w-4 shrink-0 text-primary" />
                       <div>
                         <p className="text-sm font-semibold text-foreground">Ritmo do ciclo</p>
-                        <p className="text-xs text-muted-foreground mt-0.5 max-w-xl">
-                          Compara o tempo já consumido no ciclo com o progresso médio dos key results. Se o
-                          progresso está muito abaixo do tempo decorrido, o ciclo tende a atraso.
+                        <p className="mt-0.5 max-w-xl text-xs text-muted-foreground">
+                          Compara o tempo já consumido no ciclo com o progresso médio dos key
+                          results. Se o progresso está muito abaixo do tempo decorrido, o ciclo
+                          tende a atraso.
                         </p>
                       </div>
                     </div>
                     <CyclePaceBadge verdict={cyclePace.verdict} diff={cyclePace.diff} />
                   </div>
-                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
-                      <div className="flex justify-between text-xs mb-1">
+                      <div className="mb-1 flex justify-between text-xs">
                         <span className="text-muted-foreground">Tempo do ciclo</span>
-                        <span className="tabular-nums font-medium">{cyclePace.elapsedPercent}%</span>
+                        <span className="font-medium tabular-nums">
+                          {cyclePace.elapsedPercent}%
+                        </span>
                       </div>
                       <OkrProgressBar percent={cyclePace.elapsedPercent} size="sm" />
                     </div>
                     <div>
-                      <div className="flex justify-between text-xs mb-1">
+                      <div className="mb-1 flex justify-between text-xs">
                         <span className="text-muted-foreground">Progresso médio dos KRs</span>
-                        <span className="tabular-nums font-medium">{cyclePace.avgKrProgress}%</span>
+                        <span className="font-medium tabular-nums">{cyclePace.avgKrProgress}%</span>
                       </div>
                       <OkrProgressBar percent={Math.min(100, cyclePace.avgKrProgress)} size="sm" />
                     </div>
@@ -339,12 +347,12 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
             </>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <div className="rounded-xl border border-border bg-card">
-              <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+              <div className="flex items-center justify-between border-b border-border px-5 py-4">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-amber-500" />
-                  <span className="font-medium text-sm">Atenção necessária</span>
+                  <span className="text-sm font-medium">Atenção necessária</span>
                 </div>
                 <Link href="/okr/objectives" className="text-xs text-primary hover:underline">
                   Ver todos
@@ -352,29 +360,35 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
               </div>
               <div className="divide-y divide-border">
                 {attentionItems.length === 0 ? (
-                  <div className="px-5 py-8 text-center space-y-2">
-                    <CheckCircle2 className="h-8 w-8 mx-auto text-emerald-500/80" />
-                    <p className="text-sm font-medium text-foreground">Nenhum item crítico no escopo atual</p>
-                    <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
-                      Não encontramos objetivos fora do rumo, KRs estagnados ou prazos iminentes com progresso
-                      baixo. Quando algo precisar de ação, aparecerá aqui com prioridade.
+                  <div className="space-y-2 px-5 py-8 text-center">
+                    <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-500/80" />
+                    <p className="text-sm font-medium text-foreground">
+                      Nenhum item crítico no escopo atual
+                    </p>
+                    <p className="mx-auto max-w-sm text-xs leading-relaxed text-muted-foreground">
+                      Não encontramos objetivos fora do rumo, KRs estagnados ou prazos iminentes com
+                      progresso baixo. Quando algo precisar de ação, aparecerá aqui com prioridade.
                     </p>
                   </div>
                 ) : (
-                  attentionItems.map((item) => <AttentionRow key={`${item.kind}-${item.id}`} item={item} />)
+                  attentionItems.map((item) => (
+                    <AttentionRow key={`${item.kind}-${item.id}`} item={item} />
+                  ))
                 )}
               </div>
             </div>
 
             <div className="rounded-xl border border-border bg-card">
-              <div className="px-5 py-4 border-b border-border flex items-center gap-2">
+              <div className="flex items-center gap-2 border-b border-border px-5 py-4">
                 <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium text-sm">Atualizações recentes</span>
+                <span className="text-sm font-medium">Atualizações recentes</span>
               </div>
-              <div className="divide-y divide-border max-h-[min(420px,50vh)] overflow-y-auto">
+              <div className="max-h-[min(420px,50vh)] divide-y divide-border overflow-y-auto">
                 {recentUpdates.length === 0 ? (
                   <div className="px-5 py-8 text-center">
-                    <p className="text-sm text-muted-foreground">Nenhuma atualização de progresso ainda.</p>
+                    <p className="text-sm text-muted-foreground">
+                      Nenhuma atualização de progresso ainda.
+                    </p>
                   </div>
                 ) : (
                   recentUpdates.map((upd) => <UpdateRow key={upd.id} update={upd} />)
@@ -383,22 +397,20 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
             </div>
           </div>
 
-          {objectives.length > 0 && (
-            <KrPerformanceSection objectives={objectives} />
-          )}
+          {objectives.length > 0 && <KrPerformanceSection objectives={objectives} />}
 
           {objectives.length > 0 && (
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
-              <div className="px-5 py-3 border-b border-border bg-gradient-to-b from-muted/45 to-muted/10 flex items-center justify-between">
+            <div className="overflow-hidden rounded-xl border border-border bg-card">
+              <div className="flex items-center justify-between border-b border-border bg-gradient-to-b from-muted/45 to-muted/10 px-5 py-3">
                 <div>
-                  <span className="font-semibold text-sm text-foreground">Objetivos do ciclo</span>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                  <span className="text-sm font-semibold text-foreground">Objetivos do ciclo</span>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
                     Resumo rápido com dono, prazo e progresso
                   </p>
                 </div>
                 <Link
                   href="/okr/objectives"
-                  className="text-xs text-primary hover:underline flex items-center gap-1 shrink-0"
+                  className="flex shrink-0 items-center gap-1 text-xs text-primary hover:underline"
                 >
                   Ver todos <ChevronRight className="h-3 w-3" />
                 </Link>
@@ -412,13 +424,14 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
           )}
 
           {!stats?.totalObjectives && !allCycles.length && (
-            <div className="text-center py-20">
-              <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-muted mx-auto mb-4">
+            <div className="py-20 text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
                 <Target className="h-7 w-7 text-muted-foreground" />
               </div>
-              <h2 className="text-base font-semibold text-foreground mb-1">Comece pelos ciclos</h2>
-              <p className="text-sm text-muted-foreground max-w-xs mx-auto mb-6">
-                Crie um ciclo (ex.: 1Q2025), adicione objetivos e defina key results para acompanhar.
+              <h2 className="mb-1 text-base font-semibold text-foreground">Comece pelos ciclos</h2>
+              <p className="mx-auto mb-6 max-w-xs text-sm text-muted-foreground">
+                Crie um ciclo (ex.: 1Q2025), adicione objetivos e defina key results para
+                acompanhar.
               </p>
               <Button onClick={() => setCreateCycleOpen(true)}>
                 <Plus className="h-4 w-4" />
@@ -463,7 +476,7 @@ function HealthPill({
   return (
     <div className={cn("rounded-lg border px-3 py-2.5", tones[tone])}>
       <p className="text-[10px] font-semibold uppercase tracking-wide opacity-90">{label}</p>
-      <p className="text-xl font-bold tabular-nums mt-0.5">{value}</p>
+      <p className="mt-0.5 text-xl font-bold tabular-nums">{value}</p>
     </div>
   );
 }
@@ -476,14 +489,20 @@ function CyclePaceBadge({
   diff: number;
 }) {
   const copy = {
-    ahead: { label: "À frente do tempo", className: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-100" },
+    ahead: {
+      label: "À frente do tempo",
+      className: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-100",
+    },
     aligned: { label: "Alinhado ao tempo", className: "bg-muted text-foreground" },
-    behind: { label: "Atrasado vs. tempo", className: "bg-amber-500/15 text-amber-900 dark:text-amber-100" },
+    behind: {
+      label: "Atrasado vs. tempo",
+      className: "bg-amber-500/15 text-amber-900 dark:text-amber-100",
+    },
   }[verdict];
   return (
-    <div className={cn("rounded-lg px-3 py-2 text-xs font-semibold shrink-0", copy.className)}>
+    <div className={cn("shrink-0 rounded-lg px-3 py-2 text-xs font-semibold", copy.className)}>
       {copy.label}
-      <span className="block font-normal opacity-90 mt-0.5 tabular-nums">
+      <span className="mt-0.5 block font-normal tabular-nums opacity-90">
         Δ progresso − tempo: {diff > 0 ? "+" : ""}
         {diff} pp
       </span>
@@ -495,33 +514,37 @@ function AttentionRow({ item }: { item: DashboardAttentionItem }) {
   return (
     <Link
       href={item.href}
-      className="flex items-center gap-3 px-5 py-3 hover:bg-muted/40 transition-colors"
+      className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-muted/40"
     >
       {item.kind === "objective" ? (
         <MiniProgressRing percent={item.progressPercent} size={32} status={item.status} />
       ) : (
-        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
           <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
         </div>
       )}
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground truncate">{item.title}</p>
-        <div className="flex flex-wrap items-center gap-2 mt-0.5">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-foreground">{item.title}</p>
+        <div className="mt-0.5 flex flex-wrap items-center gap-2">
           <span
             className={cn(
               "text-[11px] font-medium",
-              item.severity === "high" ? "text-amber-700 dark:text-amber-300" : "text-muted-foreground",
+              item.severity === "high"
+                ? "text-amber-700 dark:text-amber-300"
+                : "text-muted-foreground",
             )}
           >
             {item.reason}
           </span>
           {item.objectiveTitle && item.kind === "key_result" && (
-            <span className="text-[11px] text-muted-foreground truncate">· {item.objectiveTitle}</span>
+            <span className="truncate text-[11px] text-muted-foreground">
+              · {item.objectiveTitle}
+            </span>
           )}
         </div>
       </div>
       <OkrStatusBadge status={item.status} />
-      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
     </Link>
   );
 }
@@ -531,16 +554,19 @@ function UpdateRow({ update }: { update: RecentKrUpdateWithContext }) {
   const sign = delta >= 0 ? "+" : "";
   const rel = formatDistanceToNow(new Date(update.createdAt), { locale: ptBR, addSuffix: true });
   return (
-    <div className="px-5 py-3 flex items-start gap-3">
-      <div className="mt-0.5 h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+    <div className="flex items-start gap-3 px-5 py-3">
+      <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10">
         <Activity className="h-3 w-3 text-primary" />
       </div>
-      <div className="flex-1 min-w-0 space-y-1">
-        <p className="text-xs font-medium text-foreground leading-snug">
-          <Link href={`/okr/key-results/${update.keyResultId}`} className="hover:text-primary hover:underline">
+      <div className="min-w-0 flex-1 space-y-1">
+        <p className="text-xs font-medium leading-snug text-foreground">
+          <Link
+            href={`/okr/key-results/${update.keyResultId}`}
+            className="hover:text-primary hover:underline"
+          >
             {update.keyResultTitle}
           </Link>
-          <span className="text-muted-foreground font-normal"> · </span>
+          <span className="font-normal text-muted-foreground"> · </span>
           <Link
             href={`/okr/objectives/${update.objectiveId}`}
             className="text-muted-foreground hover:text-primary hover:underline"
@@ -548,12 +574,16 @@ function UpdateRow({ update }: { update: RecentKrUpdateWithContext }) {
             {update.objectiveTitle}
           </Link>
         </p>
-        {update.comment && <p className="text-xs text-foreground/90 line-clamp-2">{update.comment}</p>}
+        {update.comment && (
+          <p className="line-clamp-2 text-xs text-foreground/90">{update.comment}</p>
+        )}
         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-          <span className="text-xs text-muted-foreground tabular-nums">
+          <span className="text-xs tabular-nums text-muted-foreground">
             {update.previousValue} → {update.newValue}
           </span>
-          <span className={`text-xs font-medium tabular-nums ${delta >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+          <span
+            className={`text-xs font-medium tabular-nums ${delta >= 0 ? "text-emerald-600" : "text-red-600"}`}
+          >
             ({sign}
             {delta})
           </span>
@@ -578,9 +608,7 @@ function KrPerformanceSection({ objectives }: { objectives: ObjectiveWithKRsForD
       }
     }
     const now = new Date();
-    const atRisk = flat.filter(
-      ({ kr }) => kr.status === "at_risk" || kr.status === "off_track",
-    );
+    const atRisk = flat.filter(({ kr }) => kr.status === "at_risk" || kr.status === "off_track");
     const topProgress = [...flat]
       .filter(({ kr }) => kr.status !== "completed")
       .sort((a, b) => b.kr.progressPercent - a.kr.progressPercent)
@@ -597,15 +625,15 @@ function KrPerformanceSection({ objectives }: { objectives: ObjectiveWithKRsForD
 
   return (
     <div className="rounded-xl border border-border bg-card">
-      <div className="px-5 py-4 border-b border-border">
+      <div className="border-b border-border px-5 py-4">
         <p className="text-sm font-semibold text-foreground">Performance dos key results</p>
-        <p className="text-xs text-muted-foreground mt-0.5">
+        <p className="mt-0.5 text-xs text-muted-foreground">
           Segmentos rápidos para acompanhar risco, destaques e frescor das atualizações
         </p>
       </div>
       <Tabs defaultValue="risk" className="w-full">
-        <div className="px-5 pt-2 overflow-x-auto">
-          <TabsList className="w-full sm:w-auto flex-wrap h-auto gap-1 py-1">
+        <div className="overflow-x-auto px-5 pt-2">
+          <TabsList className="h-auto w-full flex-wrap gap-1 py-1 sm:w-auto">
             <TabsTrigger value="risk" className="text-xs">
               Em risco ({atRisk.length})
             </TabsTrigger>
@@ -651,7 +679,7 @@ function KrPerfList({
   showUpdated?: boolean;
 }) {
   if (rows.length === 0) {
-    return <p className="text-sm text-muted-foreground px-5 py-6 text-center">{empty}</p>;
+    return <p className="px-5 py-6 text-center text-sm text-muted-foreground">{empty}</p>;
   }
   return (
     <div className="divide-y divide-border">
@@ -659,22 +687,22 @@ function KrPerfList({
         <Link
           key={kr.id}
           href={`/okr/key-results/${kr.id}`}
-          className="flex items-center gap-3 px-5 py-2.5 hover:bg-muted/40 transition-colors text-sm"
+          className="flex items-center gap-3 px-5 py-2.5 text-sm transition-colors hover:bg-muted/40"
         >
-          <div className="flex-1 min-w-0">
-            <p className="font-medium text-foreground truncate">{kr.title}</p>
-            <p className="text-[11px] text-muted-foreground truncate">{objectiveTitle}</p>
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-medium text-foreground">{kr.title}</p>
+            <p className="truncate text-[11px] text-muted-foreground">{objectiveTitle}</p>
           </div>
           {showUpdated && (
-            <span className="text-[11px] text-muted-foreground shrink-0 tabular-nums hidden sm:inline">
+            <span className="hidden shrink-0 text-[11px] tabular-nums text-muted-foreground sm:inline">
               {formatDistanceToNow(new Date(kr.updatedAt), { locale: ptBR, addSuffix: true })}
             </span>
           )}
           <OkrStatusBadge status={kr.status} />
-          <span className="text-xs tabular-nums text-muted-foreground w-10 text-right">
+          <span className="w-10 text-right text-xs tabular-nums text-muted-foreground">
             {Math.round(kr.progressPercent)}%
           </span>
-          <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         </Link>
       ))}
     </div>
@@ -688,40 +716,42 @@ function ObjectiveRow({ objective }: { objective: ObjectiveWithKRsForDashboard }
   return (
     <Link
       href={`/okr/objectives/${objective.id}`}
-      className="flex flex-col sm:flex-row sm:items-center gap-3 px-5 py-3.5 hover:bg-muted/40 transition-colors"
+      className="flex flex-col gap-3 px-5 py-3.5 transition-colors hover:bg-muted/40 sm:flex-row sm:items-center"
     >
-      <div className="flex items-center gap-4 flex-1 min-w-0">
+      <div className="flex min-w-0 flex-1 items-center gap-4">
         <MiniProgressRing percent={objective.progressPercent} size={36} status={objective.status} />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-foreground truncate">{objective.title}</p>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-foreground">{objective.title}</p>
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
             <OkrStatusBadge status={objective.status} />
             <span className="text-xs text-muted-foreground">
               {completedKrs}/{krCount} KRs concluídos
             </span>
             {objective.ownerDisplayName && (
-              <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                 <User className="h-3 w-3 shrink-0" />
                 {objective.ownerDisplayName}
               </span>
             )}
-            <span className="text-xs text-muted-foreground">Meta {formatShortDate(objective.targetDate)}</span>
+            <span className="text-xs text-muted-foreground">
+              Meta {formatShortDate(objective.targetDate)}
+            </span>
           </div>
         </div>
       </div>
       <div className="flex items-center gap-3 pl-[52px] sm:pl-0">
-        <div className="w-full sm:w-36 flex items-center gap-2">
+        <div className="flex w-full items-center gap-2 sm:w-36">
           <OkrProgressBar
             percent={objective.progressPercent}
             status={objective.status}
             size="xs"
             className="flex-1"
           />
-          <span className="text-xs tabular-nums text-muted-foreground w-9 text-right shrink-0">
+          <span className="w-9 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
             {Math.round(objective.progressPercent)}%
           </span>
         </div>
-        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 hidden sm:block" />
+        <ChevronRight className="hidden h-4 w-4 shrink-0 text-muted-foreground sm:block" />
       </div>
     </Link>
   );

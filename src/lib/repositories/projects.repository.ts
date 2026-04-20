@@ -110,10 +110,7 @@ export async function createMilestone(data: NewMilestone): Promise<Milestone> {
   return milestone;
 }
 
-export async function updateMilestone(
-  id: string,
-  data: Partial<NewMilestone>,
-): Promise<Milestone> {
+export async function updateMilestone(id: string, data: Partial<NewMilestone>): Promise<Milestone> {
   const [updated] = await db
     .update(milestones)
     .set({ ...data, updatedAt: new Date() })
@@ -163,7 +160,9 @@ export async function softDeleteMilestone(id: string): Promise<void> {
 export type OkrObjectiveLink = PmProjectOkrObjectiveLink & { objective: OkrObjective };
 export type OkrKrLink = PmProjectOkrKrLink & { keyResult: OkrKeyResult };
 
-export async function findOkrObjectiveLinksByProject(projectId: string): Promise<OkrObjectiveLink[]> {
+export async function findOkrObjectiveLinksByProject(
+  projectId: string,
+): Promise<OkrObjectiveLink[]> {
   const links = await db.query.pmProjectOkrObjectiveLinks.findMany({
     where: eq(pmProjectOkrObjectiveLinks.projectId, projectId),
   });

@@ -11,7 +11,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
     const { id } = await params;
     const user = await requireAuth();
     const project = await projectsRepo.findProjectById(id);
-    if (!project || project.workspaceId !== user.workspaceId) throw new NotFoundError("Project", id);
+    if (!project || project.workspaceId !== user.workspaceId)
+      throw new NotFoundError("Project", id);
     return NextResponse.json({ data: project });
   } catch (err) {
     const error = toApiError(err);
@@ -26,7 +27,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     const body = await request.json();
     const input = updateProjectSchema.parse(body);
     const project = await projectsRepo.findProjectById(id);
-    if (!project || project.workspaceId !== user.workspaceId) throw new NotFoundError("Project", id);
+    if (!project || project.workspaceId !== user.workspaceId)
+      throw new NotFoundError("Project", id);
     const updated = await projectsRepo.updateProject(id, { ...input, updatedBy: user.id });
     return NextResponse.json({ data: updated });
   } catch (err) {
@@ -40,7 +42,8 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     const { id } = await params;
     const user = await requireAuth();
     const project = await projectsRepo.findProjectById(id);
-    if (!project || project.workspaceId !== user.workspaceId) throw new NotFoundError("Project", id);
+    if (!project || project.workspaceId !== user.workspaceId)
+      throw new NotFoundError("Project", id);
     await projectsRepo.softDeleteProject(id);
     return NextResponse.json({ data: null });
   } catch (err) {
