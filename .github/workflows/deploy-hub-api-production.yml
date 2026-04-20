@@ -1,0 +1,57 @@
+name: Deploy production — Hub API (Cloudflare Workers)
+
+on:
+  workflow_run:
+    workflows: ["Build & quality checks — Hub API"]
+    types:
+      - completed
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-hub-api-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  deploy:
+    name: Cloudflare Workers Production (Hub API)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: PROD
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        github.event.workflow_run.head_repository.full_name == github.repository
+      )
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ vars.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.event.workflow_run.head_sha }}
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply D1 migrations (remote)
+        run: npm run d1:migrate:remote --workspace @tribus/hub-api
+
+      - name: Deploy Hub API via Wrangler
+        run: npm run deploy:hub-api

@@ -4,8 +4,10 @@
 tribus-hub/
 ├── .github/
 │   └── workflows/
-│       ├── ci.yml                  # typecheck, lint, test, build
-│       └── deploy-production.yml   # deploy no Vercel após CI verde
+│       ├── ci-hub-web.yml              # CI Hub Web (Next)
+│       ├── ci-hub-api.yml              # CI Hub API (Worker, dry-run)
+│       ├── deploy-hub-web-vercel.yml   # Vercel prod/preview após CI Hub Web
+│       └── deploy-hub-api-production.yml  # Cloudflare após CI Hub API
 ├── docs/
 │   ├── project-context.md          # contexto canônico (leia primeiro)
 │   ├── architecture/               # visão geral, camadas, decisões

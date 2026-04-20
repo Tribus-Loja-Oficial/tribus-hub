@@ -1,0 +1,49 @@
+name: Build & quality checks — Hub API
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "apps/hub-api/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/ci-hub-api.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "apps/hub-api/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/ci-hub-api.yml"
+
+concurrency:
+  group: ci-hub-api-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Validate Worker bundle (Hub API)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: PROD
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Wrangler deploy (dry run)
+        working-directory: apps/hub-api
+        run: npx wrangler deploy --dry-run

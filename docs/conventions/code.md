@@ -219,9 +219,9 @@ npm run test:staged       # only files staged for commit (used by pre-commit hoo
 
 ---
 
-## What CI checks (`ci.yml`)
+## What CI checks (`ci-hub-web.yml`)
 
-On push/PR to `main` or `develop`:
+On push/PR to `main` or `develop` (when paths match the Hub Web app):
 1. TypeScript (`npm run typecheck`)
 2. Prettier format check (`npm run format:check`)
 3. ESLint (`npm run lint`)

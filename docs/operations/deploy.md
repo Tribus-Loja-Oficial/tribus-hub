@@ -10,9 +10,10 @@
 
 ## Processo
 
-1. Push para `main`
-2. CI executa: typecheck → lint → format:check → tests → build
-3. Se CI verde: `deploy-production.yml` faz deploy no Vercel automaticamente
+1. Push para `main` (com mudanças que disparam o CI do Hub Web — ver `ci-hub-web.yml`)
+2. Workflow **Build & quality checks — Hub Web**: typecheck → format:check → lint → tests → build
+3. Se esse CI terminar com sucesso: **Deploy — Hub Web (Vercel)** roda deploy em produção (`vercel deploy --prod`), no mesmo padrão do `tribus-monitor`
+4. Mudanças em **Hub API** (`apps/hub-api`) disparam **Build & quality checks — Hub API**; com sucesso em push em `main`, **Deploy production — Hub API (Cloudflare Workers)** aplica migrações D1 remotas e faz `wrangler deploy`
 
 ## Variáveis de ambiente no Vercel
 

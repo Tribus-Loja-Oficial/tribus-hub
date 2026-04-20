@@ -1,0 +1,111 @@
+# Runs after "Build & quality checks — Hub Web" succeeds (same pattern as tribus-monitor).
+# - Push to main → production deploy
+# - Pull request (base branch per ci-hub-web.yml, e.g. develop) → preview deploy
+# - workflow_dispatch → production deploy (manual)
+
+name: Deploy — Hub Web (Vercel)
+
+on:
+  workflow_run:
+    workflows: ["Build & quality checks — Hub Web"]
+    types:
+      - completed
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-hub-web-vercel
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  deploy-production:
+    name: Vercel Production (Hub Web)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: PROD
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        github.event.workflow_run.head_repository.full_name == github.repository
+      )
+    env:
+      AUTH_SECRET: ${{ vars.AUTH_SECRET }}
+      R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ vars.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ vars.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET_NAME: ${{ vars.R2_BUCKET_NAME }}
+      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ vars.VERCEL_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.event.workflow_run.head_sha }}
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Hub Web
+        run: npm run build
+
+      - name: Deploy Hub Web to Vercel (production)
+        run: npx --yes vercel@41 deploy --prod --yes --token "$VERCEL_TOKEN"
+
+  deploy-preview:
+    name: Vercel Preview (Hub Web)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: PROD
+    if: >
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    env:
+      AUTH_SECRET: ${{ vars.AUTH_SECRET }}
+      R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ vars.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ vars.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET_NAME: ${{ vars.R2_BUCKET_NAME }}
+      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ vars.VERCEL_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Hub Web
+        run: npm run build
+
+      - name: Deploy Hub Web to Vercel (preview)
+        run: npx --yes vercel@41 deploy --yes --token "$VERCEL_TOKEN"

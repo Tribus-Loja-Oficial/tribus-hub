@@ -1,21 +1,51 @@
-name: CI
+name: Build & quality checks — Hub Web
 
 on:
   push:
-    branches: ["main", "develop"]
+    branches: [main, develop]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - "next.config.*"
+      - "postcss.config.*"
+      - "tailwind.config.*"
+      - "eslint.config.*"
+      - "vitest.config.ts"
+      - "vitest.setup.ts"
+      - "tests/**"
+      - ".github/workflows/ci-hub-web.yml"
   pull_request:
-    branches: ["main", "develop"]
+    branches: [main, develop]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - "next.config.*"
+      - "postcss.config.*"
+      - "tailwind.config.*"
+      - "eslint.config.*"
+      - "vitest.config.ts"
+      - "vitest.setup.ts"
+      - "tests/**"
+      - ".github/workflows/ci-hub-web.yml"
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ci-hub-web-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   quality:
-    name: Quality Gates
+    name: Format, Lint, Typecheck, Test & Build (Hub Web)
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # Repository / org → Settings → Environments → PROD → Environment variables
     environment: PROD
 
     steps:
@@ -26,7 +56,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "npm"
+          cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
