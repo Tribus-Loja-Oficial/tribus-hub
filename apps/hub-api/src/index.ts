@@ -1,3 +1,6 @@
+import { handleV1ExtraRoutes } from "./v1-extra-routes";
+import { handleV1OkrWriteRoutes } from "./v1-okr-write";
+
 type D1StatementResult<T> = {
   results?: T[];
   success: boolean;
@@ -110,6 +113,17 @@ type CreateTaskInput = {
   descriptionText?: string;
   descriptionJson?: Record<string, unknown>;
   labelIds?: string[];
+};
+
+type CreateProjectInput = {
+  title: string;
+  summary?: string | null;
+  status?: "planned" | "active" | "on_hold" | "completed" | "cancelled";
+  healthStatus?: "on_track" | "at_risk" | "blocked" | "off_track" | null;
+  priority?: "low" | "medium" | "high" | "urgent";
+  ownerUserId?: string | null;
+  startDate?: string | null;
+  targetDate?: string | null;
 };
 
 type CreateTaskLabelInput = {
@@ -395,6 +409,149 @@ async function getProjectsByWorkspace(db: D1DatabaseLike, workspaceId: string) {
     archivedAt: row.archived_at,
     deletedAt: row.deleted_at,
   }));
+}
+
+function slugifyProjectTitle(input: string): string {
+  return input
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 100);
+}
+
+async function resolveProjectSlug(db: D1DatabaseLike, workspaceId: string, title: string) {
+  const base = slugifyProjectTitle(title) || "project";
+  const check = await db
+    .prepare(
+      `SELECT id FROM projects WHERE workspace_id = ? AND slug = ? AND deleted_at IS NULL LIMIT 1`,
+    )
+    .bind(workspaceId, base)
+    .all<{ id: string }>();
+  if (!check.success) throw new Error(check.error ?? "Failed to check slug");
+  if (check.results?.length) {
+    const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 6);
+    return `${base}-${suffix}`;
+  }
+  return base;
+}
+
+function mapProjectRowToDto(row: ProjectRow) {
+  return {
+    id: row.id,
+    workspaceId: row.workspace_id,
+    title: row.title,
+    slug: row.slug,
+    summary: row.summary,
+    descriptionJson: row.description_json ? JSON.parse(row.description_json) : null,
+    descriptionText: row.description_text,
+    status: row.status,
+    healthStatus: row.health_status,
+    priority: row.priority,
+    progressPercent: Number(row.progress_percent ?? 0),
+    ownerUserId: row.owner_user_id,
+    startDate: row.start_date,
+    targetDate: row.target_date,
+    completedAt: row.completed_at,
+    createdBy: row.created_by,
+    updatedBy: row.updated_by,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    archivedAt: row.archived_at,
+    deletedAt: row.deleted_at,
+  };
+}
+
+async function createProject(
+  db: D1DatabaseLike,
+  workspaceId: string,
+  actorUserId: string,
+  input: CreateProjectInput,
+) {
+  const title = input.title?.trim();
+  if (!title) throw new Error("title is required");
+
+  const status = input.status ?? "planned";
+  if (!["planned", "active", "on_hold", "completed", "cancelled"].includes(status)) {
+    throw new Error("status is invalid");
+  }
+  const priority = input.priority ?? "medium";
+  if (!["low", "medium", "high", "urgent"].includes(priority)) {
+    throw new Error("priority is invalid");
+  }
+  if (input.healthStatus != null && input.healthStatus !== undefined) {
+    if (!["on_track", "at_risk", "blocked", "off_track"].includes(input.healthStatus)) {
+      throw new Error("healthStatus is invalid");
+    }
+  }
+
+  const slug = await resolveProjectSlug(db, workspaceId, title);
+  const id = createId();
+  const now = new Date().toISOString();
+  const healthStatus = input.healthStatus ?? null;
+
+  const insert = await db
+    .prepare(
+      `
+      INSERT INTO projects (
+        id, workspace_id, title, slug, summary, description_json, description_text,
+        status, health_status, priority, progress_percent, owner_user_id,
+        start_date, target_date, completed_at, created_by, updated_by,
+        created_at, updated_at, archived_at, deleted_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+    )
+    .bind(
+      id,
+      workspaceId,
+      title,
+      slug,
+      input.summary ?? null,
+      null,
+      null,
+      status,
+      healthStatus,
+      priority,
+      0,
+      input.ownerUserId ?? null,
+      input.startDate ?? null,
+      input.targetDate ?? null,
+      null,
+      actorUserId,
+      actorUserId,
+      now,
+      now,
+      null,
+      null,
+    )
+    .all();
+
+  if (!insert.success) throw new Error(insert.error ?? "Failed to create project");
+
+  const row = await db
+    .prepare(
+      `
+      SELECT
+        id, workspace_id, title, slug, summary, description_json, description_text,
+        status, health_status, priority, progress_percent, owner_user_id,
+        start_date, target_date, completed_at, created_by, updated_by,
+        created_at, updated_at, archived_at, deleted_at
+      FROM projects
+      WHERE id = ?
+      LIMIT 1
+    `,
+    )
+    .bind(id)
+    .all<ProjectRow>();
+  if (!row.success) throw new Error(row.error ?? "Failed to load project");
+  const p = row.results?.[0];
+  if (!p) throw new Error("Failed to load created project");
+
+  return mapProjectRowToDto(p);
 }
 
 function safeJsonParse(value: string | null): unknown {
@@ -1777,6 +1934,22 @@ export default {
       }
     }
 
+    if (request.method === "POST" && pathname === "/v1/projects") {
+      const workspaceId = request.headers.get("x-workspace-id");
+      const actorUserId = request.headers.get("x-actor-user-id");
+      if (!workspaceId) return json({ error: { message: "x-workspace-id is required" } }, 400);
+      if (!actorUserId) return json({ error: { message: "x-actor-user-id is required" } }, 400);
+
+      try {
+        const input = parseJsonBody<CreateProjectInput>(body);
+        const project = await createProject(env.TRIBUS_HUB_DB, workspaceId, actorUserId, input);
+        return json({ data: project }, 201);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unexpected error";
+        return json({ error: { message } }, 400);
+      }
+    }
+
     if (request.method === "GET" && pathname === "/v1/tasks/board") {
       const workspaceId = request.headers.get("x-workspace-id");
       if (!workspaceId) return json({ error: { message: "x-workspace-id is required" } }, 400);
@@ -2129,6 +2302,11 @@ export default {
         }
       }
     }
+
+    const extraV1 = await handleV1ExtraRoutes(request, env, pathname, body);
+    if (extraV1) return extraV1;
+    const okrV1 = await handleV1OkrWriteRoutes(request, env, pathname, body);
+    if (okrV1) return okrV1;
 
     return json({ error: { message: "Not found" } }, 404);
   },

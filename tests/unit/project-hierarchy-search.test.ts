@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { projectMatchesSearch } from "@/features/projects/lib/project-hierarchy-search";
-import type { ProjectHierarchyItem } from "@/lib/repositories/projects.repository";
+import type { ProjectHierarchyItem } from "@/lib/types/pm-hierarchy";
 
 function makeProject(overrides: Partial<ProjectHierarchyItem> = {}): ProjectHierarchyItem {
   return {

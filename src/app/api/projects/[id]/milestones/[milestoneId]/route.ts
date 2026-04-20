@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/permissions";
-import * as projectsRepo from "@/lib/repositories/projects.repository";
+import { hubApiFetch } from "@/lib/integrations/hub-api/client";
 import { updateMilestoneSchema } from "@/lib/schemas/projects.schemas";
-import { toApiError, NotFoundError } from "@/lib/errors";
+import { toApiError } from "@/lib/errors";
 
 type Params = { params: Promise<{ id: string; milestoneId: string }> };
 
@@ -10,12 +10,15 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   try {
     const { id, milestoneId } = await params;
     const user = await requireAuth();
-    const project = await projectsRepo.findProjectById(id);
-    if (!project || project.workspaceId !== user.workspaceId)
-      throw new NotFoundError("Project", id);
     const body = await request.json();
     const input = updateMilestoneSchema.parse(body);
-    const milestone = await projectsRepo.updateMilestone(milestoneId, input);
+    const milestone = await hubApiFetch({
+      method: "PATCH",
+      path: `/v1/projects/${id}/milestones/${milestoneId}`,
+      workspaceId: user.workspaceId,
+      actorUserId: user.id,
+      body: input,
+    });
     return NextResponse.json({ data: milestone });
   } catch (err) {
     return NextResponse.json({ error: toApiError(err) }, { status: toApiError(err).status });
@@ -26,10 +29,12 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   try {
     const { id, milestoneId } = await params;
     const user = await requireAuth();
-    const project = await projectsRepo.findProjectById(id);
-    if (!project || project.workspaceId !== user.workspaceId)
-      throw new NotFoundError("Project", id);
-    await projectsRepo.softDeleteMilestone(milestoneId);
+    await hubApiFetch({
+      method: "DELETE",
+      path: `/v1/projects/${id}/milestones/${milestoneId}`,
+      workspaceId: user.workspaceId,
+      actorUserId: user.id,
+    });
     return NextResponse.json({ data: null });
   } catch (err) {
     return NextResponse.json({ error: toApiError(err) }, { status: toApiError(err).status });

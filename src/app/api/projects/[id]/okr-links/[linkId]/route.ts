@@ -1,24 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/permissions";
-import * as projectsRepo from "@/lib/repositories/projects.repository";
-import { toApiError, NotFoundError } from "@/lib/errors";
+import { hubApiFetch } from "@/lib/integrations/hub-api/client";
+import { toApiError } from "@/lib/errors";
 
 type Params = { params: Promise<{ id: string; linkId: string }> };
 
-export async function DELETE(_req: NextRequest, { params }: Params) {
+export async function DELETE(req: NextRequest, { params }: Params) {
   try {
     const { id, linkId } = await params;
     const user = await requireAuth();
-    const project = await projectsRepo.findProjectById(id);
-    if (!project || project.workspaceId !== user.workspaceId)
-      throw new NotFoundError("Project", id);
-
-    const type = new URL(_req.url).searchParams.get("type");
-    if (type === "kr") {
-      await projectsRepo.removeOkrKrLink(linkId);
-    } else {
-      await projectsRepo.removeOkrObjectiveLink(linkId);
-    }
+    const type = new URL(req.url).searchParams.get("type");
+    const segment = type === "kr" ? "key-results" : "objectives";
+    await hubApiFetch({
+      method: "DELETE",
+      path: `/v1/projects/${id}/okr-links/${segment}/${linkId}`,
+      workspaceId: user.workspaceId,
+      actorUserId: user.id,
+    });
     return NextResponse.json({ data: null });
   } catch (err) {
     return NextResponse.json({ error: toApiError(err) }, { status: toApiError(err).status });

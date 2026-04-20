@@ -4,7 +4,7 @@ import { use, useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Project, Milestone, Task } from "@/lib/db/schema";
-import type { OkrObjectiveLink, OkrKrLink } from "@/lib/repositories/projects.repository";
+import type { OkrObjectiveLink, OkrKrLink } from "@/lib/types/pm-hierarchy";
 import {
   FolderKanban,
   Target,

@@ -1,11 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/permissions";
-import * as projectsRepo from "@/lib/repositories/projects.repository";
 import * as auditService from "@/lib/services/audit.service";
 import { hubApiFetch } from "@/lib/integrations/hub-api/client";
 import { createProjectSchema } from "@/lib/schemas/projects.schemas";
 import { toApiError } from "@/lib/errors";
-import { slugify, uniqueSlug } from "@/lib/utils/ids";
+
+/** Shape returned by hub-api `POST /v1/projects` (D1 row as JSON). */
+type HubApiCreatedProject = {
+  id: string;
+  workspaceId: string;
+  title: string;
+  slug: string;
+  summary: string | null;
+  descriptionJson: unknown;
+  descriptionText: string | null;
+  status: string;
+  healthStatus: string | null;
+  priority: string;
+  progressPercent: number;
+  ownerUserId: string | null;
+  startDate: string | null;
+  targetDate: string | null;
+  completedAt: string | null;
+  createdBy: string;
+  updatedBy: string;
+  createdAt: string;
+  updatedAt: string;
+  archivedAt: string | null;
+  deletedAt: string | null;
+};
 
 export async function GET() {
   try {
@@ -29,22 +52,21 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const input = createProjectSchema.parse(body);
 
-    const base = slugify(input.title);
-    const existing = await projectsRepo.findProjectBySlug(user.workspaceId, base);
-    const slug = existing ? uniqueSlug(input.title) : base;
-
-    const project = await projectsRepo.createProject({
+    const project = await hubApiFetch<HubApiCreatedProject>({
+      method: "POST",
+      path: "/v1/projects",
       workspaceId: user.workspaceId,
-      title: input.title,
-      slug,
-      summary: input.summary ?? null,
-      status: input.status ?? "planned",
-      priority: input.priority ?? "medium",
-      ownerUserId: input.ownerUserId ?? null,
-      startDate: input.startDate ?? null,
-      targetDate: input.targetDate ?? null,
-      createdBy: user.id,
-      updatedBy: user.id,
+      actorUserId: user.id,
+      body: {
+        title: input.title,
+        summary: input.summary ?? null,
+        status: input.status,
+        healthStatus: input.healthStatus ?? null,
+        priority: input.priority,
+        ownerUserId: input.ownerUserId ?? null,
+        startDate: input.startDate ?? null,
+        targetDate: input.targetDate ?? null,
+      },
     });
 
     await auditService.recordAudit({

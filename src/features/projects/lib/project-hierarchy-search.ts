@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import type { ProjectHierarchyItem } from "@/lib/repositories/projects.repository";
+import type { ProjectHierarchyItem } from "@/lib/types/pm-hierarchy";
 
 const STATUS_LABELS: Record<string, string> = {
   planned: "Planejado",

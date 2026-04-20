@@ -1,0 +1,882 @@
+/**
+ * OKR mutations, single-entity reads, KR updates, dashboard (D1).
+ */
+
+import type { HubExtraEnv } from "./v1-extra-routes";
+import { calcKrProgress, calcObjectiveProgressFromKrs } from "./v1-extra-routes";
+
+type D1PreparedStatement = {
+  bind: (...values: unknown[]) => D1PreparedStatement;
+  all: <T>() => Promise<{ results?: T[]; success: boolean; error?: string }>;
+};
+type D1DatabaseLike = { prepare: (query: string) => D1PreparedStatement };
+
+function json(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "content-type": "application/json; charset=utf-8" },
+  });
+}
+
+function createId() {
+  return crypto.randomUUID().replace(/-/g, "");
+}
+
+function parseJson<T>(body: string): T {
+  try {
+    return JSON.parse(body) as T;
+  } catch {
+    throw new Error("Invalid JSON body");
+  }
+}
+
+function safeJsonParse(value: string | null): unknown {
+  if (!value) return null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+function slugifyTitle(input: string): string {
+  return input
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 100);
+}
+
+async function uniqueSlug(
+  db: D1DatabaseLike,
+  table: "okr_cycles" | "okr_objectives" | "okr_key_results",
+  workspaceCol: string,
+  workspaceId: string,
+  base: string,
+): Promise<string> {
+  const b = base || "item";
+  const q =
+    table === "okr_cycles"
+      ? `SELECT id FROM okr_cycles WHERE workspace_id = ? AND slug = ? AND deleted_at IS NULL LIMIT 1`
+      : table === "okr_objectives"
+        ? `SELECT id FROM okr_objectives WHERE workspace_id = ? AND slug = ? AND deleted_at IS NULL LIMIT 1`
+        : `SELECT id FROM okr_key_results WHERE workspace_id = ? AND slug = ? AND deleted_at IS NULL LIMIT 1`;
+  const check = await db.prepare(q).bind(workspaceId, b).all<{ id: string }>();
+  if (check.results?.length) return `${b}-${crypto.randomUUID().replace(/-/g, "").slice(0, 6)}`;
+  return b;
+}
+
+function mapCycle(r: Record<string, unknown>) {
+  return {
+    id: r.id,
+    workspaceId: r.workspace_id,
+    title: r.title,
+    slug: r.slug,
+    description: r.description,
+    startDate: r.start_date,
+    endDate: r.end_date,
+    status: r.status,
+    createdBy: r.created_by,
+    updatedBy: r.updated_by,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+    archivedAt: r.archived_at,
+    deletedAt: r.deleted_at,
+  };
+}
+
+function mapObjective(r: Record<string, unknown>) {
+  return {
+    id: r.id,
+    workspaceId: r.workspace_id,
+    cycleId: r.cycle_id,
+    title: r.title,
+    slug: r.slug,
+    descriptionJson: safeJsonParse(r.description_json as string | null),
+    descriptionText: r.description_text,
+    ownerUserId: r.owner_user_id,
+    status: r.status,
+    progressPercent: Number(r.progress_percent ?? 0),
+    priority: r.priority,
+    sortOrder: Number(r.sort_order ?? 0),
+    startDate: r.start_date,
+    targetDate: r.target_date,
+    completedAt: r.completed_at,
+    createdBy: r.created_by,
+    updatedBy: r.updated_by,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+    archivedAt: r.archived_at,
+    deletedAt: r.deleted_at,
+  };
+}
+
+function mapKr(r: Record<string, unknown>) {
+  return {
+    id: r.id,
+    workspaceId: r.workspace_id,
+    cycleId: r.cycle_id,
+    objectiveId: r.objective_id,
+    title: r.title,
+    slug: r.slug,
+    descriptionJson: safeJsonParse(r.description_json as string | null),
+    descriptionText: r.description_text,
+    ownerUserId: r.owner_user_id,
+    metricType: r.metric_type,
+    unit: r.unit,
+    startValue: Number(r.start_value ?? 0),
+    currentValue: Number(r.current_value ?? 0),
+    targetValue: Number(r.target_value ?? 0),
+    progressPercent: Number(r.progress_percent ?? 0),
+    status: r.status,
+    confidence: r.confidence,
+    sortOrder: Number(r.sort_order ?? 0),
+    startDate: r.start_date,
+    targetDate: r.target_date,
+    completedAt: r.completed_at,
+    createdBy: r.created_by,
+    updatedBy: r.updated_by,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+    archivedAt: r.archived_at,
+    deletedAt: r.deleted_at,
+  };
+}
+
+async function refreshObjectiveProgress(db: D1DatabaseLike, objectiveId: string, actorUserId: string) {
+  const krs = await db
+    .prepare(`SELECT progress_percent FROM okr_key_results WHERE objective_id = ? AND deleted_at IS NULL`)
+    .bind(objectiveId)
+    .all<{ progress_percent: number }>();
+  const list = (krs.results ?? []).map((k) => ({ progressPercent: Number(k.progress_percent ?? 0) }));
+  const p = calcObjectiveProgressFromKrs(list);
+  await db
+    .prepare(`UPDATE okr_objectives SET progress_percent = ?, updated_by = ?, updated_at = ? WHERE id = ?`)
+    .bind(p, actorUserId, new Date().toISOString(), objectiveId)
+    .all();
+}
+
+export async function handleV1OkrWriteRoutes(
+  request: Request,
+  env: HubExtraEnv,
+  pathname: string,
+  body: string,
+): Promise<Response | null> {
+  const method = request.method.toUpperCase();
+  const workspaceId = request.headers.get("x-workspace-id");
+  const actorUserId = request.headers.get("x-actor-user-id");
+  const db = env.TRIBUS_HUB_DB;
+
+  const needWs = () => (!workspaceId ? json({ error: { message: "x-workspace-id is required" } }, 400) : null);
+  const needActor = () => (!actorUserId ? json({ error: { message: "x-actor-user-id is required" } }, 400) : null);
+
+  // GET /v1/okr/dashboard
+  if (method === "GET" && pathname === "/v1/okr/dashboard") {
+    const err = needWs();
+    if (err) return err;
+    const cycleId = new URL(request.url).searchParams.get("cycleId") ?? undefined;
+    try {
+      const cycles = await db
+        .prepare(`SELECT * FROM okr_cycles WHERE workspace_id = ? AND deleted_at IS NULL ORDER BY start_date DESC`)
+        .bind(workspaceId)
+        .all<Record<string, unknown>>();
+      if (!cycles.success) throw new Error(cycles.error);
+      const allCycles = (cycles.results ?? []).map(mapCycle);
+      let activeCycle: Record<string, unknown> | null = null;
+      if (cycleId) {
+        const one = await db
+          .prepare(`SELECT * FROM okr_cycles WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`)
+          .bind(cycleId, workspaceId)
+          .all<Record<string, unknown>>();
+        activeCycle = one.results?.[0] ?? null;
+      } else {
+        const a = await db
+          .prepare(
+            `SELECT * FROM okr_cycles WHERE workspace_id = ? AND status = 'active' AND deleted_at IS NULL ORDER BY start_date DESC LIMIT 1`,
+          )
+          .bind(workspaceId)
+          .all<Record<string, unknown>>();
+        activeCycle = a.results?.[0] ?? null;
+      }
+      const resolvedCycleId = cycleId ?? (activeCycle?.id as string | undefined);
+      const whereObj = ["workspace_id = ?", "deleted_at IS NULL"];
+      const argsObj: unknown[] = [workspaceId];
+      if (resolvedCycleId) {
+        whereObj.push("cycle_id = ?");
+        argsObj.push(resolvedCycleId);
+      }
+      const objs = await db
+        .prepare(`SELECT status FROM okr_objectives WHERE ${whereObj.join(" AND ")}`)
+        .bind(...argsObj)
+        .all<{ status: string }>();
+      const whereKr = ["workspace_id = ?", "deleted_at IS NULL"];
+      const argsKr: unknown[] = [workspaceId];
+      if (resolvedCycleId) {
+        whereKr.push("cycle_id = ?");
+        argsKr.push(resolvedCycleId);
+      }
+      const krs = await db
+        .prepare(`SELECT status, progress_percent FROM okr_key_results WHERE ${whereKr.join(" AND ")}`)
+        .bind(...argsKr)
+        .all<{ status: string; progress_percent: number }>();
+      const oc = (s: string) => (objs.results ?? []).filter((o) => o.status === s).length;
+      const kc = (s: string) => (krs.results ?? []).filter((k) => k.status === s).length;
+      const krList = krs.results ?? [];
+      const avgKrProgress =
+        krList.length === 0
+          ? 0
+          : Math.round((krList.reduce((sum, kr) => sum + Number(kr.progress_percent ?? 0), 0) / krList.length) * 10) /
+            10;
+      const stats = {
+        totalObjectives: (objs.results ?? []).length,
+        draftObjectives: oc("draft"),
+        onTrackObjectives: oc("on_track"),
+        atRiskObjectives: oc("at_risk"),
+        offTrackObjectives: oc("off_track"),
+        completedObjectives: oc("completed"),
+        totalKeyResults: krList.length,
+        avgKrProgress,
+        draftKrs: kc("draft"),
+        onTrackKrs: kc("on_track"),
+        atRiskKrs: kc("at_risk"),
+        offTrackKrs: kc("off_track"),
+        completedKrs: kc("completed"),
+      };
+      const objFull = await db
+        .prepare(
+          `SELECT * FROM okr_objectives WHERE workspace_id = ? AND deleted_at IS NULL ${resolvedCycleId ? "AND cycle_id = ?" : ""} ORDER BY sort_order ASC`,
+        )
+        .bind(...(resolvedCycleId ? [workspaceId, resolvedCycleId] : [workspaceId]))
+        .all<Record<string, unknown>>();
+      const olist = objFull.results ?? [];
+      const oids = olist.map((o) => o.id as string);
+      let krByObj = new Map<string, Record<string, unknown>[]>();
+      if (oids.length) {
+        const ph = oids.map(() => "?").join(", ");
+        const allKr = await db
+          .prepare(
+            `SELECT * FROM okr_key_results WHERE workspace_id = ? AND deleted_at IS NULL AND objective_id IN (${ph}) ORDER BY sort_order ASC`,
+          )
+          .bind(workspaceId, ...oids)
+          .all<Record<string, unknown>>();
+        for (const kr of allKr.results ?? []) {
+          const oid = kr.objective_id as string;
+          const list = krByObj.get(oid) ?? [];
+          list.push(kr);
+          krByObj.set(oid, list);
+        }
+      }
+      const objectives = olist.map((o) => ({
+        ...mapObjective(o),
+        keyResults: (krByObj.get(o.id as string) ?? []).map(mapKr),
+      }));
+      const users = await db
+        .prepare(`SELECT id, name FROM users WHERE workspace_id = ? AND is_active = 1`)
+        .bind(workspaceId)
+        .all<{ id: string; name: string }>();
+      const nameBy = new Map((users.results ?? []).map((u) => [u.id, u.name]));
+      const objectivesForDashboard = objectives.map((o) => ({
+        ...o,
+        ownerDisplayName: o.ownerUserId ? (nameBy.get(o.ownerUserId as string) ?? null) : null,
+      }));
+      const rawUpdates = await recentKrUpdates(db, workspaceId!, resolvedCycleId, 12);
+      const recentUpdates = await enrichUpdates(db, rawUpdates, nameBy);
+      return json({
+        data: {
+          activeCycle: activeCycle ? mapCycle(activeCycle) : null,
+          allCycles,
+          stats,
+          attentionItems: buildAttention(objectives),
+          recentUpdates,
+          objectives: objectivesForDashboard,
+          cyclePace: activeCycle
+            ? {
+                elapsedPercent: 50,
+                avgKrProgress: stats.avgKrProgress,
+                verdict: "aligned" as const,
+                diff: 0,
+              }
+            : null,
+        },
+      });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "dashboard failed";
+      return json({ error: { message } }, 500);
+    }
+  }
+
+  // POST /v1/okr/cycles
+  if (method === "POST" && pathname === "/v1/okr/cycles") {
+    const err = needWs() ?? needActor();
+    if (err) return err;
+    try {
+      const input = parseJson<Record<string, unknown>>(body);
+      const title = String(input.title ?? "").trim();
+      if (!title) return json({ error: { message: "title is required" } }, 400);
+      const base = slugifyTitle(title);
+      const slug = await uniqueSlug(db, "okr_cycles", "workspace_id", workspaceId!, base);
+      const id = createId();
+      const now = new Date().toISOString();
+      const ins = await db
+        .prepare(
+          `INSERT INTO okr_cycles (id, workspace_id, title, slug, description, start_date, end_date, status, created_by, updated_by, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .bind(
+          id,
+          workspaceId,
+          title,
+          slug,
+          input.description ?? null,
+          input.startDate,
+          input.endDate,
+          input.status ?? "planned",
+          actorUserId,
+          actorUserId,
+          now,
+          now,
+        )
+        .all();
+      if (!ins.success) return json({ error: { message: ins.error } }, 400);
+      const row = await db.prepare(`SELECT * FROM okr_cycles WHERE id = ?`).bind(id).all<Record<string, unknown>>();
+      return json({ data: mapCycle(row.results?.[0] ?? {}) }, 201);
+    } catch (e) {
+      return json({ error: { message: e instanceof Error ? e.message : "error" } }, 400);
+    }
+  }
+
+  // /v1/okr/cycles/:id
+  const cycleMatch = pathname.match(/^\/v1\/okr\/cycles\/([^/]+)$/);
+  if (cycleMatch) {
+    const id = cycleMatch[1]!;
+    const err = needWs() ?? needActor();
+    if (err) return err;
+    if (method === "GET") {
+      const row = await db
+        .prepare(`SELECT * FROM okr_cycles WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`)
+        .bind(id, workspaceId)
+        .all<Record<string, unknown>>();
+      if (!row.results?.[0]) return json({ error: { message: "Not found" } }, 404);
+      return json({ data: mapCycle(row.results[0]) });
+    }
+    if (method === "PATCH") {
+      const input = parseJson<Record<string, unknown>>(body);
+      const cur = await db
+        .prepare(`SELECT * FROM okr_cycles WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`)
+        .bind(id, workspaceId)
+        .all<Record<string, unknown>>();
+      if (!cur.results?.[0]) return json({ error: { message: "Not found" } }, 404);
+      if (input.status === "active" && cur.results[0].status !== "active") {
+        await db
+          .prepare(
+            `UPDATE okr_cycles SET status = 'closed', updated_by = ?, updated_at = ? WHERE workspace_id = ? AND status = 'active' AND id != ? AND deleted_at IS NULL`,
+          )
+          .bind(actorUserId, new Date().toISOString(), workspaceId, id)
+          .all();
+      }
+      const sets: string[] = [];
+      const args: unknown[] = [];
+      for (const [k, col] of Object.entries({
+        title: "title",
+        description: "description",
+        startDate: "start_date",
+        endDate: "end_date",
+        status: "status",
+      })) {
+        if (input[k] !== undefined) {
+          sets.push(`${col} = ?`);
+          args.push(input[k] ?? null);
+        }
+      }
+      sets.push("updated_by = ?", "updated_at = ?");
+      args.push(actorUserId, new Date().toISOString(), id, workspaceId);
+      const up = await db
+        .prepare(`UPDATE okr_cycles SET ${sets.join(", ")} WHERE id = ? AND workspace_id = ?`)
+        .bind(...args)
+        .all();
+      if (!up.success) return json({ error: { message: up.error } }, 400);
+      const row = await db.prepare(`SELECT * FROM okr_cycles WHERE id = ?`).bind(id).all<Record<string, unknown>>();
+      return json({ data: mapCycle(row.results?.[0] ?? {}) });
+    }
+    if (method === "DELETE") {
+      const now = new Date().toISOString();
+      await db
+        .prepare(`UPDATE okr_cycles SET deleted_at = ?, updated_at = ?, updated_by = ? WHERE id = ? AND workspace_id = ?`)
+        .bind(now, now, actorUserId, id, workspaceId)
+        .all();
+      return json({ data: null });
+    }
+  }
+
+  // POST /v1/okr/objectives
+  if (method === "POST" && pathname === "/v1/okr/objectives") {
+    const err = needWs() ?? needActor();
+    if (err) return err;
+    const input = parseJson<Record<string, unknown>>(body);
+    const title = String(input.title ?? "").trim();
+    if (!title) return json({ error: { message: "title is required" } }, 400);
+    const base = slugifyTitle(title);
+    const slug = await uniqueSlug(db, "okr_objectives", "workspace_id", workspaceId!, base);
+    const id = createId();
+    const now = new Date().toISOString();
+    const ins = await db
+      .prepare(
+        `INSERT INTO okr_objectives (id, workspace_id, cycle_id, title, slug, description_json, description_text, owner_user_id, status, progress_percent, priority, sort_order, start_date, target_date, completed_at, created_by, updated_by, created_at, updated_at, archived_at, deleted_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .bind(
+        id,
+        workspaceId,
+        input.cycleId ?? null,
+        title,
+        slug,
+        null,
+        input.descriptionText ?? null,
+        input.ownerUserId ?? null,
+        input.status ?? "draft",
+        0,
+        input.priority ?? "medium",
+        input.sortOrder ?? 0,
+        input.startDate ?? null,
+        input.targetDate ?? null,
+        null,
+        actorUserId,
+        actorUserId,
+        now,
+        now,
+        null,
+        null,
+      )
+      .all();
+    if (!ins.success) return json({ error: { message: ins.error } }, 400);
+    const row = await db.prepare(`SELECT * FROM okr_objectives WHERE id = ?`).bind(id).all<Record<string, unknown>>();
+    return json({ data: mapObjective(row.results?.[0] ?? {}) }, 201);
+  }
+
+  const objMatch = pathname.match(/^\/v1\/okr\/objectives\/([^/]+)$/);
+  if (objMatch) {
+    const id = objMatch[1]!;
+    const err = needWs() ?? needActor();
+    if (err) return err;
+    if (method === "GET") {
+      const row = await db
+        .prepare(`SELECT * FROM okr_objectives WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`)
+        .bind(id, workspaceId)
+        .all<Record<string, unknown>>();
+      if (!row.results?.[0]) return json({ error: { message: "Not found" } }, 404);
+      const krs = await db
+        .prepare(`SELECT * FROM okr_key_results WHERE objective_id = ? AND deleted_at IS NULL ORDER BY sort_order ASC`)
+        .bind(id)
+        .all<Record<string, unknown>>();
+      return json({
+        data: { ...mapObjective(row.results[0]), keyResults: (krs.results ?? []).map(mapKr) },
+      });
+    }
+    if (method === "PATCH") {
+      const input = parseJson<Record<string, unknown>>(body);
+      const ex = await db
+        .prepare(`SELECT id FROM okr_objectives WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`)
+        .bind(id, workspaceId)
+        .all<{ id: string }>();
+      if (!ex.results?.[0]) return json({ error: { message: "Not found" } }, 404);
+      const sets: string[] = [];
+      const args: unknown[] = [];
+      const map: [string, string][] = [
+        ["title", "title"],
+        ["descriptionText", "description_text"],
+        ["cycleId", "cycle_id"],
+        ["ownerUserId", "owner_user_id"],
+        ["status", "status"],
+        ["priority", "priority"],
+        ["startDate", "start_date"],
+        ["targetDate", "target_date"],
+        ["sortOrder", "sort_order"],
+      ];
+      for (const [js, col] of map) {
+        if (input[js] !== undefined) {
+          sets.push(`${col} = ?`);
+          args.push(input[js] ?? null);
+        }
+      }
+      sets.push("updated_by = ?", "updated_at = ?");
+      args.push(actorUserId, new Date().toISOString(), id, workspaceId);
+      await db
+        .prepare(`UPDATE okr_objectives SET ${sets.join(", ")} WHERE id = ? AND workspace_id = ?`)
+        .bind(...args)
+        .all();
+      const row = await db.prepare(`SELECT * FROM okr_objectives WHERE id = ?`).bind(id).all<Record<string, unknown>>();
+      return json({ data: mapObjective(row.results?.[0] ?? {}) });
+    }
+    if (method === "DELETE") {
+      const now = new Date().toISOString();
+      await db
+        .prepare(`UPDATE okr_objectives SET deleted_at = ?, updated_at = ?, updated_by = ? WHERE id = ? AND workspace_id = ?`)
+        .bind(now, now, actorUserId, id, workspaceId)
+        .all();
+      return json({ data: null });
+    }
+  }
+
+  // GET /v1/okr/key-results?...
+  if (method === "GET" && pathname === "/v1/okr/key-results") {
+    const err = needWs();
+    if (err) return err;
+    const url = new URL(request.url);
+    const cycleId = url.searchParams.get("cycleId") ?? undefined;
+    const objectiveId = url.searchParams.get("objectiveId") ?? undefined;
+    const status = url.searchParams.get("status") ?? undefined;
+    const where = ["workspace_id = ?", "deleted_at IS NULL"];
+    const args: unknown[] = [workspaceId];
+    if (cycleId) {
+      where.push("cycle_id = ?");
+      args.push(cycleId);
+    }
+    if (objectiveId) {
+      where.push("objective_id = ?");
+      args.push(objectiveId);
+    }
+    if (status) {
+      where.push("status = ?");
+      args.push(status);
+    }
+    const rows = await db
+      .prepare(`SELECT * FROM okr_key_results WHERE ${where.join(" AND ")} ORDER BY sort_order ASC`)
+      .bind(...args)
+      .all<Record<string, unknown>>();
+    return json({ data: (rows.results ?? []).map(mapKr) });
+  }
+
+  if (method === "POST" && pathname === "/v1/okr/key-results") {
+    const err = needWs() ?? needActor();
+    if (err) return err;
+    const input = parseJson<Record<string, unknown>>(body);
+    const title = String(input.title ?? "").trim();
+    const objectiveId = String(input.objectiveId ?? "");
+    if (!title || !objectiveId) return json({ error: { message: "title and objectiveId required" } }, 400);
+    const obj = await db
+      .prepare(`SELECT id, cycle_id, workspace_id FROM okr_objectives WHERE id = ? AND deleted_at IS NULL`)
+      .bind(objectiveId)
+      .all<Record<string, unknown>>();
+    const o = obj.results?.[0];
+    if (!o || o.workspace_id !== workspaceId) return json({ error: { message: "Objective not found" } }, 404);
+    const base = slugifyTitle(title);
+    const slug = await uniqueSlug(db, "okr_key_results", "workspace_id", workspaceId!, base);
+    const id = createId();
+    const now = new Date().toISOString();
+    const startValue = Number(input.startValue ?? 0);
+    const targetValue = Number(input.targetValue);
+    const currentValue = Number(input.currentValue ?? startValue);
+    const metricType = (input.metricType as string) ?? "number";
+    const progress = calcKrProgress(startValue, currentValue, targetValue, metricType);
+    const ins = await db
+      .prepare(
+        `INSERT INTO okr_key_results (id, workspace_id, cycle_id, objective_id, title, slug, description_json, description_text, owner_user_id, metric_type, unit, start_value, current_value, target_value, progress_percent, status, confidence, sort_order, start_date, target_date, completed_at, created_by, updated_by, created_at, updated_at, archived_at, deleted_at)
+         VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, NULL, NULL)`,
+      )
+      .bind(
+        id,
+        workspaceId,
+        input.cycleId ?? o.cycle_id ?? null,
+        objectiveId,
+        title,
+        slug,
+        input.descriptionText ?? null,
+        input.ownerUserId ?? null,
+        metricType,
+        input.unit ?? null,
+        startValue,
+        currentValue,
+        targetValue,
+        progress,
+        input.status ?? "draft",
+        input.confidence ?? 50,
+        input.sortOrder ?? 0,
+        input.startDate ?? null,
+        input.targetDate ?? null,
+        actorUserId,
+        actorUserId,
+        now,
+        now,
+      )
+      .all();
+    if (!ins.success) return json({ error: { message: ins.error } }, 400);
+    await refreshObjectiveProgress(db, objectiveId, actorUserId!);
+    const row = await db.prepare(`SELECT * FROM okr_key_results WHERE id = ?`).bind(id).all<Record<string, unknown>>();
+    return json({ data: mapKr(row.results?.[0] ?? {}) }, 201);
+  }
+
+  const krMatch = pathname.match(/^\/v1\/okr\/key-results\/([^/]+)$/);
+  if (krMatch) {
+    const id = krMatch[1]!;
+    const err = needWs() ?? needActor();
+    if (err) return err;
+    if (method === "GET") {
+      const row = await db
+        .prepare(`SELECT * FROM okr_key_results WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`)
+        .bind(id, workspaceId)
+        .all<Record<string, unknown>>();
+      if (!row.results?.[0]) return json({ error: { message: "Not found" } }, 404);
+      return json({ data: mapKr(row.results[0]) });
+    }
+    if (method === "PATCH") {
+      const input = parseJson<Record<string, unknown>>(body);
+      const cur = await db
+        .prepare(`SELECT * FROM okr_key_results WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`)
+        .bind(id, workspaceId)
+        .all<Record<string, unknown>>();
+      if (!cur.results?.[0]) return json({ error: { message: "Not found" } }, 404);
+      const c = cur.results[0];
+      const startValue = Number(input.startValue ?? c.start_value);
+      const currentValue = Number(input.currentValue ?? c.current_value);
+      const targetValue = Number(input.targetValue ?? c.target_value);
+      const metricType = (input.metricType as string) ?? (c.metric_type as string);
+      const progress = calcKrProgress(startValue, currentValue, targetValue, metricType);
+      const title = input.title !== undefined ? String(input.title) : (c.title as string);
+      const descriptionText =
+        input.descriptionText !== undefined ? input.descriptionText : c.description_text;
+      const cycleId = input.cycleId !== undefined ? input.cycleId : c.cycle_id;
+      const ownerUserId = input.ownerUserId !== undefined ? input.ownerUserId : c.owner_user_id;
+      const unit = input.unit !== undefined ? input.unit : c.unit;
+      const status = input.status !== undefined ? input.status : c.status;
+      const confidence = input.confidence !== undefined ? input.confidence : c.confidence;
+      const sortOrder = input.sortOrder !== undefined ? input.sortOrder : c.sort_order;
+      const startDate = input.startDate !== undefined ? input.startDate : c.start_date;
+      const targetDate = input.targetDate !== undefined ? input.targetDate : c.target_date;
+      const now = new Date().toISOString();
+      await db
+        .prepare(
+          `UPDATE okr_key_results SET title = ?, description_text = ?, cycle_id = ?, owner_user_id = ?, metric_type = ?, unit = ?, start_value = ?, current_value = ?, target_value = ?, progress_percent = ?, status = ?, confidence = ?, sort_order = ?, start_date = ?, target_date = ?, updated_by = ?, updated_at = ? WHERE id = ? AND workspace_id = ?`,
+        )
+        .bind(
+          title,
+          descriptionText,
+          cycleId,
+          ownerUserId,
+          metricType,
+          unit,
+          startValue,
+          currentValue,
+          targetValue,
+          progress,
+          status,
+          confidence,
+          sortOrder,
+          startDate,
+          targetDate,
+          actorUserId,
+          now,
+          id,
+          workspaceId,
+        )
+        .all();
+      await refreshObjectiveProgress(db, c.objective_id as string, actorUserId!);
+      const row = await db.prepare(`SELECT * FROM okr_key_results WHERE id = ?`).bind(id).all<Record<string, unknown>>();
+      return json({ data: mapKr(row.results?.[0] ?? {}) });
+    }
+    if (method === "DELETE") {
+      const cur = await db
+        .prepare(`SELECT objective_id FROM okr_key_results WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`)
+        .bind(id, workspaceId)
+        .all<{ objective_id: string }>();
+      if (!cur.results?.[0]) return json({ error: { message: "Not found" } }, 404);
+      const oid = cur.results[0].objective_id;
+      const now = new Date().toISOString();
+      await db
+        .prepare(`UPDATE okr_key_results SET deleted_at = ?, updated_at = ?, updated_by = ? WHERE id = ?`)
+        .bind(now, now, actorUserId, id)
+        .all();
+      await refreshObjectiveProgress(db, oid, actorUserId!);
+      return json({ data: null });
+    }
+  }
+
+  const krUpMatch = pathname.match(/^\/v1\/okr\/key-results\/([^/]+)\/updates$/);
+  if (krUpMatch) {
+    const krId = krUpMatch[1]!;
+    const err = needWs() ?? needActor();
+    if (err) return err;
+    if (method === "GET") {
+      const kr = await db
+        .prepare(`SELECT id FROM okr_key_results WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`)
+        .bind(krId, workspaceId)
+        .all<{ id: string }>();
+      if (!kr.results?.[0]) return json({ error: { message: "Not found" } }, 404);
+      const rows = await db
+        .prepare(`SELECT * FROM okr_key_result_updates WHERE key_result_id = ? ORDER BY created_at DESC`)
+        .bind(krId)
+        .all<Record<string, unknown>>();
+      return json({
+        data: (rows.results ?? []).map((u) => ({
+          id: u.id,
+          keyResultId: u.key_result_id,
+          previousValue: u.previous_value,
+          newValue: u.new_value,
+          comment: u.comment,
+          updatedBy: u.updated_by,
+          createdAt: u.created_at,
+        })),
+      });
+    }
+    if (method === "POST") {
+      const input = parseJson<{ newValue: number; comment?: string | null }>(body);
+      const cur = await db
+        .prepare(`SELECT * FROM okr_key_results WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`)
+        .bind(krId, workspaceId)
+        .all<Record<string, unknown>>();
+      if (!cur.results?.[0]) return json({ error: { message: "Not found" } }, 404);
+      const c = cur.results[0];
+      const previousValue = Number(c.current_value);
+      const newValue = input.newValue;
+      const progress = calcKrProgress(
+        Number(c.start_value),
+        newValue,
+        Number(c.target_value),
+        c.metric_type as string,
+      );
+      let status = c.status as string;
+      if (progress >= 100) status = "completed";
+      const now = new Date().toISOString();
+      const uid = createId();
+      await db
+        .prepare(
+          `INSERT INTO okr_key_result_updates (id, key_result_id, previous_value, new_value, comment, updated_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .bind(uid, krId, previousValue, newValue, input.comment ?? null, actorUserId, now)
+        .all();
+      await db
+        .prepare(
+          `UPDATE okr_key_results SET current_value = ?, progress_percent = ?, status = ?, updated_by = ?, updated_at = ? WHERE id = ?`,
+        )
+        .bind(newValue, progress, status, actorUserId, now, krId)
+        .all();
+      await refreshObjectiveProgress(db, c.objective_id as string, actorUserId!);
+      const krRow = await db.prepare(`SELECT * FROM okr_key_results WHERE id = ?`).bind(krId).all<Record<string, unknown>>();
+      const upRow = await db.prepare(`SELECT * FROM okr_key_result_updates WHERE id = ?`).bind(uid).all<Record<string, unknown>>();
+      const u = upRow.results?.[0] ?? {};
+      return json({
+        data: {
+          keyResult: mapKr(krRow.results?.[0] ?? {}),
+          update: {
+            id: u.id,
+            keyResultId: u.key_result_id,
+            previousValue: u.previous_value,
+            newValue: u.new_value,
+            comment: u.comment,
+            updatedBy: u.updated_by,
+            createdAt: u.created_at,
+          },
+        },
+      });
+    }
+  }
+
+  return null;
+}
+
+async function recentKrUpdates(
+  db: D1DatabaseLike,
+  workspaceId: string,
+  cycleId: string | undefined,
+  limit: number,
+): Promise<Record<string, unknown>[]> {
+  const where = ["workspace_id = ?", "deleted_at IS NULL"];
+  const args: unknown[] = [workspaceId];
+  if (cycleId) {
+    where.push("cycle_id = ?");
+    args.push(cycleId);
+  }
+  const krs = await db
+    .prepare(`SELECT id FROM okr_key_results WHERE ${where.join(" AND ")}`)
+    .bind(...args)
+    .all<{ id: string }>();
+  const ids = (krs.results ?? []).map((k) => k.id);
+  if (ids.length === 0) return [];
+  const ph = ids.map(() => "?").join(", ");
+  const rows = await db
+    .prepare(
+      `SELECT * FROM okr_key_result_updates WHERE key_result_id IN (${ph}) ORDER BY created_at DESC LIMIT ?`,
+    )
+    .bind(...ids, limit)
+    .all<Record<string, unknown>>();
+  return rows.results ?? [];
+}
+
+async function enrichUpdates(
+  db: D1DatabaseLike,
+  raw: Record<string, unknown>[],
+  nameBy: Map<string, string>,
+): Promise<unknown[]> {
+  if (raw.length === 0) return [];
+  const krIds = [...new Set(raw.map((u) => u.key_result_id as string))];
+  const ph = krIds.map(() => "?").join(", ");
+  const krs = await db
+    .prepare(`SELECT id, title, objective_id FROM okr_key_results WHERE id IN (${ph})`)
+    .bind(...krIds)
+    .all<Record<string, unknown>>();
+  const krMap = new Map((krs.results ?? []).map((k) => [k.id as string, k]));
+  const objIds = [...new Set((krs.results ?? []).map((k) => k.objective_id as string))];
+  const ph2 = objIds.map(() => "?").join(", ");
+  const objs = await db
+    .prepare(`SELECT id, title FROM okr_objectives WHERE id IN (${ph2})`)
+    .bind(...objIds)
+    .all<Record<string, unknown>>();
+  const objMap = new Map((objs.results ?? []).map((o) => [o.id as string, o]));
+  return raw.map((u) => {
+    const kr = krMap.get(u.key_result_id as string);
+    const obj = kr ? objMap.get(kr.objective_id as string) : undefined;
+    return {
+      id: u.id,
+      keyResultId: u.key_result_id,
+      previousValue: u.previous_value,
+      newValue: u.new_value,
+      comment: u.comment,
+      updatedBy: u.updated_by,
+      createdAt: u.created_at,
+      keyResultTitle: kr?.title ?? "Key result",
+      objectiveId: kr?.objective_id ?? "",
+      objectiveTitle: (obj?.title as string) ?? "Objetivo",
+      updatedByName: nameBy.get(u.updated_by as string) ?? null,
+    };
+  });
+}
+
+function buildAttention(objectives: { id: string; title: string; status: string; progressPercent: number; keyResults: { status: string; title: string; id: string; progressPercent: number; confidence: number | null; updatedAt: string }[] }[]) {
+  const items: unknown[] = [];
+  for (const o of objectives) {
+    if (o.status === "off_track") {
+      items.push({
+        kind: "objective",
+        id: o.id,
+        title: o.title,
+        reason: "Objetivo fora do rumo",
+        href: `/okr/objectives/${o.id}`,
+        severity: "high",
+        score: 100,
+        progressPercent: o.progressPercent,
+        status: o.status,
+      });
+    }
+    for (const kr of o.keyResults ?? []) {
+      if (kr.status === "off_track") {
+        items.push({
+          kind: "key_result",
+          id: kr.id,
+          title: kr.title,
+          reason: "KR fora do rumo",
+          href: `/okr/key-results/${kr.id}`,
+          severity: "high",
+          score: 92,
+          progressPercent: kr.progressPercent,
+          status: kr.status,
+          objectiveTitle: o.title,
+        });
+      }
+    }
+  }
+  return items.slice(0, 12);
+}

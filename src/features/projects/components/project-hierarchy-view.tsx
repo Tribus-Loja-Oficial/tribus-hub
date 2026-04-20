@@ -31,18 +31,14 @@ import {
 } from "./project-badges";
 import { TaskFormDialog } from "@/features/tasks/components/task-form-dialog";
 import type { TaskColumn } from "@/lib/db/schema";
-import type {
-  ProjectHierarchyItem,
-  HierarchyMilestone,
-  HierarchyTask,
-} from "@/lib/repositories/projects.repository";
+import type { ProjectHierarchyItem, HierarchyMilestone, HierarchyTask } from "@/lib/types/pm-hierarchy";
 import { projectMatchesSearch } from "@/features/projects/lib/project-hierarchy-search";
 
 type MemberRow = { id: string; name: string; email: string };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function isOverdue(dateStr: string | null | undefined, completedAt: Date | null | undefined) {
+function isOverdue(dateStr: string | null | undefined, completedAt: string | Date | null | undefined) {
   if (!dateStr || completedAt) return false;
   return isBefore(startOfDay(new Date(dateStr)), startOfDay(new Date()));
 }

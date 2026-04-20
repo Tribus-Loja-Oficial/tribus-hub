@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/permissions";
-import * as projectsRepo from "@/lib/repositories/projects.repository";
+import { hubApiFetch } from "@/lib/integrations/hub-api/client";
 import { toApiError } from "@/lib/errors";
 
 export async function GET() {
   try {
     const user = await requireAuth();
-    const data = await projectsRepo.findProjectsWithHierarchyData(user.workspaceId);
+    const data = await hubApiFetch({
+      path: "/v1/projects/hierarchy",
+      workspaceId: user.workspaceId,
+      actorUserId: user.id,
+    });
     return NextResponse.json({ data });
   } catch (err) {
     const error = toApiError(err);
