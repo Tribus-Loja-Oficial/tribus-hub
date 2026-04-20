@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, addDays } from "date-fns";
-import { CheckSquare2, Loader2, Plus, Trash2, X, Calendar, Tag } from "lucide-react";
+import { CheckSquare2, Loader2, Plus, Trash2, X, Tag } from "lucide-react";
 import type { Task, TaskColumn } from "@/lib/db/schema";
 import { Button } from "@/components/ui/button";
+import { DateField } from "@/components/ui/date-field";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils/cn";
 
@@ -492,12 +493,10 @@ export function TaskFormDialog({
                         </button>
                       ))}
                     </div>
-                    <input
+                    <DateField
                       id="task-due"
-                      type="date"
                       value={dueDate}
                       onChange={(e) => setDueDate(e.target.value)}
-                      className="h-9 w-full rounded-md border border-input bg-background px-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                   </div>
                 </div>

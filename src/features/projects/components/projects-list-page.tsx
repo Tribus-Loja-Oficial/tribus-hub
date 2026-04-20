@@ -20,6 +20,7 @@ import {
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PageGuide, GuideSection, GuideList } from "@/components/ui/page-guide";
+import { DateField } from "@/components/ui/date-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -192,15 +193,11 @@ function CreateProjectDialog({ open, onOpenChange, onCreated }: CreateProjectDia
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Início</Label>
-              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              <DateField value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             </div>
             <div className="space-y-1.5">
               <Label>Prazo alvo</Label>
-              <Input
-                type="date"
-                value={targetDate}
-                onChange={(e) => setTargetDate(e.target.value)}
-              />
+              <DateField value={targetDate} onChange={(e) => setTargetDate(e.target.value)} />
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-1">

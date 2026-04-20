@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DateField } from "@/components/ui/date-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { OkrObjective } from "@/lib/db/schema";
@@ -239,11 +240,7 @@ export function CreateKeyResultDialog({
             </div>
             <div className="space-y-1.5">
               <Label>Data meta</Label>
-              <Input
-                type="date"
-                value={targetDate}
-                onChange={(e) => setTargetDate(e.target.value)}
-              />
+              <DateField value={targetDate} onChange={(e) => setTargetDate(e.target.value)} />
             </div>
           </div>
 

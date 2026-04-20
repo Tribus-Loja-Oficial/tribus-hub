@@ -588,7 +588,59 @@ function createSlug(input: string) {
   return `${base || "item"}-${suffix}`;
 }
 
+const DEFAULT_TASK_COLUMNS: Array<{
+  name: string;
+  slug: string;
+  colorToken: string | null;
+  sortOrder: number;
+  isDefault: number;
+}> = [
+  { name: "Backlog", slug: "backlog", colorToken: "#94a3b8", sortOrder: 0, isDefault: 0 },
+  { name: "To do", slug: "to-do", colorToken: "#60a5fa", sortOrder: 1000, isDefault: 1 },
+  { name: "In progress", slug: "in-progress", colorToken: "#f59e0b", sortOrder: 2000, isDefault: 0 },
+  { name: "Blocked", slug: "blocked", colorToken: "#f87171", sortOrder: 3000, isDefault: 0 },
+  { name: "Done", slug: "done", colorToken: "#34d399", sortOrder: 4000, isDefault: 0 },
+];
+
+async function ensureDefaultTaskColumns(db: D1DatabaseLike, workspaceId: string) {
+  const countResult = await db
+    .prepare(`SELECT COUNT(*) AS c FROM task_columns WHERE workspace_id = ?`)
+    .bind(workspaceId)
+    .all<{ c: number }>();
+  if (!countResult.success) throw new Error(countResult.error ?? "Failed to count task columns");
+  const n = Number(countResult.results?.[0]?.c ?? 0);
+  if (n > 0) return;
+
+  const now = new Date().toISOString();
+  for (const col of DEFAULT_TASK_COLUMNS) {
+    const id = createId();
+    const ins = await db
+      .prepare(
+        `
+        INSERT INTO task_columns (
+          id, workspace_id, name, slug, color_token, sort_order, is_default, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      )
+      .bind(
+        id,
+        workspaceId,
+        col.name,
+        col.slug,
+        col.colorToken,
+        col.sortOrder,
+        col.isDefault,
+        now,
+        now,
+      )
+      .all();
+    if (!ins.success) throw new Error(ins.error ?? "Failed to insert default task column");
+  }
+}
+
 async function getTaskBoardData(db: D1DatabaseLike, workspaceId: string) {
+  await ensureDefaultTaskColumns(db, workspaceId);
+
   const columnsResult = await db
     .prepare(
       `
@@ -730,6 +782,8 @@ async function getTaskBoardData(db: D1DatabaseLike, workspaceId: string) {
 }
 
 async function getTaskColumnsByWorkspace(db: D1DatabaseLike, workspaceId: string) {
+  await ensureDefaultTaskColumns(db, workspaceId);
+
   const result = await db
     .prepare(
       `
@@ -933,6 +987,8 @@ async function createTask(
   actorUserId: string,
   input: CreateTaskInput,
 ) {
+  await ensureDefaultTaskColumns(db, workspaceId);
+
   if (!input.title?.trim()) throw new Error("title is required");
   if (!input.columnId?.trim()) throw new Error("columnId is required");
   const priority = input.priority ?? "medium";

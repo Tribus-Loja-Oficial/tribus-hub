@@ -32,6 +32,12 @@ function buildSignature(input: {
   return createHmac("sha256", input.secret).update(canonical).digest("hex");
 }
 
+/** hub-api verifies HMAC using `URL(request.url).pathname` only (no query string). */
+function signingPathFromRequestPath(path: string): string {
+  const q = path.indexOf("?");
+  return q === -1 ? path : path.slice(0, q);
+}
+
 export async function hubApiFetch<T>(input: {
   method?: HttpMethod;
   path: string;
@@ -47,7 +53,7 @@ export async function hubApiFetch<T>(input: {
   const signature = buildSignature({
     secret,
     method,
-    path: input.path,
+    path: signingPathFromRequestPath(input.path),
     timestamp,
     nonce,
     body: bodyString,

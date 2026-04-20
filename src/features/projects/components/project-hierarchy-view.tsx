@@ -20,6 +20,7 @@ import { format, isBefore, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/components/ui/button";
+import { DateField } from "@/components/ui/date-field";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -536,7 +537,7 @@ function ProjectRow({
             </div>
             <div className="space-y-1.5">
               <Label>Prazo</Label>
-              <Input type="date" value={msDueDate} onChange={(e) => setMsDueDate(e.target.value)} />
+              <DateField value={msDueDate} onChange={(e) => setMsDueDate(e.target.value)} />
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" type="button" onClick={() => setCreateMilestoneOpen(false)}>

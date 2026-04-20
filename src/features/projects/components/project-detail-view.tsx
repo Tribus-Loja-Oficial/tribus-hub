@@ -26,6 +26,7 @@ import {
   Kanban,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DateField } from "@/components/ui/date-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -192,7 +193,7 @@ function CreateMilestoneDialog({
           </div>
           <div className="space-y-1.5">
             <Label>Prazo</Label>
-            <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+            <DateField value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
