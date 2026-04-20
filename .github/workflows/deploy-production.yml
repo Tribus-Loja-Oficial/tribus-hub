@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: []
     timeout-minutes: 20
+    environment: PROD
 
     steps:
       - name: Checkout
@@ -22,7 +23,7 @@ jobs:
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-token: ${{ vars.VERCEL_TOKEN }}
+          vercel-org-id: ${{ vars.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ vars.VERCEL_PROJECT_ID }}
           vercel-args: "--prod"
