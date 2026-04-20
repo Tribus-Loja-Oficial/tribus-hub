@@ -62,12 +62,11 @@ Este documento descreve o estado atual da migracao para `hub-api` + `D1`.
 2. Copiar o `database_id` gerado e preencher em `apps/hub-api/wrangler.toml`.
 3. Definir secret do Worker:
    - `wrangler secret put HUB_API_INTERNAL_SECRET`
-4. Aplicar migration inicial:
+4. Aplicar migrations (schema `0001` + seed bootstrap `0002` — cria `admin@tribus.com.br` / `changeme123!`):
    - `npm run d1:migrate:remote --workspace @tribus/hub-api`
 5. Fazer deploy do Worker:
    - `npm run deploy:hub-api`
-6. Configurar no `hub-web`:
-   - `HUB_API_ENABLED=true`
+6. Configurar no `hub-web` (Vercel / `.env.local`):
    - `HUB_API_URL=https://<seu-worker>.workers.dev`
    - `HUB_API_INTERNAL_SECRET=<mesmo valor do Worker>`
 

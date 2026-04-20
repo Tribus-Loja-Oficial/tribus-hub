@@ -48,3 +48,12 @@ Cloudflare Worker interno para o `tribus-hub`.
 
 - `npm run dev:hub-api` (a partir da raiz)
 - `npm run deploy:hub-api` (a partir da raiz)
+
+## D1 migrations
+
+Na pasta `migrations/`:
+
+1. `0001_init.sql` — schema
+2. `0002_seed_bootstrap_admin.sql` — workspace + owner `admin@tribus.com.br` / `changeme123!` (idempotente)
+
+`npm run d1:migrate:local` / `d1:migrate:remote` no pacote `@tribus/hub-api` aplica `0001` e depois `0002`.
