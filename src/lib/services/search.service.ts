@@ -8,7 +8,13 @@ export async function search(user: AuthenticatedUser, query: string) {
   }
 
   const q = encodeURIComponent(query.trim());
-  return hubApiFetch<{ pages: unknown[]; projects: unknown[]; milestones: unknown[]; tasks: unknown[]; total: number }>({
+  return hubApiFetch<{
+    pages: unknown[];
+    projects: unknown[];
+    milestones: unknown[];
+    tasks: unknown[];
+    total: number;
+  }>({
     path: `/v1/search?q=${q}`,
     workspaceId: user.workspaceId,
     actorUserId: user.id,

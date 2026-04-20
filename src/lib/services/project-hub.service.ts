@@ -11,7 +11,8 @@ export async function getProjectHub(user: AuthenticatedUser, projectId: string) 
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    if (msg.includes("Not found") || msg.includes("404")) throw new NotFoundError("Project", projectId);
+    if (msg.includes("Not found") || msg.includes("404"))
+      throw new NotFoundError("Project", projectId);
     throw e;
   }
 }

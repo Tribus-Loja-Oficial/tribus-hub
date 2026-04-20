@@ -109,7 +109,10 @@ export async function getCycle(user: AuthenticatedUser, id: string): Promise<Okr
   }
 }
 
-export async function createCycle(user: AuthenticatedUser, input: CreateCycleInput): Promise<OkrCycle> {
+export async function createCycle(
+  user: AuthenticatedUser,
+  input: CreateCycleInput,
+): Promise<OkrCycle> {
   return hubApiFetch<OkrCycle>({
     method: "POST",
     path: "/v1/okr/cycles",
