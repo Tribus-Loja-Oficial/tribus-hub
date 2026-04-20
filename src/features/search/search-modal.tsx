@@ -5,7 +5,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Search, FileText, FolderKanban, CheckSquare, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
 import { useDebounce } from "@/lib/utils/use-debounce";
 
 interface SearchResult {
@@ -118,7 +117,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
           <div className="max-h-80 overflow-y-auto py-1">
             {query.length >= 2 && !isFetching && allResults.length === 0 && (
               <p className="py-8 text-center text-sm text-muted-foreground">
-                Nenhum resultado para "{query}"
+                Nenhum resultado para &quot;{query}&quot;
               </p>
             )}
 
