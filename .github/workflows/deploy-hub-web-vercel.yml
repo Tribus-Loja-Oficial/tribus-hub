@@ -65,7 +65,7 @@ jobs:
         run: npm run build
 
       - name: Deploy Hub Web to Vercel (production)
-        run: npx --yes vercel@41 deploy --prod --yes --token "$VERCEL_TOKEN"
+        run: npx --yes vercel@51 deploy --prod --yes --token "$VERCEL_TOKEN"
 
   deploy-preview:
     name: Vercel Preview (Hub Web)
@@ -108,4 +108,4 @@ jobs:
         run: npm run build
 
       - name: Deploy Hub Web to Vercel (preview)
-        run: npx --yes vercel@41 deploy --yes --token "$VERCEL_TOKEN"
+        run: npx --yes vercel@51 deploy --yes --token "$VERCEL_TOKEN"
