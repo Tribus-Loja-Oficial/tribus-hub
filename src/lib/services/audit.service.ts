@@ -1,4 +1,4 @@
-import type { AuditAction } from "@/lib/db/schema/audit";
+import type { AuditAction } from "@/lib/types/domain";
 import { logger } from "@/lib/observability/logger";
 import { appConfig } from "@/lib/config/app-config";
 

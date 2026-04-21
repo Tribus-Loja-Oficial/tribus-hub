@@ -1,1 +1,0 @@
-ALTER TABLE "milestones" ADD COLUMN "priority" "project_priority" DEFAULT 'medium' NOT NULL;

@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { ArrowLeft, CalendarRange, Target, TrendingUp, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { OkrCycle, OkrObjective, OkrKeyResult } from "@/lib/db/schema";
+import type { OkrCycle, OkrObjective, OkrKeyResult } from "@/lib/types/domain";
 import { OkrStatusBadge } from "./okr-status-badge";
 import { OkrProgressBar, MiniProgressRing } from "./okr-progress-bar";
 import { format, differenceInDays, isAfter, isBefore } from "date-fns";

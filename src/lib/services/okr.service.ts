@@ -1,7 +1,7 @@
 import { hubApiFetch } from "@/lib/integrations/hub-api/client";
 import { NotFoundError } from "@/lib/errors";
 import type { AuthenticatedUser } from "@/lib/permissions";
-import type { OkrCycle, OkrObjective, OkrKeyResult, OkrKeyResultUpdate } from "@/lib/db/schema";
+import type { OkrCycle, OkrObjective, OkrKeyResult, OkrKeyResultUpdate } from "@/lib/types/domain";
 import type {
   CreateCycleInput,
   UpdateCycleInput,

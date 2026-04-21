@@ -28,7 +28,7 @@ import {
   PriorityBadge,
   MilestoneStatusBadge,
 } from "./project-badges";
-import type { Project } from "@/lib/db/schema";
+import type { Project } from "@/lib/types/domain";
 import { cn } from "@/lib/utils/cn";
 
 interface UpcomingMilestone {

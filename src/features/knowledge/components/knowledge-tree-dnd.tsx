@@ -36,7 +36,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { Page } from "@/lib/db/schema";
+import type { Page } from "@/lib/types/domain";
 import { cn } from "@/lib/utils/cn";
 
 export interface PageNode extends Page {

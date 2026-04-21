@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { ArrowLeft, Target, TrendingUp, Plus, RefreshCw, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { OkrObjective, OkrKeyResult, OkrCycle } from "@/lib/db/schema";
+import type { OkrObjective, OkrKeyResult, OkrCycle } from "@/lib/types/domain";
 import { OkrStatusBadge, OkrPriorityBadge } from "./okr-status-badge";
 import { OkrProgressBar, MiniProgressRing } from "./okr-progress-bar";
 import { CreateKeyResultDialog } from "./create-key-result-dialog";

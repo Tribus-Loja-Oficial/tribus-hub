@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { OkrKeyResult } from "@/lib/db/schema";
+import type { OkrKeyResult } from "@/lib/types/domain";
 import { OkrProgressBar } from "./okr-progress-bar";
 
 interface UpdateKeyResultDialogProps {

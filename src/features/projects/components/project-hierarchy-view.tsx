@@ -31,7 +31,7 @@ import {
   MilestoneStatusBadge,
 } from "./project-badges";
 import { TaskFormDialog } from "@/features/tasks/components/task-form-dialog";
-import type { TaskColumn } from "@/lib/db/schema";
+import type { TaskColumn } from "@/lib/types/domain";
 import type {
   ProjectHierarchyItem,
   HierarchyMilestone,

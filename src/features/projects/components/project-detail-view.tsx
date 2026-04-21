@@ -3,7 +3,7 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Project, Milestone, Task } from "@/lib/db/schema";
+import type { Project, Milestone, Task } from "@/lib/types/domain";
 import type { OkrObjectiveLink, OkrKrLink } from "@/lib/types/pm-hierarchy";
 import {
   FolderKanban,
@@ -40,7 +40,7 @@ import {
   PriorityBadge,
   MilestoneStatusBadge,
 } from "./project-badges";
-import type { OkrObjective, OkrKeyResult } from "@/lib/db/schema";
+import type { OkrObjective, OkrKeyResult } from "@/lib/types/domain";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

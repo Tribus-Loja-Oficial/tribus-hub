@@ -21,7 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { PageGuide, GuideSection, GuideList } from "@/components/ui/page-guide";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { OkrCycle, OkrKeyResult } from "@/lib/db/schema";
+import type { OkrCycle, OkrKeyResult } from "@/lib/types/domain";
 import type {
   ObjectiveWithKRsForDashboard,
   DashboardData,

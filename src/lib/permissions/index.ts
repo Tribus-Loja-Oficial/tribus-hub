@@ -1,4 +1,4 @@
-import type { UserRole } from "@/lib/db/schema";
+import type { UserRole } from "@/lib/types/domain";
 import type { Session } from "next-auth";
 import { UnauthorizedError, ForbiddenError } from "@/lib/errors";
 

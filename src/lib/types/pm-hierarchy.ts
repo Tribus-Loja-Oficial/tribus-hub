@@ -1,4 +1,4 @@
-import type { OkrObjective, OkrKeyResult, Project } from "@/lib/db/schema";
+import type { OkrObjective, OkrKeyResult, Project } from "@/lib/types/domain";
 
 /** Task row nested under hierarchy milestones (hub-api JSON). */
 export type HierarchyTask = {

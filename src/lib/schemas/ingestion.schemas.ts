@@ -4,6 +4,7 @@ import { z } from "zod";
 
 const okrCycleDataSchema = z.object({
   title: z.string().min(1, "Título é obrigatório").max(200),
+  external_ref: z.string().max(100).optional(),
   description: z.string().max(2000).optional(),
   start_date: z.string().date("Formato de data inválido (esperado YYYY-MM-DD)"),
   end_date: z.string().date("Formato de data inválido (esperado YYYY-MM-DD)"),
@@ -13,9 +14,12 @@ const okrCycleDataSchema = z.object({
 const okrObjectiveDataSchema = z.object({
   title: z.string().min(1, "Título é obrigatório").max(500),
   description: z.string().max(5000).optional(),
+  external_ref: z.string().max(100).optional(),
   cycle_id: z.string().optional(),
   cycle_ref: z.string().optional(),
+  cycle_external_ref: z.string().max(100).optional(),
   owner_user_id: z.string().optional(),
+  owner_user_external_ref: z.string().max(100).optional(),
   status: z.enum(["draft", "on_track", "at_risk", "off_track", "completed"]).optional(),
   priority: z.enum(["low", "medium", "high", "critical"]).optional(),
   start_date: z.string().date().optional(),
@@ -26,11 +30,15 @@ const okrKeyResultDataSchema = z
   .object({
     title: z.string().min(1, "Título é obrigatório").max(500),
     description: z.string().max(5000).optional(),
+    external_ref: z.string().max(100).optional(),
     objective_id: z.string().optional(),
     objective_ref: z.string().optional(),
+    objective_external_ref: z.string().max(100).optional(),
     cycle_id: z.string().optional(),
     cycle_ref: z.string().optional(),
+    cycle_external_ref: z.string().max(100).optional(),
     owner_user_id: z.string().optional(),
+    owner_user_external_ref: z.string().max(100).optional(),
     metric_type: z.enum(["percentage", "number", "currency", "boolean", "custom"]).optional(),
     unit: z.string().max(50).optional(),
     start_value: z.number().optional(),
@@ -41,17 +49,19 @@ const okrKeyResultDataSchema = z
     start_date: z.string().date().optional(),
     target_date: z.string().date().optional(),
   })
-  .refine((d) => d.objective_id || d.objective_ref, {
-    message: "objective_id ou objective_ref é obrigatório",
+  .refine((d) => d.objective_id || d.objective_ref || d.objective_external_ref, {
+    message: "objective_id, objective_ref ou objective_external_ref é obrigatório",
   });
 
 const projectDataSchema = z.object({
   title: z.string().min(1, "Título é obrigatório").max(500),
+  external_ref: z.string().max(100).optional(),
   summary: z.string().max(1000).optional(),
   status: z.enum(["planned", "active", "on_hold", "completed", "cancelled"]).optional(),
   health_status: z.enum(["on_track", "at_risk", "blocked", "off_track"]).optional(),
   priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
   owner_user_id: z.string().optional(),
+  owner_user_external_ref: z.string().max(100).optional(),
   start_date: z.string().date().optional(),
   target_date: z.string().date().optional(),
 });
@@ -59,29 +69,36 @@ const projectDataSchema = z.object({
 const milestoneDataSchema = z
   .object({
     title: z.string().min(1, "Título é obrigatório").max(500),
+    external_ref: z.string().max(100).optional(),
     description: z.string().max(2000).optional(),
     project_id: z.string().optional(),
     project_ref: z.string().optional(),
+    project_external_ref: z.string().max(100).optional(),
     status: z.enum(["pending", "in_progress", "completed", "missed"]).optional(),
     priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
     owner_user_id: z.string().optional(),
+    owner_user_external_ref: z.string().max(100).optional(),
     due_date: z.string().date().optional(),
   })
-  .refine((d) => d.project_id || d.project_ref, {
-    message: "project_id ou project_ref é obrigatório",
+  .refine((d) => d.project_id || d.project_ref || d.project_external_ref, {
+    message: "project_id, project_ref ou project_external_ref é obrigatório",
   });
 
 const taskDataSchema = z.object({
   title: z.string().min(1, "Título é obrigatório").max(500),
+  external_ref: z.string().max(100).optional(),
   description: z.string().max(5000).optional(),
   project_id: z.string().optional(),
   project_ref: z.string().optional(),
+  project_external_ref: z.string().max(100).optional(),
   milestone_id: z.string().optional(),
   milestone_ref: z.string().optional(),
+  milestone_external_ref: z.string().max(100).optional(),
   column_id: z.string().optional(),
   column_name: z.string().optional(),
   priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
   assignee_user_id: z.string().optional(),
+  assignee_user_external_ref: z.string().max(100).optional(),
   due_date: z.string().date().optional(),
   label_ids: z.array(z.string()).optional(),
 });

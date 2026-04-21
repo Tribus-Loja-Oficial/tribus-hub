@@ -7,7 +7,7 @@ import { addDays, isBefore, isWithinInterval, startOfDay, format } from "date-fn
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils/cn";
 import { CheckSquare, Kanban, LayoutList, Plus, Search } from "lucide-react";
-import type { TaskColumn } from "@/lib/db/schema";
+import type { TaskColumn } from "@/lib/types/domain";
 import type { BoardTask } from "@/lib/services/task-board.service";
 import { KanbanBoard } from "@/components/board/kanban-board";
 import { Button } from "@/components/ui/button";

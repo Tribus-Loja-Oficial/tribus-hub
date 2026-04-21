@@ -25,7 +25,7 @@ import {
   Check,
 } from "lucide-react";
 import type { JSONContent } from "@tiptap/core";
-import type { Page, PageRevision } from "@/lib/db/schema";
+import type { Page, PageRevision } from "@/lib/types/domain";
 import { RichEditor } from "@/components/editor/rich-editor";
 import { Input } from "@/components/ui/input";
 import { KnowledgeTreeDnd } from "@/features/knowledge/components/knowledge-tree-dnd";

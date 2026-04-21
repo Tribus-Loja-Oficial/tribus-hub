@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils/cn";
-import type { OkrObjectiveStatus, OkrKeyResultStatus, OkrCycleStatus } from "@/lib/db/schema";
+import type { OkrObjectiveStatus, OkrKeyResultStatus, OkrCycleStatus } from "@/lib/types/domain";
 
 type AnyStatus = OkrObjectiveStatus | OkrKeyResultStatus | OkrCycleStatus | string;
 

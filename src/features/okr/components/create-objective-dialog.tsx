@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { DateField } from "@/components/ui/date-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { OkrCycle } from "@/lib/db/schema";
+import type { OkrCycle } from "@/lib/types/domain";
 
 interface MemberRow {
   id: string;

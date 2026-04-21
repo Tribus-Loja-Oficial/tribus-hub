@@ -27,7 +27,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageGuide, GuideSection, GuideList, GuideExamples } from "@/components/ui/page-guide";
-import type { OkrCycle, OkrKeyResult } from "@/lib/db/schema";
+import type { OkrCycle, OkrKeyResult } from "@/lib/types/domain";
 import { OkrStatusBadge } from "./okr-status-badge";
 import { OkrProgressBar } from "./okr-progress-bar";
 import { CreateObjectiveDialog } from "./create-objective-dialog";

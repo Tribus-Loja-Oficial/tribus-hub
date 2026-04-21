@@ -24,7 +24,7 @@ import { DateField } from "@/components/ui/date-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import type { Project } from "@/lib/db/schema";
+import type { Project } from "@/lib/types/domain";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ProjectHealthBadge, ProjectStatusBadge, PriorityBadge } from "./project-badges";

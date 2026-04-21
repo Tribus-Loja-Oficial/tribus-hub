@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import type { OkrObjective, OkrKeyResult } from "@/lib/db/schema";
+import type { OkrObjective, OkrKeyResult } from "@/lib/types/domain";
 
 export type ObjectiveWithKRs = OkrObjective & { keyResults: OkrKeyResult[] };
 

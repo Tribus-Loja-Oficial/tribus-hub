@@ -2,7 +2,7 @@
 
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import type { TaskColumn } from "@/lib/db/schema";
+import type { TaskColumn } from "@/lib/types/domain";
 import type { BoardTask } from "@/lib/services/task-board.service";
 import { TaskCard } from "./task-card";
 import { cn } from "@/lib/utils/cn";

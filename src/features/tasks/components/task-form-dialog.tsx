@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, addDays } from "date-fns";
 import { CheckSquare2, Loader2, Plus, Trash2, X, Tag } from "lucide-react";
-import type { Task, TaskColumn } from "@/lib/db/schema";
+import type { Task, TaskColumn } from "@/lib/types/domain";
 import { Button } from "@/components/ui/button";
 import { DateField } from "@/components/ui/date-field";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";

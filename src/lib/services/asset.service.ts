@@ -10,7 +10,7 @@ import { recordAudit } from "./audit.service";
 import { NotFoundError, ValidationError } from "@/lib/errors";
 import { appConfig } from "@/lib/config/app-config";
 import type { AuthenticatedUser } from "@/lib/permissions";
-import type { Asset, AssetLink } from "@/lib/db/schema";
+import type { Asset, AssetLink } from "@/lib/types/domain";
 import sizeOf from "image-size";
 
 export interface UploadAssetInput {

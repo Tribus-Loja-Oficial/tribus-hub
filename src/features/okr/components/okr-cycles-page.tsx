@@ -25,7 +25,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { PageGuide, GuideSection, GuideList } from "@/components/ui/page-guide";
 import { Input } from "@/components/ui/input";
-import type { OkrCycle } from "@/lib/db/schema";
+import type { OkrCycle } from "@/lib/types/domain";
 import type {
   CycleCardStats,
   OkrCycleWithStats,

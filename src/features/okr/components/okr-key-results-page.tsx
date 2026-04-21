@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { OkrCycle, OkrKeyResult, OkrObjective } from "@/lib/db/schema";
+import type { OkrCycle, OkrKeyResult, OkrObjective } from "@/lib/types/domain";
 import { OkrStatusBadge } from "./okr-status-badge";
 import { OkrProgressBar } from "./okr-progress-bar";
 import { CreateKeyResultDialog } from "./create-key-result-dialog";

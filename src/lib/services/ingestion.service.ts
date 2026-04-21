@@ -7,6 +7,15 @@ import type {
   IngestionObjectType,
 } from "@/lib/schemas/ingestion.schemas";
 
+type ExternalRefEntityType =
+  | "user"
+  | "project"
+  | "milestone"
+  | "task"
+  | "okr_cycle"
+  | "okr_objective"
+  | "okr_key_result";
+
 // ─── Result types ─────────────────────────────────────────────────────────────
 
 export type ValidationIssue = {
@@ -271,6 +280,7 @@ export async function executeIngestion(
   const taskColumns: TaskColumn[] = hasTasks ? await fetchTaskColumns(user) : [];
 
   const refMap: Record<string, string> = {};
+  const externalRefCache = new Map<string, string | null>();
   const items: IngestionItemResult[] = [];
   let created = 0;
   let failed = 0;
@@ -288,7 +298,7 @@ export async function executeIngestion(
     };
 
     try {
-      const id = await createIngestionObject(obj, user, refMap, taskColumns);
+      const id = await createIngestionObject(obj, user, refMap, taskColumns, externalRefCache);
 
       if (obj.client_ref) {
         refMap[obj.client_ref] = id;
@@ -315,26 +325,52 @@ async function createIngestionObject(
   user: AuthenticatedUser,
   refMap: Record<string, string>,
   taskColumns: TaskColumn[],
+  externalRefCache: Map<string, string | null>,
 ): Promise<string> {
   switch (obj.type) {
     case "okr_cycle":
       return createCycle(user, obj.data);
 
     case "okr_objective":
-      return createObjective(user, obj.data, refMap);
+      return createObjective(user, obj.data, refMap, externalRefCache);
 
     case "okr_key_result":
-      return createKeyResult(user, obj.data, refMap);
+      return createKeyResult(user, obj.data, refMap, externalRefCache);
 
     case "project":
-      return createProject(user, obj.data);
+      return createProject(user, obj.data, externalRefCache);
 
     case "milestone":
-      return createMilestone(user, obj.data, refMap);
+      return createMilestone(user, obj.data, refMap, externalRefCache);
 
     case "task":
-      return createTask(user, obj.data, refMap, taskColumns);
+      return createTask(user, obj.data, refMap, taskColumns, externalRefCache);
   }
+}
+
+async function resolveExternalRef(
+  user: AuthenticatedUser,
+  cache: Map<string, string | null>,
+  entityType: ExternalRefEntityType,
+  externalRef: string | undefined,
+): Promise<string | null> {
+  const ref = externalRef?.trim();
+  if (!ref) return null;
+  const key = `${entityType}:${ref.toUpperCase()}`;
+  if (cache.has(key)) return cache.get(key) ?? null;
+  const rows = await hubApiFetch<
+    Array<{ entityType: ExternalRefEntityType; externalRef: string; entityId: string | null }>
+  >({
+    method: "POST",
+    path: "/v1/internal/external-refs/resolve-many",
+    workspaceId: user.workspaceId,
+    body: {
+      items: [{ entityType, externalRef: ref }],
+    },
+  });
+  const entityId = rows[0]?.entityId ?? null;
+  cache.set(key, entityId);
+  return entityId;
 }
 
 async function createCycle(
@@ -348,6 +384,7 @@ async function createCycle(
     actorUserId: user.id,
     body: {
       title: data.title,
+      externalRef: data.external_ref ?? null,
       description: data.description ?? null,
       startDate: data.start_date,
       endDate: data.end_date,
@@ -361,8 +398,15 @@ async function createObjective(
   user: AuthenticatedUser,
   data: Extract<IngestionObject, { type: "okr_objective" }>["data"],
   refMap: Record<string, string>,
+  externalRefCache: Map<string, string | null>,
 ): Promise<string> {
-  const cycleId = data.cycle_ref ? (refMap[data.cycle_ref] ?? data.cycle_id) : data.cycle_id;
+  const cycleIdFromRef = data.cycle_ref ? (refMap[data.cycle_ref] ?? data.cycle_id) : data.cycle_id;
+  const cycleId =
+    cycleIdFromRef ??
+    (await resolveExternalRef(user, externalRefCache, "okr_cycle", data.cycle_external_ref));
+  const ownerUserId =
+    data.owner_user_id ??
+    (await resolveExternalRef(user, externalRefCache, "user", data.owner_user_external_ref));
   const result = await hubApiFetch<{ id: string }>({
     method: "POST",
     path: "/v1/okr/objectives",
@@ -370,9 +414,10 @@ async function createObjective(
     actorUserId: user.id,
     body: {
       title: data.title,
+      externalRef: data.external_ref ?? null,
       descriptionText: data.description ?? null,
       cycleId: cycleId ?? null,
-      ownerUserId: data.owner_user_id ?? null,
+      ownerUserId: ownerUserId ?? null,
       status: data.status ?? "draft",
       priority: data.priority ?? null,
       startDate: data.start_date ?? null,
@@ -386,14 +431,29 @@ async function createKeyResult(
   user: AuthenticatedUser,
   data: Extract<IngestionObject, { type: "okr_key_result" }>["data"],
   refMap: Record<string, string>,
+  externalRefCache: Map<string, string | null>,
 ): Promise<string> {
   const objectiveId = data.objective_ref
     ? (refMap[data.objective_ref] ?? data.objective_id)
     : data.objective_id;
+  const objectiveIdResolved =
+    objectiveId ??
+    (await resolveExternalRef(
+      user,
+      externalRefCache,
+      "okr_objective",
+      data.objective_external_ref,
+    ));
 
-  if (!objectiveId) throw new Error("objective_id não pôde ser resolvido");
+  if (!objectiveIdResolved) throw new Error("objective_id não pôde ser resolvido");
 
-  const cycleId = data.cycle_ref ? (refMap[data.cycle_ref] ?? data.cycle_id) : data.cycle_id;
+  const cycleIdFromRef = data.cycle_ref ? (refMap[data.cycle_ref] ?? data.cycle_id) : data.cycle_id;
+  const cycleId =
+    cycleIdFromRef ??
+    (await resolveExternalRef(user, externalRefCache, "okr_cycle", data.cycle_external_ref));
+  const ownerUserId =
+    data.owner_user_id ??
+    (await resolveExternalRef(user, externalRefCache, "user", data.owner_user_external_ref));
 
   const result = await hubApiFetch<{ id: string }>({
     method: "POST",
@@ -402,10 +462,11 @@ async function createKeyResult(
     actorUserId: user.id,
     body: {
       title: data.title,
+      externalRef: data.external_ref ?? null,
       descriptionText: data.description ?? null,
-      objectiveId,
+      objectiveId: objectiveIdResolved,
       cycleId: cycleId ?? null,
-      ownerUserId: data.owner_user_id ?? null,
+      ownerUserId: ownerUserId ?? null,
       metricType: data.metric_type ?? "number",
       unit: data.unit ?? null,
       startValue: data.start_value ?? 0,
@@ -423,7 +484,11 @@ async function createKeyResult(
 async function createProject(
   user: AuthenticatedUser,
   data: Extract<IngestionObject, { type: "project" }>["data"],
+  externalRefCache: Map<string, string | null>,
 ): Promise<string> {
+  const ownerUserId =
+    data.owner_user_id ??
+    (await resolveExternalRef(user, externalRefCache, "user", data.owner_user_external_ref));
   const result = await hubApiFetch<{ id: string }>({
     method: "POST",
     path: "/v1/projects",
@@ -431,11 +496,12 @@ async function createProject(
     actorUserId: user.id,
     body: {
       title: data.title,
+      externalRef: data.external_ref ?? null,
       summary: data.summary ?? null,
       status: data.status ?? "planned",
       healthStatus: data.health_status ?? null,
       priority: data.priority ?? null,
-      ownerUserId: data.owner_user_id ?? null,
+      ownerUserId: ownerUserId ?? null,
       startDate: data.start_date ?? null,
       targetDate: data.target_date ?? null,
     },
@@ -447,25 +513,33 @@ async function createMilestone(
   user: AuthenticatedUser,
   data: Extract<IngestionObject, { type: "milestone" }>["data"],
   refMap: Record<string, string>,
+  externalRefCache: Map<string, string | null>,
 ): Promise<string> {
   const projectId = data.project_ref
     ? (refMap[data.project_ref] ?? data.project_id)
     : data.project_id;
+  const projectIdResolved =
+    projectId ??
+    (await resolveExternalRef(user, externalRefCache, "project", data.project_external_ref));
 
-  if (!projectId) throw new Error("project_id não pôde ser resolvido");
+  if (!projectIdResolved) throw new Error("project_id não pôde ser resolvido");
+  const ownerUserId =
+    data.owner_user_id ??
+    (await resolveExternalRef(user, externalRefCache, "user", data.owner_user_external_ref));
 
   const result = await hubApiFetch<{ id: string }>({
     method: "POST",
-    path: `/v1/projects/${projectId}/milestones`,
+    path: `/v1/projects/${projectIdResolved}/milestones`,
     workspaceId: user.workspaceId,
     actorUserId: user.id,
     body: {
       title: data.title,
+      externalRef: data.external_ref ?? null,
       description: data.description ?? null,
       status: data.status ?? "pending",
       priority: data.priority ?? null,
       dueDate: data.due_date ?? null,
-      ownerUserId: data.owner_user_id ?? null,
+      ownerUserId: ownerUserId ?? null,
       sortOrder: 0,
     },
   });
@@ -477,6 +551,7 @@ async function createTask(
   data: Extract<IngestionObject, { type: "task" }>["data"],
   refMap: Record<string, string>,
   taskColumns: TaskColumn[],
+  externalRefCache: Map<string, string | null>,
 ): Promise<string> {
   const columnId = resolveColumnId(data, taskColumns);
   if (!columnId) throw new Error("Nenhuma coluna disponível para criar a tarefa");
@@ -484,10 +559,19 @@ async function createTask(
   const projectId = data.project_ref
     ? (refMap[data.project_ref] ?? data.project_id)
     : data.project_id;
+  const projectIdResolved =
+    projectId ??
+    (await resolveExternalRef(user, externalRefCache, "project", data.project_external_ref));
 
   const milestoneId = data.milestone_ref
     ? (refMap[data.milestone_ref] ?? data.milestone_id)
     : data.milestone_id;
+  const milestoneIdResolved =
+    milestoneId ??
+    (await resolveExternalRef(user, externalRefCache, "milestone", data.milestone_external_ref));
+  const assigneeUserId =
+    data.assignee_user_id ??
+    (await resolveExternalRef(user, externalRefCache, "user", data.assignee_user_external_ref));
 
   const result = await hubApiFetch<{ id: string }>({
     method: "POST",
@@ -496,11 +580,12 @@ async function createTask(
     actorUserId: user.id,
     body: {
       title: data.title,
+      externalRef: data.external_ref ?? null,
       columnId,
-      projectId: projectId ?? null,
-      milestoneId: milestoneId ?? null,
+      projectId: projectIdResolved ?? null,
+      milestoneId: milestoneIdResolved ?? null,
       priority: data.priority ?? null,
-      assigneeUserId: data.assignee_user_id ?? null,
+      assigneeUserId: assigneeUserId ?? null,
       dueDate: data.due_date ?? null,
       descriptionText: data.description ?? null,
       labelIds: data.label_ids ?? [],

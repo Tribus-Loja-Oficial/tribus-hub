@@ -1,4 +1,4 @@
-import type { UserRole } from "@/lib/db/schema";
+import type { UserRole } from "@/lib/types/domain";
 import type { DefaultSession } from "next-auth";
 
 declare module "next-auth" {

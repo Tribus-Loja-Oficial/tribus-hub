@@ -1,4 +1,4 @@
-import type { Task } from "@/lib/db/schema";
+import type { Task } from "@/lib/types/domain";
 
 /** Label summary attached to board tasks (matches hub-api /v1/tasks/board). */
 export type TaskLabelSummary = {

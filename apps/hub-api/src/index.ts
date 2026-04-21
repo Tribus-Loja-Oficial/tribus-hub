@@ -1,5 +1,10 @@
 import { handleV1ExtraRoutes } from "./v1-extra-routes";
 import { handleV1OkrWriteRoutes } from "./v1-okr-write";
+import {
+  ensureExternalRef,
+  resolveEntityIdByExternalRef,
+  type ExternalRefEntityType,
+} from "./external-refs";
 
 type D1StatementResult<T> = {
   results?: T[];
@@ -109,6 +114,7 @@ type CreateTaskInput = {
   columnId: string;
   projectId?: string;
   milestoneId?: string;
+  externalRef?: string;
   priority?: "low" | "medium" | "high" | "urgent";
   assigneeUserId?: string;
   dueDate?: string;
@@ -119,6 +125,7 @@ type CreateTaskInput = {
 
 type CreateProjectInput = {
   title: string;
+  externalRef?: string;
   summary?: string | null;
   status?: "planned" | "active" | "on_hold" | "completed" | "cancelled";
   healthStatus?: "on_track" | "at_risk" | "blocked" | "off_track" | null;
@@ -552,8 +559,13 @@ async function createProject(
   if (!row.success) throw new Error(row.error ?? "Failed to load project");
   const p = row.results?.[0];
   if (!p) throw new Error("Failed to load created project");
-
-  return mapProjectRowToDto(p);
+  const externalRef = await ensureExternalRef(db, {
+    workspaceId,
+    entityType: "project",
+    entityId: id,
+    suggestedRef: input.externalRef ?? null,
+  });
+  return { ...mapProjectRowToDto(p), externalRef };
 }
 
 function safeJsonParse(value: string | null): unknown {
@@ -599,7 +611,13 @@ const DEFAULT_TASK_COLUMNS: Array<{
 }> = [
   { name: "Backlog", slug: "backlog", colorToken: "#94a3b8", sortOrder: 0, isDefault: 0 },
   { name: "To do", slug: "to-do", colorToken: "#60a5fa", sortOrder: 1000, isDefault: 1 },
-  { name: "In progress", slug: "in-progress", colorToken: "#f59e0b", sortOrder: 2000, isDefault: 0 },
+  {
+    name: "In progress",
+    slug: "in-progress",
+    colorToken: "#f59e0b",
+    sortOrder: 2000,
+    isDefault: 0,
+  },
   { name: "Blocked", slug: "blocked", colorToken: "#f87171", sortOrder: 3000, isDefault: 0 },
   { name: "Done", slug: "done", colorToken: "#34d399", sortOrder: 4000, isDefault: 0 },
 ];
@@ -924,7 +942,10 @@ async function getTasksByWorkspace(
     ORDER BY sort_order ASC
   `;
 
-  const result = await db.prepare(query).bind(...args).all<TaskRow>();
+  const result = await db
+    .prepare(query)
+    .bind(...args)
+    .all<TaskRow>();
   if (!result.success) {
     throw new Error(result.error ?? "Failed to query tasks");
   }
@@ -1069,6 +1090,12 @@ async function createTask(
       .all();
     if (!linkInsert.success) throw new Error(linkInsert.error ?? "Failed to link task labels");
   }
+  const externalRef = await ensureExternalRef(db, {
+    workspaceId,
+    entityType: "task",
+    entityId: id,
+    suggestedRef: input.externalRef ?? null,
+  });
 
   return {
     id,
@@ -1093,6 +1120,7 @@ async function createTask(
     updatedAt: now,
     archivedAt: null,
     deletedAt: null,
+    externalRef,
   };
 }
 
@@ -1189,7 +1217,10 @@ async function replaceTaskLabels(
     }
   }
 
-  const clear = await db.prepare(`DELETE FROM task_label_links WHERE task_id = ?`).bind(taskId).all();
+  const clear = await db
+    .prepare(`DELETE FROM task_label_links WHERE task_id = ?`)
+    .bind(taskId)
+    .all();
   if (!clear.success) throw new Error(clear.error ?? "Failed to clear task labels");
 
   for (const labelId of labelIds) {
@@ -1260,7 +1291,10 @@ async function updateTaskById(
   args.push(new Date().toISOString());
 
   const query = `UPDATE tasks SET ${updates.join(", ")} WHERE id = ? AND workspace_id = ?`;
-  const update = await db.prepare(query).bind(...args, taskId, workspaceId).all();
+  const update = await db
+    .prepare(query)
+    .bind(...args, taskId, workspaceId)
+    .all();
   if (!update.success) throw new Error(update.error ?? "Failed to update task");
 
   if (input.labelIds !== undefined) {
@@ -1288,8 +1322,10 @@ async function moveTaskInBoard(
   actorUserId: string,
   input: MoveTaskInput,
 ) {
-  if (!input.taskId || !input.targetColumnId) throw new Error("taskId and targetColumnId are required");
-  if (!Number.isInteger(input.sortOrder) || input.sortOrder < 0) throw new Error("sortOrder is invalid");
+  if (!input.taskId || !input.targetColumnId)
+    throw new Error("taskId and targetColumnId are required");
+  if (!Number.isInteger(input.sortOrder) || input.sortOrder < 0)
+    throw new Error("sortOrder is invalid");
 
   const taskResult = await db
     .prepare(`SELECT id FROM tasks WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`)
@@ -1326,7 +1362,9 @@ async function reorderTaskColumns(
 ) {
   for (const update of updates) {
     const result = await db
-      .prepare(`UPDATE task_columns SET sort_order = ?, updated_at = ? WHERE id = ? AND workspace_id = ?`)
+      .prepare(
+        `UPDATE task_columns SET sort_order = ?, updated_at = ? WHERE id = ? AND workspace_id = ?`,
+      )
       .bind(update.sortOrder, new Date().toISOString(), update.id, workspaceId)
       .all();
     if (!result.success) throw new Error(result.error ?? "Failed to reorder task columns");
@@ -1377,8 +1415,7 @@ async function getKnowledgePages(
     args.push(options.parentId);
   }
 
-  const orderBy =
-    options.parentId === undefined ? "updated_at DESC" : "sort_order ASC, title ASC";
+  const orderBy = options.parentId === undefined ? "updated_at DESC" : "sort_order ASC, title ASC";
   const query = `
     SELECT
       id, workspace_id, parent_page_id, is_folder, sort_order, title, slug, icon,
@@ -1389,7 +1426,10 @@ async function getKnowledgePages(
     ORDER BY ${orderBy}
   `;
 
-  const result = await db.prepare(query).bind(...args).all<PageRow>();
+  const result = await db
+    .prepare(query)
+    .bind(...args)
+    .all<PageRow>();
   if (!result.success) throw new Error(result.error ?? "Failed to query pages");
   return (result.results ?? []).map(toPageDto);
 }
@@ -1416,11 +1456,7 @@ async function getKnowledgePageById(db: D1DatabaseLike, workspaceId: string, pag
   return row ? toPageDto(row) : null;
 }
 
-async function getKnowledgePageRevisions(
-  db: D1DatabaseLike,
-  workspaceId: string,
-  pageId: string,
-) {
+async function getKnowledgePageRevisions(db: D1DatabaseLike, workspaceId: string, pageId: string) {
   const page = await getKnowledgePageById(db, workspaceId, pageId);
   if (!page) return null;
   const result = await db
@@ -1481,7 +1517,8 @@ async function createKnowledgePage(
     )
     .bind(workspaceId, parentPageId, parentPageId)
     .all<{ max_sort: number | null }>();
-  if (!maxSortResult.success) throw new Error(maxSortResult.error ?? "Failed to compute sort order");
+  if (!maxSortResult.success)
+    throw new Error(maxSortResult.error ?? "Failed to compute sort order");
 
   const now = new Date().toISOString();
   const id = createId();
@@ -1581,7 +1618,10 @@ async function updateKnowledgePage(
   args.push(new Date().toISOString());
 
   const query = `UPDATE pages SET ${updates.join(", ")} WHERE id = ? AND workspace_id = ?`;
-  const updateResult = await db.prepare(query).bind(...args, pageId, workspaceId).all();
+  const updateResult = await db
+    .prepare(query)
+    .bind(...args, pageId, workspaceId)
+    .all();
   if (!updateResult.success) throw new Error(updateResult.error ?? "Failed to update page");
 
   const updated = await getKnowledgePageById(db, workspaceId, pageId);
@@ -1589,10 +1629,13 @@ async function updateKnowledgePage(
 
   if (input.createRevision) {
     const latestResult = await db
-      .prepare(`SELECT COALESCE(MAX(version), 0) AS max_version FROM page_revisions WHERE page_id = ?`)
+      .prepare(
+        `SELECT COALESCE(MAX(version), 0) AS max_version FROM page_revisions WHERE page_id = ?`,
+      )
       .bind(pageId)
       .all<{ max_version: number | null }>();
-    if (!latestResult.success) throw new Error(latestResult.error ?? "Failed to compute revision version");
+    if (!latestResult.success)
+      throw new Error(latestResult.error ?? "Failed to compute revision version");
     const version = Number(latestResult.results?.[0]?.max_version ?? 0) + 1;
     const revisionInsert = await db
       .prepare(
@@ -1614,7 +1657,8 @@ async function updateKnowledgePage(
         new Date().toISOString(),
       )
       .all();
-    if (!revisionInsert.success) throw new Error(revisionInsert.error ?? "Failed to create revision");
+    if (!revisionInsert.success)
+      throw new Error(revisionInsert.error ?? "Failed to create revision");
   }
 
   return updated;
@@ -1641,7 +1685,14 @@ async function reorderKnowledgePages(
           )
       `,
       )
-      .bind(sortOrder, new Date().toISOString(), pageId, workspaceId, input.parentPageId, input.parentPageId)
+      .bind(
+        sortOrder,
+        new Date().toISOString(),
+        pageId,
+        workspaceId,
+        input.parentPageId,
+        input.parentPageId,
+      )
       .all();
     if (!result.success) throw new Error(result.error ?? "Failed to reorder pages");
     sortOrder += 1000;
@@ -1740,8 +1791,10 @@ async function getOkrCyclesWithStats(db: D1DatabaseLike, workspaceId: string) {
   ]);
 
   if (!cyclesResult.success) throw new Error(cyclesResult.error ?? "Failed to query cycles");
-  if (!objectivesResult.success) throw new Error(objectivesResult.error ?? "Failed to query objectives");
-  if (!keyResultsResult.success) throw new Error(keyResultsResult.error ?? "Failed to query key results");
+  if (!objectivesResult.success)
+    throw new Error(objectivesResult.error ?? "Failed to query objectives");
+  if (!keyResultsResult.success)
+    throw new Error(keyResultsResult.error ?? "Failed to query key results");
 
   const objectives = objectivesResult.results ?? [];
   const keyResults = keyResultsResult.results ?? [];
@@ -1753,7 +1806,8 @@ async function getOkrCyclesWithStats(db: D1DatabaseLike, workspaceId: string) {
       cKrs.length === 0
         ? 0
         : Math.round(
-            (cKrs.reduce((sum, kr) => sum + Number(kr.progress_percent ?? 0), 0) / cKrs.length) * 10,
+            (cKrs.reduce((sum, kr) => sum + Number(kr.progress_percent ?? 0), 0) / cKrs.length) *
+              10,
           ) / 10;
     return {
       id: cycle.id,
@@ -1815,7 +1869,8 @@ async function getOkrObjectives(
     )
     .bind(...args)
     .all<OkrObjectiveRow>();
-  if (!objectivesResult.success) throw new Error(objectivesResult.error ?? "Failed to query objectives");
+  if (!objectivesResult.success)
+    throw new Error(objectivesResult.error ?? "Failed to query objectives");
 
   const objectives = objectivesResult.results ?? [];
   if (objectives.length === 0) return [];
@@ -1839,7 +1894,8 @@ async function getOkrObjectives(
     )
     .bind(workspaceId, ...objectiveIds)
     .all<OkrKeyResultRow>();
-  if (!keyResultsResult.success) throw new Error(keyResultsResult.error ?? "Failed to query key results");
+  if (!keyResultsResult.success)
+    throw new Error(keyResultsResult.error ?? "Failed to query key results");
 
   const keyResultsByObjective = new Map<string, OkrKeyResultRow[]>();
   for (const kr of keyResultsResult.results ?? []) {
@@ -2394,6 +2450,48 @@ export default {
       }
     }
 
+    if (request.method === "POST" && pathname === "/v1/internal/external-refs/resolve-many") {
+      try {
+        const payload = parseJsonBody<{
+          items?: Array<{
+            entityType?: ExternalRefEntityType;
+            externalRef?: string;
+          }>;
+        }>(body);
+        const items = payload.items ?? [];
+        if (!Array.isArray(items) || items.length === 0) {
+          return json({ error: { message: "items is required" } }, 400);
+        }
+        if (items.length > 200) {
+          return json({ error: { message: "items limit is 200" } }, 400);
+        }
+        const out: Array<{
+          entityType: string;
+          externalRef: string;
+          entityId: string | null;
+        }> = [];
+        for (const item of items) {
+          const entityType = item.entityType;
+          const externalRef = item.externalRef?.trim();
+          if (!entityType || !externalRef) {
+            return json({ error: { message: "entityType and externalRef are required" } }, 400);
+          }
+          const workspaceId = request.headers.get("x-workspace-id");
+          if (!workspaceId) return json({ error: { message: "x-workspace-id is required" } }, 400);
+          const entityId = await resolveEntityIdByExternalRef(env.TRIBUS_HUB_DB, {
+            workspaceId,
+            entityType,
+            externalRef,
+          });
+          out.push({ entityType, externalRef, entityId });
+        }
+        return json({ data: out });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unexpected error";
+        return json({ error: { message } }, 400);
+      }
+    }
+
     if (request.method === "GET" && pathname === "/v1/knowledge/pages") {
       const workspaceId = request.headers.get("x-workspace-id");
       if (!workspaceId) return json({ error: { message: "x-workspace-id is required" } }, 400);
@@ -2480,7 +2578,11 @@ export default {
 
       if (request.method === "GET" && maybeRevisions) {
         try {
-          const rows = await getKnowledgePageRevisions(env.TRIBUS_HUB_DB, workspaceId, targetPageId);
+          const rows = await getKnowledgePageRevisions(
+            env.TRIBUS_HUB_DB,
+            workspaceId,
+            targetPageId,
+          );
           if (rows === null) return json({ error: { message: "Page not found" } }, 404);
           return json({ data: rows });
         } catch (error) {
@@ -2544,7 +2646,11 @@ export default {
 
       if (request.method === "DELETE" && !maybeRevisions) {
         try {
-          const deleted = await softDeleteKnowledgePage(env.TRIBUS_HUB_DB, workspaceId, targetPageId);
+          const deleted = await softDeleteKnowledgePage(
+            env.TRIBUS_HUB_DB,
+            workspaceId,
+            targetPageId,
+          );
           if (!deleted) return json({ error: { message: "Page not found" } }, 404);
           return json({ data: null }, 200);
         } catch (error) {
@@ -2576,7 +2682,13 @@ export default {
         if (!actorUserId) return json({ error: { message: "x-actor-user-id is required" } }, 400);
         try {
           const input = parseJsonBody<UpdateTaskInput>(body);
-          const updated = await updateTaskById(env.TRIBUS_HUB_DB, workspaceId, actorUserId, taskId, input);
+          const updated = await updateTaskById(
+            env.TRIBUS_HUB_DB,
+            workspaceId,
+            actorUserId,
+            taskId,
+            input,
+          );
           if (!updated) return json({ error: { message: "Task not found" } }, 404);
           return json({ data: updated });
         } catch (error) {

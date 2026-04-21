@@ -14,7 +14,7 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { TaskColumn } from "@/lib/db/schema";
+import type { TaskColumn } from "@/lib/types/domain";
 import type { BoardTask } from "@/lib/services/task-board.service";
 import { KanbanColumn } from "./kanban-column";
 import { TaskCard } from "./task-card";

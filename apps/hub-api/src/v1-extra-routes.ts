@@ -2,6 +2,7 @@
  * Additional authenticated /v1 routes (projects detail, PM, OKR writes, search, assets).
  * Kept separate from index.ts to limit file size.
  */
+import { ensureExternalRef } from "./external-refs";
 
 type D1PreparedStatement = {
   bind: (...values: unknown[]) => D1PreparedStatement;
@@ -63,7 +64,8 @@ async function resolveUniqueSlug(
 ): Promise<string> {
   const check = await db.prepare(sql).bind(workspaceId, base).all<{ id: string }>();
   if (!check.success) throw new Error(check.error ?? "slug check failed");
-  if (check.results?.length) return `${base || "item"}-${crypto.randomUUID().replace(/-/g, "").slice(0, 6)}`;
+  if (check.results?.length)
+    return `${base || "item"}-${crypto.randomUUID().replace(/-/g, "").slice(0, 6)}`;
   return base || "item";
 }
 
@@ -111,86 +113,87 @@ export async function handleV1ExtraRoutes(
     const err = needWs();
     if (err) return err;
     const q = new URL(request.url).searchParams.get("q")?.trim() ?? "";
-    if (q.length < 2) return json({ error: { message: "query must be at least 2 characters" } }, 400);
+    if (q.length < 2)
+      return json({ error: { message: "query must be at least 2 characters" } }, 400);
     const safe = q.replace(/[%_]/g, " ").trim();
-    if (safe.length < 2) return json({ error: { message: "query must be at least 2 characters" } }, 400);
+    if (safe.length < 2)
+      return json({ error: { message: "query must be at least 2 characters" } }, 400);
     const pattern = `%${safe}%`;
     const limit = 48;
     const each = 8;
     try {
-      const [
-        pages,
-        projects,
-        milestones,
-        tasks,
-        objectives,
-        keyResults,
-        cycles,
-      ] = await Promise.all([
-        db
-          .prepare(
-            `SELECT id, title, slug, excerpt FROM pages
+      const [pages, projects, milestones, tasks, objectives, keyResults, cycles] =
+        await Promise.all([
+          db
+            .prepare(
+              `SELECT id, title, slug, excerpt FROM pages
              WHERE workspace_id = ? AND deleted_at IS NULL
                AND (title LIKE ? OR slug LIKE ? OR IFNULL(excerpt,'') LIKE ? OR IFNULL(content_text,'') LIKE ?)
              LIMIT ?`,
-          )
-          .bind(workspaceId, pattern, pattern, pattern, pattern, each)
-          .all<{ id: string; title: string; slug: string; excerpt: string | null }>(),
-        db
-          .prepare(
-            `SELECT id, title, slug, summary, description_text FROM projects
+            )
+            .bind(workspaceId, pattern, pattern, pattern, pattern, each)
+            .all<{ id: string; title: string; slug: string; excerpt: string | null }>(),
+          db
+            .prepare(
+              `SELECT id, title, slug, summary, description_text FROM projects
              WHERE workspace_id = ? AND deleted_at IS NULL
                AND (title LIKE ? OR IFNULL(summary,'') LIKE ? OR IFNULL(description_text,'') LIKE ?)
              LIMIT ?`,
-          )
-          .bind(workspaceId!, pattern, pattern, pattern, each)
-          .all<{ id: string; title: string; slug: string; summary: string | null; description_text: string | null }>(),
-        db
-          .prepare(
-            `SELECT m.id, m.title, m.project_id FROM milestones m
+            )
+            .bind(workspaceId!, pattern, pattern, pattern, each)
+            .all<{
+              id: string;
+              title: string;
+              slug: string;
+              summary: string | null;
+              description_text: string | null;
+            }>(),
+          db
+            .prepare(
+              `SELECT m.id, m.title, m.project_id FROM milestones m
              INNER JOIN projects p ON p.id = m.project_id
              WHERE p.workspace_id = ? AND m.title LIKE ?
              LIMIT ?`,
-          )
-          .bind(workspaceId!, pattern, each)
-          .all<{ id: string; title: string; project_id: string }>(),
-        db
-          .prepare(
-            `SELECT id, title, slug, description_text FROM tasks
+            )
+            .bind(workspaceId!, pattern, each)
+            .all<{ id: string; title: string; project_id: string }>(),
+          db
+            .prepare(
+              `SELECT id, title, slug, description_text FROM tasks
              WHERE workspace_id = ? AND deleted_at IS NULL
                AND (title LIKE ? OR slug LIKE ? OR IFNULL(description_text,'') LIKE ?)
              LIMIT ?`,
-          )
-          .bind(workspaceId!, pattern, pattern, pattern, each)
-          .all<{ id: string; title: string; slug: string; description_text: string | null }>(),
-        db
-          .prepare(
-            `SELECT id, title, slug, description_text FROM okr_objectives
+            )
+            .bind(workspaceId!, pattern, pattern, pattern, each)
+            .all<{ id: string; title: string; slug: string; description_text: string | null }>(),
+          db
+            .prepare(
+              `SELECT id, title, slug, description_text FROM okr_objectives
              WHERE workspace_id = ? AND deleted_at IS NULL
                AND (title LIKE ? OR IFNULL(description_text,'') LIKE ?)
              LIMIT ?`,
-          )
-          .bind(workspaceId!, pattern, pattern, each)
-          .all<{ id: string; title: string; slug: string; description_text: string | null }>(),
-        db
-          .prepare(
-            `SELECT id, title, slug, description_text FROM okr_key_results
+            )
+            .bind(workspaceId!, pattern, pattern, each)
+            .all<{ id: string; title: string; slug: string; description_text: string | null }>(),
+          db
+            .prepare(
+              `SELECT id, title, slug, description_text FROM okr_key_results
              WHERE workspace_id = ? AND deleted_at IS NULL
                AND (title LIKE ? OR IFNULL(description_text,'') LIKE ?)
              LIMIT ?`,
-          )
-          .bind(workspaceId!, pattern, pattern, each)
-          .all<{ id: string; title: string; slug: string; description_text: string | null }>(),
-        db
-          .prepare(
-            `SELECT id, title, slug, description FROM okr_cycles
+            )
+            .bind(workspaceId!, pattern, pattern, each)
+            .all<{ id: string; title: string; slug: string; description_text: string | null }>(),
+          db
+            .prepare(
+              `SELECT id, title, slug, description FROM okr_cycles
              WHERE workspace_id = ? AND deleted_at IS NULL
                AND (title LIKE ? OR IFNULL(description,'') LIKE ?)
              LIMIT ?`,
-          )
-          .bind(workspaceId!, pattern, pattern, each)
-          .all<{ id: string; title: string; slug: string; description: string | null }>(),
-      ]);
+            )
+            .bind(workspaceId!, pattern, pattern, each)
+            .all<{ id: string; title: string; slug: string; description: string | null }>(),
+        ]);
       if (
         !pages.success ||
         !projects.success ||
@@ -280,7 +283,12 @@ export async function handleV1ExtraRoutes(
           `SELECT id, status, health_status, target_date FROM projects WHERE workspace_id = ? AND deleted_at IS NULL`,
         )
         .bind(workspaceId)
-        .all<{ id: string; status: string; health_status: string | null; target_date: string | null }>();
+        .all<{
+          id: string;
+          status: string;
+          health_status: string | null;
+          target_date: string | null;
+        }>();
       if (!proj.success) throw new Error(proj.error ?? "projects");
       const allProjects = proj.results ?? [];
       const active = allProjects.filter((p) => p.status === "active");
@@ -539,7 +547,8 @@ export async function handleV1ExtraRoutes(
           .prepare(`SELECT * FROM assets WHERE id = ? AND workspace_id = ?`)
           .bind(assetId, workspaceId)
           .all<Record<string, unknown>>();
-        if (!row.success || !row.results?.[0]) return json({ error: { message: "Not found" } }, 404);
+        if (!row.success || !row.results?.[0])
+          return json({ error: { message: "Not found" } }, 404);
         return json({ data: mapAssetCamel(row.results[0]) });
       }
       if (method === "DELETE") {
@@ -547,7 +556,8 @@ export async function handleV1ExtraRoutes(
           .prepare(`SELECT id FROM assets WHERE id = ? AND workspace_id = ?`)
           .bind(assetId, workspaceId)
           .all<{ id: string }>();
-        if (!row.success || !row.results?.[0]) return json({ error: { message: "Not found" } }, 404);
+        if (!row.success || !row.results?.[0])
+          return json({ error: { message: "Not found" } }, 404);
         await db.prepare(`DELETE FROM asset_links WHERE asset_id = ?`).bind(assetId).all();
         const del = await db.prepare(`DELETE FROM assets WHERE id = ?`).bind(assetId).all();
         if (!del.success) return json({ error: { message: del.error } }, 400);
@@ -562,12 +572,20 @@ export async function handleV1ExtraRoutes(
         .prepare(`SELECT id FROM assets WHERE id = ? AND workspace_id = ?`)
         .bind(assetId, workspaceId)
         .all<{ id: string }>();
-      if (!assetCheck.success || !assetCheck.results?.[0]) return json({ error: { message: "Not found" } }, 404);
+      if (!assetCheck.success || !assetCheck.results?.[0])
+        return json({ error: { message: "Not found" } }, 404);
       const ins = await db
         .prepare(
           `INSERT INTO asset_links (id, asset_id, entity_type, entity_id, usage_kind, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
         )
-        .bind(linkId, assetId, input.entityType, input.entityId, input.usageKind ?? "attachment", now)
+        .bind(
+          linkId,
+          assetId,
+          input.entityType,
+          input.entityId,
+          input.usageKind ?? "attachment",
+          now,
+        )
         .all();
       if (!ins.success) return json({ error: { message: ins.error ?? "link failed" } }, 400);
       return json(
@@ -597,10 +615,13 @@ export async function handleV1ExtraRoutes(
       const projectId = segments[0]!;
       if (method === "GET") {
         const row = await db
-          .prepare(`SELECT * FROM projects WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`)
+          .prepare(
+            `SELECT * FROM projects WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`,
+          )
           .bind(projectId, workspaceId)
           .all<Record<string, unknown>>();
-        if (!row.success || !row.results?.[0]) return json({ error: { message: "Not found" } }, 404);
+        if (!row.success || !row.results?.[0])
+          return json({ error: { message: "Not found" } }, 404);
         return json({ data: mapProjectRowCamel(row.results[0]) });
       }
       if (method === "PATCH") {
@@ -608,10 +629,13 @@ export async function handleV1ExtraRoutes(
         if (aerr) return aerr;
         const input = parseJson<Record<string, unknown>>(body);
         const row = await db
-          .prepare(`SELECT id FROM projects WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`)
+          .prepare(
+            `SELECT id FROM projects WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`,
+          )
           .bind(projectId, workspaceId)
           .all<{ id: string }>();
-        if (!row.success || !row.results?.[0]) return json({ error: { message: "Not found" } }, 404);
+        if (!row.success || !row.results?.[0])
+          return json({ error: { message: "Not found" } }, 404);
         const sets: string[] = [];
         const args: unknown[] = [];
         const map: [string, string][] = [
@@ -633,7 +657,10 @@ export async function handleV1ExtraRoutes(
         sets.push("updated_by = ?", "updated_at = ?");
         args.push(actorUserId, new Date().toISOString(), projectId, workspaceId);
         const q = `UPDATE projects SET ${sets.join(", ")} WHERE id = ? AND workspace_id = ?`;
-        const up = await db.prepare(q).bind(...args).all();
+        const up = await db
+          .prepare(q)
+          .bind(...args)
+          .all();
         if (!up.success) return json({ error: { message: up.error } }, 400);
         const again = await db
           .prepare(`SELECT * FROM projects WHERE id = ?`)
@@ -644,7 +671,9 @@ export async function handleV1ExtraRoutes(
       if (method === "DELETE") {
         const now = new Date().toISOString();
         const up = await db
-          .prepare(`UPDATE projects SET deleted_at = ?, updated_at = ? WHERE id = ? AND workspace_id = ?`)
+          .prepare(
+            `UPDATE projects SET deleted_at = ?, updated_at = ? WHERE id = ? AND workspace_id = ?`,
+          )
           .bind(now, now, projectId, workspaceId)
           .all();
         if (!up.success) return json({ error: { message: up.error } }, 400);
@@ -660,7 +689,8 @@ export async function handleV1ExtraRoutes(
         .prepare(`SELECT * FROM projects WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`)
         .bind(projectId, workspaceId)
         .all<Record<string, unknown>>();
-      if (!proj.success || !proj.results?.[0]) return json({ error: { message: "Not found" } }, 404);
+      if (!proj.success || !proj.results?.[0])
+        return json({ error: { message: "Not found" } }, 404);
       const project = mapProjectRowCamel(proj.results[0]);
       const [ms, objs, taskCount] = await Promise.all([
         db
@@ -682,7 +712,9 @@ export async function handleV1ExtraRoutes(
       if (objIds.length) {
         const ph = objIds.map(() => "?").join(", ");
         const krRes = await db
-          .prepare(`SELECT * FROM project_key_results WHERE objective_id IN (${ph}) ORDER BY created_at ASC`)
+          .prepare(
+            `SELECT * FROM project_key_results WHERE objective_id IN (${ph}) ORDER BY created_at ASC`,
+          )
           .bind(...objIds)
           .all<Record<string, unknown>>();
         krs = krRes.results ?? [];
@@ -810,8 +842,17 @@ export async function handleV1ExtraRoutes(
           )
           .all();
         if (!ins.success) return json({ error: { message: ins.error } }, 400);
-        const row = await db.prepare(`SELECT * FROM milestones WHERE id = ?`).bind(id).all<Record<string, unknown>>();
-        return json({ data: mapMilestoneCamel(row.results?.[0] ?? {}) }, 201);
+        const row = await db
+          .prepare(`SELECT * FROM milestones WHERE id = ?`)
+          .bind(id)
+          .all<Record<string, unknown>>();
+        const externalRef = await ensureExternalRef(db, {
+          workspaceId,
+          entityType: "milestone",
+          entityId: id,
+          suggestedRef: (input.externalRef as string | undefined) ?? null,
+        });
+        return json({ data: { ...mapMilestoneCamel(row.results?.[0] ?? {}), externalRef } }, 201);
       }
     }
 
@@ -823,12 +864,14 @@ export async function handleV1ExtraRoutes(
         .prepare(`SELECT id FROM projects WHERE id = ? AND workspace_id = ?`)
         .bind(projectId, workspaceId)
         .all<{ id: string }>();
-      if (!pcheck.success || !pcheck.results?.[0]) return json({ error: { message: "Not found" } }, 404);
+      if (!pcheck.success || !pcheck.results?.[0])
+        return json({ error: { message: "Not found" } }, 404);
       const mcheck = await db
         .prepare(`SELECT id FROM milestones WHERE id = ? AND project_id = ?`)
         .bind(milestoneId, projectId)
         .all<{ id: string }>();
-      if (!mcheck.success || !mcheck.results?.[0]) return json({ error: { message: "Not found" } }, 404);
+      if (!mcheck.success || !mcheck.results?.[0])
+        return json({ error: { message: "Not found" } }, 404);
       if (method === "PATCH") {
         const aerr = needActor();
         if (aerr) return aerr;
@@ -850,7 +893,10 @@ export async function handleV1ExtraRoutes(
           }
         }
         if (sets.length === 0) {
-          const row = await db.prepare(`SELECT * FROM milestones WHERE id = ?`).bind(milestoneId).all<Record<string, unknown>>();
+          const row = await db
+            .prepare(`SELECT * FROM milestones WHERE id = ?`)
+            .bind(milestoneId)
+            .all<Record<string, unknown>>();
           return json({ data: mapMilestoneCamel(row.results?.[0] ?? {}) });
         }
         sets.push("updated_at = ?");
@@ -860,7 +906,10 @@ export async function handleV1ExtraRoutes(
           .bind(...args)
           .all();
         if (!up.success) return json({ error: { message: up.error } }, 400);
-        const row = await db.prepare(`SELECT * FROM milestones WHERE id = ?`).bind(milestoneId).all<Record<string, unknown>>();
+        const row = await db
+          .prepare(`SELECT * FROM milestones WHERE id = ?`)
+          .bind(milestoneId)
+          .all<Record<string, unknown>>();
         return json({ data: mapMilestoneCamel(row.results?.[0] ?? {}) });
       }
       if (method === "DELETE") {
@@ -977,7 +1026,9 @@ export async function handleV1ExtraRoutes(
           const now = new Date().toISOString();
           const rt = input.relationType ?? "contributes_to";
           const existing = await db
-            .prepare(`SELECT id, project_id, okr_kr_id, relation_type, created_at FROM pm_project_okr_kr_links WHERE project_id = ? AND okr_kr_id = ?`)
+            .prepare(
+              `SELECT id, project_id, okr_kr_id, relation_type, created_at FROM pm_project_okr_kr_links WHERE project_id = ? AND okr_kr_id = ?`,
+            )
             .bind(projectId, input.okrKrId)
             .all<Record<string, unknown>>();
           if (existing.results?.[0]) {
