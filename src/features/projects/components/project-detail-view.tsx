@@ -556,6 +556,11 @@ export function ProjectDetailView({ paramsPromise }: ProjectDetailViewProps) {
             <h1 className="truncate text-2xl font-semibold tracking-tight text-foreground">
               {project.title}
             </h1>
+            {project.externalRef && (
+              <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+                Ref: {project.externalRef}
+              </p>
+            )}
             {project.summary && (
               <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                 {project.summary}
@@ -792,6 +797,11 @@ export function ProjectDetailView({ paramsPromise }: ProjectDetailViewProps) {
                       >
                         {m.title}
                       </span>
+                      {m.externalRef && (
+                        <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                          {m.externalRef}
+                        </span>
+                      )}
                       <div className="flex shrink-0 items-center gap-1.5">
                         <MilestoneStatusBadge status={m.status} />
                         {m.dueDate && (
@@ -852,6 +862,11 @@ export function ProjectDetailView({ paramsPromise }: ProjectDetailViewProps) {
                       >
                         {t.title}
                       </span>
+                      {t.externalRef && (
+                        <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                          {t.externalRef}
+                        </span>
+                      )}
                       <PriorityBadge priority={t.priority} />
                       {t.dueDate && (
                         <span
@@ -944,6 +959,11 @@ export function ProjectDetailView({ paramsPromise }: ProjectDetailViewProps) {
                       >
                         {m.title}
                       </span>
+                      {m.externalRef && (
+                        <span className="ml-1 shrink-0 font-mono text-[10px] text-muted-foreground">
+                          {m.externalRef}
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 sm:block">
                       <select
@@ -1080,6 +1100,11 @@ export function ProjectDetailView({ paramsPromise }: ProjectDetailViewProps) {
                       >
                         {t.title}
                       </span>
+                      {t.externalRef && (
+                        <span className="ml-1 shrink-0 font-mono text-[10px] text-muted-foreground">
+                          {t.externalRef}
+                        </span>
+                      )}
                     </div>
                     <div className="shrink-0">
                       <PriorityBadge priority={t.priority} />

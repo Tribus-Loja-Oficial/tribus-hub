@@ -35,6 +35,7 @@ type MemberRow = {
 
 type ProjectRow = {
   id: string;
+  external_ref?: string | null;
   workspace_id: string;
   title: string;
   slug: string;
@@ -67,6 +68,7 @@ type TaskColumnRow = {
 
 type TaskRow = {
   id: string;
+  external_ref?: string | null;
   workspace_id: string;
   project_id: string | null;
   milestone_id: string | null;
@@ -288,7 +290,6 @@ type AuthUserRow = {
   workspace_id: string;
   name: string;
   email: string;
-  password_hash: string;
   role: "owner" | "admin" | "member";
   is_active: number;
 };
@@ -362,31 +363,36 @@ async function getProjectsByWorkspace(db: D1DatabaseLike, workspaceId: string) {
     .prepare(
       `
       SELECT
-        id,
-        workspace_id,
-        title,
-        slug,
-        summary,
-        description_json,
-        description_text,
-        status,
-        health_status,
-        priority,
-        progress_percent,
-        owner_user_id,
-        start_date,
-        target_date,
-        completed_at,
-        created_by,
-        updated_by,
-        created_at,
-        updated_at,
-        archived_at,
-        deleted_at
-      FROM projects
-      WHERE workspace_id = ?
-        AND deleted_at IS NULL
-      ORDER BY updated_at DESC
+        p.id,
+        er.external_ref,
+        p.workspace_id,
+        p.title,
+        p.slug,
+        p.summary,
+        p.description_json,
+        p.description_text,
+        p.status,
+        p.health_status,
+        p.priority,
+        p.progress_percent,
+        p.owner_user_id,
+        p.start_date,
+        p.target_date,
+        p.completed_at,
+        p.created_by,
+        p.updated_by,
+        p.created_at,
+        p.updated_at,
+        p.archived_at,
+        p.deleted_at
+      FROM projects p
+      LEFT JOIN entity_external_refs er
+        ON er.workspace_id = p.workspace_id
+       AND er.entity_type = 'project'
+       AND er.entity_id = p.id
+      WHERE p.workspace_id = ?
+        AND p.deleted_at IS NULL
+      ORDER BY p.updated_at DESC
     `,
     )
     .bind(workspaceId);
@@ -397,6 +403,7 @@ async function getProjectsByWorkspace(db: D1DatabaseLike, workspaceId: string) {
   }
   return (result.results ?? []).map((row) => ({
     id: row.id,
+    externalRef: row.external_ref ?? null,
     workspaceId: row.workspace_id,
     title: row.title,
     slug: row.slug,
@@ -452,6 +459,7 @@ async function resolveProjectSlug(db: D1DatabaseLike, workspaceId: string, title
 function mapProjectRowToDto(row: ProjectRow) {
   return {
     id: row.id,
+    externalRef: row.external_ref ?? null,
     workspaceId: row.workspace_id,
     title: row.title,
     slug: row.slug,
@@ -682,6 +690,7 @@ async function getTaskBoardData(db: D1DatabaseLike, workspaceId: string) {
       `
       SELECT
         t.id,
+        er.external_ref,
         t.workspace_id,
         t.project_id,
         t.milestone_id,
@@ -706,6 +715,10 @@ async function getTaskBoardData(db: D1DatabaseLike, workspaceId: string) {
         p.title AS project_title,
         m.title AS milestone_title
       FROM tasks t
+      LEFT JOIN entity_external_refs er
+        ON er.workspace_id = t.workspace_id
+       AND er.entity_type = 'task'
+       AND er.entity_id = t.id
       LEFT JOIN projects p ON p.id = t.project_id
       LEFT JOIN milestones m ON m.id = t.milestone_id
       WHERE t.workspace_id = ?
@@ -778,6 +791,7 @@ async function getTaskBoardData(db: D1DatabaseLike, workspaceId: string) {
       sortOrder: Number(col.sort_order ?? 0),
       tasks: (tasksByColumn.get(col.id) ?? []).map((task) => ({
         id: task.id,
+        externalRef: task.external_ref ?? null,
         workspaceId: task.workspace_id,
         projectId: task.project_id,
         milestoneId: task.milestone_id,
@@ -1958,35 +1972,6 @@ async function getOkrObjectives(
   }));
 }
 
-async function getAuthUserByEmail(db: D1DatabaseLike, email: string) {
-  const result = await db
-    .prepare(
-      `
-      SELECT id, workspace_id, name, email, password_hash, role, is_active
-      FROM users
-      WHERE email = ?
-      LIMIT 1
-    `,
-    )
-    .bind(email.toLowerCase())
-    .all<AuthUserRow>();
-  if (!result.success) throw new Error(result.error ?? "Failed to query auth user");
-  const user = result.results?.[0];
-  if (!user || !user.is_active) return null;
-  return {
-    id: user.id,
-    workspaceId: user.workspace_id,
-    name: user.name,
-    email: user.email,
-    passwordHash: user.password_hash,
-    role: user.role,
-  };
-}
-
-/** Placeholder hash — CDS owns passwords; hub D1 row still requires a NOT NULL column. */
-const CDS_LINKED_USER_PASSWORD_HASH =
-  "$2a$10$xnMinrEBm319toNOEtQbWOpne1Y9.WIp5Wqo3Kf4xU7VH2pjvHJFu";
-
 type HubUserRole = "owner" | "admin" | "member";
 
 type HubUserRow = {
@@ -2143,25 +2128,16 @@ async function resolveCdsHubUser(
         workspace_id,
         name,
         email,
-        password_hash,
         role,
         is_active,
         consumer_id,
         created_at,
         updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, 1, ?, datetime('now'), datetime('now'))
+      VALUES (?, ?, ?, ?, ?, 1, ?, datetime('now'), datetime('now'))
     `,
     )
-    .bind(
-      newId,
-      workspaceId,
-      name,
-      normalizedEmail,
-      CDS_LINKED_USER_PASSWORD_HASH,
-      hubRole,
-      input.consumerId,
-    )
+    .bind(newId, workspaceId, name, normalizedEmail, hubRole, input.consumerId)
     .all();
   if (!ins.success) throw new Error(ins.error ?? "Failed to create user");
 
@@ -2396,19 +2372,6 @@ export default {
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unexpected error";
         return json({ error: { message } }, 500);
-      }
-    }
-
-    if (request.method === "POST" && pathname === "/v1/internal/auth/user-by-email") {
-      try {
-        const payload = parseJsonBody<{ email?: string }>(body);
-        const email = payload.email?.trim();
-        if (!email) return json({ error: { message: "email is required" } }, 400);
-        const user = await getAuthUserByEmail(env.TRIBUS_HUB_DB, email);
-        return json({ data: user });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Unexpected error";
-        return json({ error: { message } }, 400);
       }
     }
 

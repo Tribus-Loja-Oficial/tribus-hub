@@ -254,6 +254,11 @@ function ListView({ projects }: { projects: Project[] }) {
         >
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-foreground">{project.title}</p>
+            {project.externalRef && (
+              <p className="mt-0.5 font-mono text-[10px] text-muted-foreground">
+                Ref: {project.externalRef}
+              </p>
+            )}
             {project.summary && (
               <p className="mt-0.5 truncate text-xs text-muted-foreground">{project.summary}</p>
             )}

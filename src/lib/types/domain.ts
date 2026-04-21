@@ -38,6 +38,7 @@ export type OkrPriority = "low" | "medium" | "high" | "critical";
 
 export interface OkrCycle {
   id: string;
+  externalRef?: string | null;
   workspaceId: string;
   title: string;
   slug: string;
@@ -55,6 +56,7 @@ export interface OkrCycle {
 
 export interface OkrObjective {
   id: string;
+  externalRef?: string | null;
   workspaceId: string;
   cycleId: string | null;
   title: string;
@@ -79,6 +81,7 @@ export interface OkrObjective {
 
 export interface OkrKeyResult {
   id: string;
+  externalRef?: string | null;
   workspaceId: string;
   cycleId: string | null;
   objectiveId: string;
@@ -125,6 +128,7 @@ export type ProjectHealthStatus = "on_track" | "at_risk" | "blocked" | "off_trac
 
 export interface Project {
   id: string;
+  externalRef?: string | null;
   workspaceId: string;
   title: string;
   slug: string;
@@ -151,6 +155,7 @@ export type MilestoneStatus = "pending" | "in_progress" | "completed" | "missed"
 
 export interface Milestone {
   id: string;
+  externalRef?: string | null;
   projectId: string;
   title: string;
   description: string | null;
@@ -170,6 +175,7 @@ export type TaskPriority = "low" | "medium" | "high" | "urgent";
 
 export interface Task {
   id: string;
+  externalRef?: string | null;
   workspaceId: string;
   projectId: string | null;
   milestoneId: string | null;

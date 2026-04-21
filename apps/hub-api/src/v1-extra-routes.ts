@@ -10,6 +10,14 @@ type D1PreparedStatement = {
 };
 
 type D1DatabaseLike = { prepare: (query: string) => D1PreparedStatement };
+type ExternalRefEntityType =
+  | "user"
+  | "project"
+  | "milestone"
+  | "task"
+  | "okr_cycle"
+  | "okr_objective"
+  | "okr_key_result";
 
 export type HubExtraEnv = {
   TRIBUS_HUB_DB: D1DatabaseLike;
@@ -41,6 +49,31 @@ function safeJsonParse(value: string | null): unknown {
   } catch {
     return null;
   }
+}
+
+async function getExternalRefMap(
+  db: D1DatabaseLike,
+  workspaceId: string,
+  entityType: ExternalRefEntityType,
+  entityIds: string[],
+) {
+  if (entityIds.length === 0) return new Map<string, string>();
+  const unique = [...new Set(entityIds)];
+  const placeholders = unique.map(() => "?").join(", ");
+  const rows = await db
+    .prepare(
+      `
+      SELECT entity_id, external_ref
+      FROM entity_external_refs
+      WHERE workspace_id = ?
+        AND entity_type = ?
+        AND entity_id IN (${placeholders})
+    `,
+    )
+    .bind(workspaceId, entityType, ...unique)
+    .all<{ entity_id: string; external_ref: string }>();
+  if (!rows.success) throw new Error(rows.error ?? "Failed to query external refs");
+  return new Map((rows.results ?? []).map((r) => [r.entity_id, r.external_ref]));
 }
 
 function slugifyTitle(input: string): string {
@@ -737,6 +770,19 @@ export async function handleV1ExtraRoutes(
         .bind(workspaceId, projectId)
         .all<Record<string, unknown>>();
       const milestones = (ms.results ?? []).map(mapMilestoneCamel);
+      const projectRefMap = await getExternalRefMap(db, workspaceId, "project", [projectId]);
+      const milestoneRefMap = await getExternalRefMap(
+        db,
+        workspaceId,
+        "milestone",
+        milestones.map((m) => String(m.id)),
+      );
+      const taskRefMap = await getExternalRefMap(
+        db,
+        workspaceId,
+        "task",
+        (tasksRes.results ?? []).map((t) => String(t.id)),
+      );
       const links = await db
         .prepare(
           `SELECT id, source_type, source_id, target_type, target_id FROM relation_links
@@ -785,8 +831,14 @@ export async function handleV1ExtraRoutes(
       const openMilestones = milestones.filter((m) => m.status !== "completed").length;
       return json({
         data: {
-          project,
-          milestones,
+          project: {
+            ...project,
+            externalRef: projectRefMap.get(projectId) ?? null,
+          },
+          milestones: milestones.map((m) => ({
+            ...m,
+            externalRef: milestoneRefMap.get(String(m.id)) ?? null,
+          })),
           objectives: objectivesWithKr,
           stats: {
             taskCount: Number((taskCount.results?.[0] as { c: number })?.c ?? 0),
@@ -795,7 +847,10 @@ export async function handleV1ExtraRoutes(
           },
           linkedPages,
           linkedAssets,
-          recentTasks: (tasksRes.results ?? []).map(mapTaskCamel),
+          recentTasks: (tasksRes.results ?? []).map((t) => ({
+            ...mapTaskCamel(t),
+            externalRef: taskRefMap.get(String(t.id)) ?? null,
+          })),
         },
       });
     }
