@@ -1,7 +1,7 @@
 # Schemas de objetos de ingestão — tribus-hub
 
 **Versão:** 1.0  
-**Relacionado:** [ingestion-spec.md](./ingestion-spec.md)
+**Relacionado:** [ingestion-spec.md](./ingestion-spec.md) · **Template IA (único):** [ingestion-ai-master-template.md](./ingestion-ai-master-template.md)
 
 Este documento descreve os campos aceitos em `data` para cada tipo de objeto de ingestão.
 

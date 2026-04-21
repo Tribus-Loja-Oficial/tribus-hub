@@ -463,6 +463,7 @@ async function createMilestone(
       title: data.title,
       description: data.description ?? null,
       status: data.status ?? "pending",
+      priority: data.priority ?? null,
       dueDate: data.due_date ?? null,
       ownerUserId: data.owner_user_id ?? null,
       sortOrder: 0,

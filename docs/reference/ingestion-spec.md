@@ -4,6 +4,8 @@
 **Domínio:** Ingestão de dados  
 **Status:** Estável
 
+**Template único para IA (campos obrigatórios/opcionais + roadmap):** [ingestion-ai-master-template.md](./ingestion-ai-master-template.md)
+
 ---
 
 ## Visão geral
@@ -346,6 +348,8 @@ A ingestão **não é totalmente transacional** a nível de banco de dados, porq
 ## Uso com IA
 
 Esta especificação foi projetada para ser usada como contexto em conversas com IA (ex.: ChatGPT, Claude).
+
+Para **um único ficheiro** com envelope, todos os tipos suportados, tabelas obrigatório/opcional e tipos futuros (knowledge, etc.), use **[ingestion-ai-master-template.md](./ingestion-ai-master-template.md)**.
 
 **Prompt de exemplo:**
 

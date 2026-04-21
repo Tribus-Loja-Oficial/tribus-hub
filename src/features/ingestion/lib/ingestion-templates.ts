@@ -7,6 +7,77 @@ export type IngestionTemplate = {
 
 export const INGESTION_TEMPLATES: IngestionTemplate[] = [
   {
+    id: "all_types_minimal",
+    label: "Todos os tipos (mínimo, um JSON)",
+    description:
+      "Um único payload com um exemplo de cada type suportado (OKR + projeto + milestone + tarefa). Ideal para copiar a outra IA como referência. Ver docs/reference/ingestion-ai-master-template.md.",
+    payload: {
+      version: "1.0",
+      mode: "create",
+      objects: [
+        {
+          type: "okr_cycle",
+          client_ref: "c_exemplo",
+          data: {
+            title: "Ciclo exemplo",
+            start_date: "2025-01-01",
+            end_date: "2025-03-31",
+            status: "planned",
+          },
+        },
+        {
+          type: "okr_objective",
+          client_ref: "o_exemplo",
+          data: {
+            title: "Objetivo exemplo",
+            cycle_ref: "c_exemplo",
+            status: "draft",
+            priority: "high",
+          },
+        },
+        {
+          type: "okr_key_result",
+          data: {
+            title: "KR exemplo",
+            objective_ref: "o_exemplo",
+            cycle_ref: "c_exemplo",
+            metric_type: "number",
+            start_value: 0,
+            target_value: 100,
+          },
+        },
+        {
+          type: "project",
+          client_ref: "p_exemplo",
+          data: {
+            title: "Projeto exemplo",
+            summary: "Resumo opcional",
+            status: "planned",
+            priority: "medium",
+          },
+        },
+        {
+          type: "milestone",
+          client_ref: "m_exemplo",
+          data: {
+            title: "Milestone exemplo",
+            project_ref: "p_exemplo",
+            status: "pending",
+          },
+        },
+        {
+          type: "task",
+          data: {
+            title: "Tarefa exemplo",
+            project_ref: "p_exemplo",
+            milestone_ref: "m_exemplo",
+            priority: "medium",
+          },
+        },
+      ],
+    },
+  },
+  {
     id: "okr_cycle_with_objectives",
     label: "Ciclo OKR + Objetivos + KRs",
     description: "Cria um ciclo completo com objetivos e key results vinculados",
