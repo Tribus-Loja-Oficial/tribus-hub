@@ -316,6 +316,11 @@ function ObjectiveRow({
           >
             {objective.title}
           </Link>
+          {objective.externalRef && (
+            <span className="font-mono text-[10px] text-muted-foreground">
+              {objective.externalRef}
+            </span>
+          )}
           {objective.targetDate && (
             <p className="mt-0.5 w-full text-xs text-muted-foreground">
               Meta: {formatDate(objective.targetDate)}
@@ -406,6 +411,9 @@ function KrSubRow({ kr, onUpdate }: { kr: OkrKeyResult; onUpdate: () => void }) 
           <TrendingUp className="mr-1.5 inline h-3 w-3 text-muted-foreground/60" />
           {kr.title}
         </Link>
+        {kr.externalRef && (
+          <p className="font-mono text-[10px] text-muted-foreground">{kr.externalRef}</p>
+        )}
         {!isBoolean && (
           <p className="mt-0.5 text-xs tabular-nums text-muted-foreground/70">
             {kr.currentValue} / {kr.targetValue}

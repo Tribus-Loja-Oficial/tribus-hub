@@ -216,6 +216,7 @@ type UpdatePageInput = {
 
 type OkrCycleRow = {
   id: string;
+  external_ref?: string | null;
   workspace_id: string;
   title: string;
   slug: string;
@@ -233,6 +234,7 @@ type OkrCycleRow = {
 
 type OkrObjectiveRow = {
   id: string;
+  external_ref?: string | null;
   workspace_id: string;
   cycle_id: string | null;
   title: string;
@@ -257,6 +259,7 @@ type OkrObjectiveRow = {
 
 type OkrKeyResultRow = {
   id: string;
+  external_ref?: string | null;
   workspace_id: string;
   cycle_id: string | null;
   objective_id: string;
@@ -1770,12 +1773,18 @@ async function getOkrCyclesWithStats(db: D1DatabaseLike, workspaceId: string) {
     db
       .prepare(
         `
-        SELECT id, workspace_id, title, slug, description, start_date, end_date, status,
-               created_by, updated_by, created_at, updated_at, archived_at, deleted_at
+        SELECT c.id, c.workspace_id, c.title, c.slug, c.description, c.start_date, c.end_date, c.status,
+               c.created_by, c.updated_by, c.created_at, c.updated_at, c.archived_at, c.deleted_at,
+               er.external_ref
         FROM okr_cycles
-        WHERE workspace_id = ?
-          AND deleted_at IS NULL
-        ORDER BY start_date DESC
+        c
+        LEFT JOIN entity_external_refs er
+          ON er.workspace_id = c.workspace_id
+         AND er.entity_type = 'okr_cycle'
+         AND er.entity_id = c.id
+        WHERE c.workspace_id = ?
+          AND c.deleted_at IS NULL
+        ORDER BY c.start_date DESC
       `,
       )
       .bind(workspaceId)
@@ -1825,6 +1834,7 @@ async function getOkrCyclesWithStats(db: D1DatabaseLike, workspaceId: string) {
           ) / 10;
     return {
       id: cycle.id,
+      externalRef: cycle.external_ref ?? null,
       workspaceId: cycle.workspace_id,
       title: cycle.title,
       slug: cycle.slug,
@@ -1873,12 +1883,18 @@ async function getOkrObjectives(
     .prepare(
       `
       SELECT
-        id, workspace_id, cycle_id, title, slug, description_json, description_text, owner_user_id,
-        status, progress_percent, priority, sort_order, start_date, target_date, completed_at,
-        created_by, updated_by, created_at, updated_at, archived_at, deleted_at
+        o.id, o.workspace_id, o.cycle_id, o.title, o.slug, o.description_json, o.description_text, o.owner_user_id,
+        o.status, o.progress_percent, o.priority, o.sort_order, o.start_date, o.target_date, o.completed_at,
+        o.created_by, o.updated_by, o.created_at, o.updated_at, o.archived_at, o.deleted_at,
+        oer.external_ref
       FROM okr_objectives
-      WHERE ${where.join(" AND ")}
-      ORDER BY sort_order ASC, updated_at DESC
+      o
+      LEFT JOIN entity_external_refs oer
+        ON oer.workspace_id = o.workspace_id
+       AND oer.entity_type = 'okr_objective'
+       AND oer.entity_id = o.id
+      WHERE ${where.map((c) => c.replaceAll("workspace_id", "o.workspace_id").replaceAll("deleted_at", "o.deleted_at").replaceAll("cycle_id", "o.cycle_id").replaceAll("status", "o.status")).join(" AND ")}
+      ORDER BY o.sort_order ASC, o.updated_at DESC
     `,
     )
     .bind(...args)
@@ -1895,15 +1911,20 @@ async function getOkrObjectives(
     .prepare(
       `
       SELECT
-        id, workspace_id, cycle_id, objective_id, title, slug, description_json, description_text, owner_user_id,
-        metric_type, unit, start_value, current_value, target_value, progress_percent, status, confidence,
-        sort_order, start_date, target_date, completed_at, created_by, updated_by, created_at, updated_at,
-        archived_at, deleted_at
+        k.id, k.workspace_id, k.cycle_id, k.objective_id, k.title, k.slug, k.description_json, k.description_text, k.owner_user_id,
+        k.metric_type, k.unit, k.start_value, k.current_value, k.target_value, k.progress_percent, k.status, k.confidence,
+        k.sort_order, k.start_date, k.target_date, k.completed_at, k.created_by, k.updated_by, k.created_at, k.updated_at,
+        k.archived_at, k.deleted_at, ker.external_ref
       FROM okr_key_results
-      WHERE workspace_id = ?
-        AND deleted_at IS NULL
-        AND objective_id IN (${placeholders})
-      ORDER BY sort_order ASC, updated_at DESC
+      k
+      LEFT JOIN entity_external_refs ker
+        ON ker.workspace_id = k.workspace_id
+       AND ker.entity_type = 'okr_key_result'
+       AND ker.entity_id = k.id
+      WHERE k.workspace_id = ?
+        AND k.deleted_at IS NULL
+        AND k.objective_id IN (${placeholders})
+      ORDER BY k.sort_order ASC, k.updated_at DESC
     `,
     )
     .bind(workspaceId, ...objectiveIds)
@@ -1920,6 +1941,7 @@ async function getOkrObjectives(
 
   return objectives.map((obj) => ({
     id: obj.id,
+    externalRef: obj.external_ref ?? null,
     workspaceId: obj.workspace_id,
     cycleId: obj.cycle_id,
     title: obj.title,
@@ -1942,6 +1964,7 @@ async function getOkrObjectives(
     deletedAt: obj.deleted_at,
     keyResults: (keyResultsByObjective.get(obj.id) ?? []).map((kr) => ({
       id: kr.id,
+      externalRef: kr.external_ref ?? null,
       workspaceId: kr.workspace_id,
       cycleId: kr.cycle_id,
       objectiveId: kr.objective_id,

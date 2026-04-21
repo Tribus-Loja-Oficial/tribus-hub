@@ -75,6 +75,7 @@ async function uniqueSlug(
 function mapCycle(r: Record<string, unknown>) {
   return {
     id: r.id,
+    externalRef: r.external_ref ?? null,
     workspaceId: r.workspace_id,
     title: r.title,
     slug: r.slug,
@@ -94,6 +95,7 @@ function mapCycle(r: Record<string, unknown>) {
 function mapObjective(r: Record<string, unknown>) {
   return {
     id: r.id,
+    externalRef: r.external_ref ?? null,
     workspaceId: r.workspace_id,
     cycleId: r.cycle_id,
     title: r.title,
@@ -120,6 +122,7 @@ function mapObjective(r: Record<string, unknown>) {
 function mapKr(r: Record<string, unknown>) {
   return {
     id: r.id,
+    externalRef: r.external_ref ?? null,
     workspaceId: r.workspace_id,
     cycleId: r.cycle_id,
     objectiveId: r.objective_id,
@@ -196,7 +199,14 @@ export async function handleV1OkrWriteRoutes(
     try {
       const cycles = await db
         .prepare(
-          `SELECT * FROM okr_cycles WHERE workspace_id = ? AND deleted_at IS NULL ORDER BY start_date DESC`,
+          `SELECT c.*, er.external_ref
+           FROM okr_cycles c
+           LEFT JOIN entity_external_refs er
+             ON er.workspace_id = c.workspace_id
+            AND er.entity_type = 'okr_cycle'
+            AND er.entity_id = c.id
+           WHERE c.workspace_id = ? AND c.deleted_at IS NULL
+           ORDER BY c.start_date DESC`,
         )
         .bind(workspaceId)
         .all<Record<string, unknown>>();
@@ -206,7 +216,13 @@ export async function handleV1OkrWriteRoutes(
       if (cycleId) {
         const one = await db
           .prepare(
-            `SELECT * FROM okr_cycles WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`,
+            `SELECT c.*, er.external_ref
+             FROM okr_cycles c
+             LEFT JOIN entity_external_refs er
+               ON er.workspace_id = c.workspace_id
+              AND er.entity_type = 'okr_cycle'
+              AND er.entity_id = c.id
+             WHERE c.id = ? AND c.workspace_id = ? AND c.deleted_at IS NULL`,
           )
           .bind(cycleId, workspaceId)
           .all<Record<string, unknown>>();
@@ -214,7 +230,14 @@ export async function handleV1OkrWriteRoutes(
       } else {
         const a = await db
           .prepare(
-            `SELECT * FROM okr_cycles WHERE workspace_id = ? AND status = 'active' AND deleted_at IS NULL ORDER BY start_date DESC LIMIT 1`,
+            `SELECT c.*, er.external_ref
+             FROM okr_cycles c
+             LEFT JOIN entity_external_refs er
+               ON er.workspace_id = c.workspace_id
+              AND er.entity_type = 'okr_cycle'
+              AND er.entity_id = c.id
+             WHERE c.workspace_id = ? AND c.status = 'active' AND c.deleted_at IS NULL
+             ORDER BY c.start_date DESC LIMIT 1`,
           )
           .bind(workspaceId)
           .all<Record<string, unknown>>();
@@ -271,7 +294,14 @@ export async function handleV1OkrWriteRoutes(
       };
       const objFull = await db
         .prepare(
-          `SELECT * FROM okr_objectives WHERE workspace_id = ? AND deleted_at IS NULL ${resolvedCycleId ? "AND cycle_id = ?" : ""} ORDER BY sort_order ASC`,
+          `SELECT o.*, er.external_ref
+           FROM okr_objectives o
+           LEFT JOIN entity_external_refs er
+             ON er.workspace_id = o.workspace_id
+            AND er.entity_type = 'okr_objective'
+            AND er.entity_id = o.id
+           WHERE o.workspace_id = ? AND o.deleted_at IS NULL ${resolvedCycleId ? "AND o.cycle_id = ?" : ""}
+           ORDER BY o.sort_order ASC`,
         )
         .bind(...(resolvedCycleId ? [workspaceId, resolvedCycleId] : [workspaceId]))
         .all<Record<string, unknown>>();
@@ -282,7 +312,14 @@ export async function handleV1OkrWriteRoutes(
         const ph = oids.map(() => "?").join(", ");
         const allKr = await db
           .prepare(
-            `SELECT * FROM okr_key_results WHERE workspace_id = ? AND deleted_at IS NULL AND objective_id IN (${ph}) ORDER BY sort_order ASC`,
+            `SELECT k.*, er.external_ref
+             FROM okr_key_results k
+             LEFT JOIN entity_external_refs er
+               ON er.workspace_id = k.workspace_id
+              AND er.entity_type = 'okr_key_result'
+              AND er.entity_id = k.id
+             WHERE k.workspace_id = ? AND k.deleted_at IS NULL AND k.objective_id IN (${ph})
+             ORDER BY k.sort_order ASC`,
           )
           .bind(workspaceId, ...oids)
           .all<Record<string, unknown>>();
@@ -390,7 +427,13 @@ export async function handleV1OkrWriteRoutes(
     if (method === "GET") {
       const row = await db
         .prepare(
-          `SELECT * FROM okr_cycles WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`,
+          `SELECT c.*, er.external_ref
+           FROM okr_cycles c
+           LEFT JOIN entity_external_refs er
+             ON er.workspace_id = c.workspace_id
+            AND er.entity_type = 'okr_cycle'
+            AND er.entity_id = c.id
+           WHERE c.id = ? AND c.workspace_id = ? AND c.deleted_at IS NULL`,
         )
         .bind(id, workspaceId)
         .all<Record<string, unknown>>();
@@ -515,14 +558,27 @@ export async function handleV1OkrWriteRoutes(
     if (method === "GET") {
       const row = await db
         .prepare(
-          `SELECT * FROM okr_objectives WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`,
+          `SELECT o.*, oer.external_ref
+           FROM okr_objectives o
+           LEFT JOIN entity_external_refs oer
+             ON oer.workspace_id = o.workspace_id
+            AND oer.entity_type = 'okr_objective'
+            AND oer.entity_id = o.id
+           WHERE o.id = ? AND o.workspace_id = ? AND o.deleted_at IS NULL`,
         )
         .bind(id, workspaceId)
         .all<Record<string, unknown>>();
       if (!row.results?.[0]) return json({ error: { message: "Not found" } }, 404);
       const krs = await db
         .prepare(
-          `SELECT * FROM okr_key_results WHERE objective_id = ? AND deleted_at IS NULL ORDER BY sort_order ASC`,
+          `SELECT k.*, ker.external_ref
+           FROM okr_key_results k
+           LEFT JOIN entity_external_refs ker
+             ON ker.workspace_id = k.workspace_id
+            AND ker.entity_type = 'okr_key_result'
+            AND ker.entity_id = k.id
+           WHERE k.objective_id = ? AND k.deleted_at IS NULL
+           ORDER BY k.sort_order ASC`,
         )
         .bind(id)
         .all<Record<string, unknown>>();
@@ -605,7 +661,16 @@ export async function handleV1OkrWriteRoutes(
       args.push(status);
     }
     const rows = await db
-      .prepare(`SELECT * FROM okr_key_results WHERE ${where.join(" AND ")} ORDER BY sort_order ASC`)
+      .prepare(
+        `SELECT k.*, er.external_ref
+         FROM okr_key_results k
+         LEFT JOIN entity_external_refs er
+           ON er.workspace_id = k.workspace_id
+          AND er.entity_type = 'okr_key_result'
+          AND er.entity_id = k.id
+         WHERE ${where.map((c) => c.replaceAll("workspace_id", "k.workspace_id").replaceAll("deleted_at", "k.deleted_at").replaceAll("cycle_id", "k.cycle_id").replaceAll("objective_id", "k.objective_id").replaceAll("status", "k.status")).join(" AND ")}
+         ORDER BY k.sort_order ASC`,
+      )
       .bind(...args)
       .all<Record<string, unknown>>();
     return json({ data: (rows.results ?? []).map(mapKr) });
@@ -691,7 +756,13 @@ export async function handleV1OkrWriteRoutes(
     if (method === "GET") {
       const row = await db
         .prepare(
-          `SELECT * FROM okr_key_results WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`,
+          `SELECT k.*, er.external_ref
+           FROM okr_key_results k
+           LEFT JOIN entity_external_refs er
+             ON er.workspace_id = k.workspace_id
+            AND er.entity_type = 'okr_key_result'
+            AND er.entity_id = k.id
+           WHERE k.id = ? AND k.workspace_id = ? AND k.deleted_at IS NULL`,
         )
         .bind(id, workspaceId)
         .all<Record<string, unknown>>();

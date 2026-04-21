@@ -564,6 +564,11 @@ export function OkrCyclesPage() {
                           >
                             {cycle.title}
                           </Link>
+                          {cycle.externalRef && (
+                            <span className="rounded border border-border/70 bg-muted/40 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                              {cycle.externalRef}
+                            </span>
+                          )}
                           <CycleStatusBadge status={cycle.status} />
                           {cycle.status === "active" && (
                             <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">

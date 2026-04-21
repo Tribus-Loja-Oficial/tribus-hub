@@ -102,6 +102,11 @@ function TaskRow({ task, members }: { task: HierarchyTask; members: Map<string, 
       >
         {task.title}
       </span>
+      {task.externalRef && (
+        <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+          {task.externalRef}
+        </span>
+      )}
       <div className="flex shrink-0 items-center gap-2 opacity-70 transition-opacity group-hover:opacity-100">
         <div className="flex w-[72px] justify-center">
           <PriorityBadge priority={task.priority} />
@@ -177,6 +182,11 @@ function MilestoneRow({
         />
         <Flag className="h-3.5 w-3.5 shrink-0 text-blue-500/70" />
         <span className="truncate text-sm font-medium text-foreground">{milestone.title}</span>
+        {milestone.externalRef && (
+          <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+            {milestone.externalRef}
+          </span>
+        )}
 
         {/* Criar task — always reachable, visible on hover */}
         <button
@@ -352,6 +362,11 @@ function ProjectRow({
             >
               {project.title}
             </Link>
+            {project.externalRef && (
+              <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                {project.externalRef}
+              </span>
+            )}
             {project.projectStats.overdueMilestones > 0 && (
               <span className="flex shrink-0 items-center gap-0.5 text-[10px] font-medium text-red-500">
                 <AlertTriangle className="h-3 w-3" />

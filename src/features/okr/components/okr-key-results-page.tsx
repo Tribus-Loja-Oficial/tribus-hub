@@ -231,6 +231,11 @@ export function OkrKeyResultsPage() {
                       <p className="truncate text-sm font-semibold text-foreground">
                         {objective?.title ?? "Objetivo desconhecido"}
                       </p>
+                      {objective?.externalRef && (
+                        <p className="font-mono text-[10px] text-muted-foreground">
+                          {objective.externalRef}
+                        </p>
+                      )}
                       <p className="mt-0.5 text-xs text-muted-foreground">
                         {krs.length} key result{krs.length !== 1 ? "s" : ""}
                       </p>
@@ -343,6 +348,9 @@ function KrRow({
         >
           {kr.title}
         </Link>
+        {kr.externalRef && (
+          <p className="font-mono text-[10px] text-muted-foreground">{kr.externalRef}</p>
+        )}
         {showObjective && objectiveName && (
           <p className="mt-0.5 truncate text-xs text-muted-foreground">{objectiveName}</p>
         )}

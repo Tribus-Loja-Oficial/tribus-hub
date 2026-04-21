@@ -440,6 +440,23 @@ export async function handleV1ExtraRoutes(
         .bind(...pids)
         .all<Record<string, unknown>>();
       if (!tasksRes.success) throw new Error(tasksRes.error ?? "tasks");
+      const refsRes = await db
+        .prepare(
+          `SELECT entity_type, entity_id, external_ref
+           FROM entity_external_refs
+           WHERE workspace_id = ?
+             AND (
+               (entity_type = 'project' AND entity_id IN (${ph}))
+               OR (entity_type = 'milestone' AND entity_id IN (SELECT id FROM milestones WHERE project_id IN (${ph})))
+               OR (entity_type = 'task' AND entity_id IN (SELECT id FROM tasks WHERE deleted_at IS NULL AND project_id IN (${ph})))
+             )`,
+        )
+        .bind(workspaceId, ...pids, ...pids, ...pids)
+        .all<{ entity_type: string; entity_id: string; external_ref: string }>();
+      if (!refsRes.success) throw new Error(refsRes.error ?? "external refs");
+      const refMap = new Map(
+        (refsRes.results ?? []).map((r) => [`${r.entity_type}:${r.entity_id}`, r.external_ref]),
+      );
       const milestonesByProject = new Map<string, Record<string, unknown>[]>();
       for (const m of milestonesRes.results ?? []) {
         const pid = m.project_id as string;
@@ -452,6 +469,7 @@ export async function handleV1ExtraRoutes(
       for (const t of tasksRes.results ?? []) {
         const task = {
           id: t.id,
+          externalRef: refMap.get(`task:${String(t.id)}`) ?? null,
           title: t.title,
           projectId: t.project_id,
           milestoneId: t.milestone_id,
@@ -490,10 +508,12 @@ export async function handleV1ExtraRoutes(
             const mDone = mTasks.filter((t) => !!t.completedAt).length;
             return {
               ...mapMilestoneCamel(milestone),
+              externalRef: refMap.get(`milestone:${mid}`) ?? null,
               tasks: mTasks,
               taskStats: { total: mTasks.length, done: mDone },
             };
           }),
+          externalRef: refMap.get(`project:${id}`) ?? null,
           projectStats: {
             totalMilestones: projMilestones.length,
             completedMilestones: projMilestones.filter((m) => m.status === "completed").length,

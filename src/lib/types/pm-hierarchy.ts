@@ -3,6 +3,7 @@ import type { OkrObjective, OkrKeyResult, Project } from "@/lib/types/domain";
 /** Task row nested under hierarchy milestones (hub-api JSON). */
 export type HierarchyTask = {
   id: string;
+  externalRef?: string | null;
   title: string;
   projectId: string | null;
   milestoneId: string | null;
@@ -17,6 +18,7 @@ export type HierarchyTask = {
 
 export type HierarchyMilestone = {
   id: string;
+  externalRef?: string | null;
   projectId: string;
   title: string;
   description: string | null;
