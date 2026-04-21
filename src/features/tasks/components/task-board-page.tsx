@@ -477,6 +477,11 @@ export function TaskBoardPage() {
                         >
                           {task.title}
                         </span>
+                        {task.externalRef && (
+                          <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                            Ref: {task.externalRef}
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="hidden max-w-[140px] truncate px-4 py-2.5 text-xs text-muted-foreground md:table-cell">

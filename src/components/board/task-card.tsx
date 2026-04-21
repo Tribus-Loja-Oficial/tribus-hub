@@ -57,6 +57,11 @@ export function TaskCard({ task, isDragging, onOpen }: TaskCardProps) {
           <p className="line-clamp-2 text-sm font-medium leading-snug text-foreground">
             {task.title}
           </p>
+          {task.externalRef && (
+            <p className="mt-0.5 font-mono text-[10px] text-muted-foreground">
+              Ref: {task.externalRef}
+            </p>
+          )}
 
           <div className="mt-2 flex flex-wrap items-center gap-2">
             {task.priority && (

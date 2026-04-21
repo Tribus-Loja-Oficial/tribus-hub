@@ -36,6 +36,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["type", "data"],
+      "description": "OKR cycle object. Required: type, data.title, data.start_date, data.end_date.",
       "properties": {
         "type": { "const": "okr_cycle" },
         "client_ref": {
@@ -46,6 +47,8 @@
           "type": "object",
           "additionalProperties": false,
           "required": ["title", "start_date", "end_date"],
+          "x-required-fields": ["title", "start_date", "end_date"],
+          "x-optional-fields": ["description", "status"],
           "properties": {
             "title": { "type": "string", "minLength": 1, "maxLength": 200 },
             "description": { "type": "string", "maxLength": 2000 },
@@ -64,6 +67,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["type", "data"],
+      "description": "OKR objective object. Required: type, data.title.",
       "properties": {
         "type": { "const": "okr_objective" },
         "client_ref": { "type": "string" },
@@ -71,6 +75,17 @@
           "type": "object",
           "additionalProperties": false,
           "required": ["title"],
+          "x-required-fields": ["title"],
+          "x-optional-fields": [
+            "description",
+            "cycle_id",
+            "cycle_ref",
+            "owner_user_id",
+            "status",
+            "priority",
+            "start_date",
+            "target_date"
+          ],
           "properties": {
             "title": { "type": "string", "minLength": 1, "maxLength": 500 },
             "description": { "type": "string", "maxLength": 5000 },
@@ -92,12 +107,31 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["type", "data"],
+      "description": "OKR key result object. Required: type, data.title, data.target_value, and one of objective_id/objective_ref.",
       "properties": {
         "type": { "const": "okr_key_result" },
         "client_ref": { "type": "string" },
         "data": {
           "type": "object",
           "additionalProperties": false,
+          "x-required-fields": ["title", "target_value"],
+          "x-conditional-required": ["objective_id OR objective_ref"],
+          "x-optional-fields": [
+            "description",
+            "objective_id",
+            "objective_ref",
+            "cycle_id",
+            "cycle_ref",
+            "owner_user_id",
+            "metric_type",
+            "unit",
+            "start_value",
+            "current_value",
+            "status",
+            "confidence",
+            "start_date",
+            "target_date"
+          ],
           "allOf": [
             {
               "required": ["title", "target_value"],
@@ -137,6 +171,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["type", "data"],
+      "description": "Project object. Required: type, data.title.",
       "properties": {
         "type": { "const": "project" },
         "client_ref": { "type": "string" },
@@ -144,6 +179,16 @@
           "type": "object",
           "additionalProperties": false,
           "required": ["title"],
+          "x-required-fields": ["title"],
+          "x-optional-fields": [
+            "summary",
+            "status",
+            "health_status",
+            "priority",
+            "owner_user_id",
+            "start_date",
+            "target_date"
+          ],
           "properties": {
             "title": { "type": "string", "minLength": 1, "maxLength": 500 },
             "summary": { "type": "string", "maxLength": 1000 },
@@ -167,12 +212,24 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["type", "data"],
+      "description": "Milestone object. Required: type, data.title, and one of project_id/project_ref.",
       "properties": {
         "type": { "const": "milestone" },
         "client_ref": { "type": "string" },
         "data": {
           "type": "object",
           "additionalProperties": false,
+          "x-required-fields": ["title"],
+          "x-conditional-required": ["project_id OR project_ref"],
+          "x-optional-fields": [
+            "description",
+            "project_id",
+            "project_ref",
+            "status",
+            "priority",
+            "owner_user_id",
+            "due_date"
+          ],
           "allOf": [
             {
               "required": ["title"],
@@ -201,6 +258,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["type", "data"],
+      "description": "Task object. Required: type, data.title.",
       "properties": {
         "type": { "const": "task" },
         "client_ref": { "type": "string" },
@@ -208,6 +266,20 @@
           "type": "object",
           "additionalProperties": false,
           "required": ["title"],
+          "x-required-fields": ["title"],
+          "x-optional-fields": [
+            "description",
+            "project_id",
+            "project_ref",
+            "milestone_id",
+            "milestone_ref",
+            "column_id",
+            "column_name",
+            "priority",
+            "assignee_user_id",
+            "due_date",
+            "label_ids"
+          ],
           "properties": {
             "title": { "type": "string", "minLength": 1, "maxLength": 500 },
             "description": { "type": "string", "maxLength": 5000 },
