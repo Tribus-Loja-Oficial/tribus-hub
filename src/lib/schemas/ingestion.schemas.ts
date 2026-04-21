@@ -31,9 +31,7 @@ const okrKeyResultDataSchema = z
     cycle_id: z.string().optional(),
     cycle_ref: z.string().optional(),
     owner_user_id: z.string().optional(),
-    metric_type: z
-      .enum(["percentage", "number", "currency", "boolean", "custom"])
-      .optional(),
+    metric_type: z.enum(["percentage", "number", "currency", "boolean", "custom"]).optional(),
     unit: z.string().max(50).optional(),
     start_value: z.number().optional(),
     current_value: z.number().optional(),
@@ -50,12 +48,8 @@ const okrKeyResultDataSchema = z
 const projectDataSchema = z.object({
   title: z.string().min(1, "Título é obrigatório").max(500),
   summary: z.string().max(1000).optional(),
-  status: z
-    .enum(["planned", "active", "on_hold", "completed", "cancelled"])
-    .optional(),
-  health_status: z
-    .enum(["on_track", "at_risk", "blocked", "off_track"])
-    .optional(),
+  status: z.enum(["planned", "active", "on_hold", "completed", "cancelled"]).optional(),
+  health_status: z.enum(["on_track", "at_risk", "blocked", "off_track"]).optional(),
   priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
   owner_user_id: z.string().optional(),
   start_date: z.string().date().optional(),

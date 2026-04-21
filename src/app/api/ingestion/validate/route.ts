@@ -20,7 +20,9 @@ export async function POST(request: NextRequest) {
         {
           data: {
             valid: false,
-            errors: errors.map((e) => ({ message: `${e.field ? `[${e.field}] ` : ""}${e.message}` })),
+            errors: errors.map((e) => ({
+              message: `${e.field ? `[${e.field}] ` : ""}${e.message}`,
+            })),
             warnings: [],
             summary: { total: 0, byType: {} },
           },

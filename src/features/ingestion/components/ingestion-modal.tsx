@@ -133,7 +133,9 @@ function ValidationPanel({ result }: { result: ValidationResult }) {
                 {err.objectIndex !== undefined && (
                   <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-destructive/70">
                     Objeto #{err.objectIndex + 1}
-                    {err.objectType ? ` · ${INGESTION_TYPE_LABELS[err.objectType] ?? err.objectType}` : ""}
+                    {err.objectType
+                      ? ` · ${INGESTION_TYPE_LABELS[err.objectType] ?? err.objectType}`
+                      : ""}
                     {err.clientRef ? ` · ref: ${err.clientRef}` : ""}
                   </p>
                 )}
@@ -201,8 +203,7 @@ function ResultPanel({ result }: { result: IngestionResult }) {
             <div>
               <p className="text-sm font-medium text-foreground">Ingestão parcial</p>
               <p className="text-xs text-muted-foreground">
-                {result.created} criado{result.created !== 1 ? "s" : ""},{" "}
-                {result.failed} falharam
+                {result.created} criado{result.created !== 1 ? "s" : ""}, {result.failed} falharam
               </p>
             </div>
           </>
@@ -242,9 +243,7 @@ function ResultPanel({ result }: { result: IngestionResult }) {
                 {item.id && (
                   <p className="font-mono text-[10px] text-muted-foreground">ID: {item.id}</p>
                 )}
-                {item.error && (
-                  <p className="mt-0.5 text-[11px] text-destructive">{item.error}</p>
-                )}
+                {item.error && <p className="mt-0.5 text-[11px] text-destructive">{item.error}</p>}
               </div>
             </div>
           ))}
@@ -276,15 +275,18 @@ export function IngestionModal({ open, onOpenChange }: IngestionModalProps) {
     }, 200);
   }, [onOpenChange]);
 
-  const handleJsonChange = useCallback((text: string) => {
-    setJsonText(text);
-    setParseError(null);
-    if (step !== "edit") setStep("edit");
-    if (text.trim()) {
-      const { error } = parseJsonSafe(text);
-      if (error) setParseError(error);
-    }
-  }, [step]);
+  const handleJsonChange = useCallback(
+    (text: string) => {
+      setJsonText(text);
+      setParseError(null);
+      if (step !== "edit") setStep("edit");
+      if (text.trim()) {
+        const { error } = parseJsonSafe(text);
+        if (error) setParseError(error);
+      }
+    },
+    [step],
+  );
 
   const handleFormat = useCallback(() => {
     const formatted = formatJson(jsonText);
@@ -405,9 +407,7 @@ export function IngestionModal({ open, onOpenChange }: IngestionModalProps) {
                         className="flex w-full flex-col gap-0.5 px-3 py-2.5 text-left hover:bg-muted"
                       >
                         <span className="text-xs font-medium text-foreground">{tpl.label}</span>
-                        <span className="text-[11px] text-muted-foreground">
-                          {tpl.description}
-                        </span>
+                        <span className="text-[11px] text-muted-foreground">{tpl.description}</span>
                       </button>
                     ))}
                   </div>
@@ -483,9 +483,7 @@ export function IngestionModal({ open, onOpenChange }: IngestionModalProps) {
             {/* Right: validation/result panel */}
             <div className="flex w-[340px] shrink-0 flex-col">
               <div className="flex shrink-0 items-center border-b border-border/60 px-4 py-2">
-                <span className="text-xs font-medium text-muted-foreground">
-                  {rightPanelTitle}
-                </span>
+                <span className="text-xs font-medium text-muted-foreground">{rightPanelTitle}</span>
               </div>
               <div className="min-h-0 flex-1 overflow-y-auto p-4">
                 {step === "edit" && !validationResult && (
@@ -493,17 +491,15 @@ export function IngestionModal({ open, onOpenChange }: IngestionModalProps) {
                     <Package className="h-8 w-8 text-muted-foreground/40" />
                     <p className="text-xs text-muted-foreground">
                       Cole um payload JSON e clique em{" "}
-                      <strong className="text-foreground">Validar</strong> para verificar os
-                      objetos antes de ingeri-los.
+                      <strong className="text-foreground">Validar</strong> para verificar os objetos
+                      antes de ingeri-los.
                     </p>
                   </div>
                 )}
                 {step === "validated" && validationResult && (
                   <ValidationPanel result={validationResult} />
                 )}
-                {step === "result" && ingestionResult && (
-                  <ResultPanel result={ingestionResult} />
-                )}
+                {step === "result" && ingestionResult && <ResultPanel result={ingestionResult} />}
               </div>
             </div>
           </div>
@@ -511,7 +507,8 @@ export function IngestionModal({ open, onOpenChange }: IngestionModalProps) {
           {/* Footer */}
           <div className="flex shrink-0 items-center justify-between border-t border-border px-5 py-3">
             <div className="text-[11px] text-muted-foreground">
-              {step === "edit" && "v1.0 · Suporta: ciclos, objetivos, KRs, projetos, milestones, tarefas"}
+              {step === "edit" &&
+                "v1.0 · Suporta: ciclos, objetivos, KRs, projetos, milestones, tarefas"}
               {step === "validated" && validationResult && (
                 <span>
                   {validationResult.summary.total} objeto

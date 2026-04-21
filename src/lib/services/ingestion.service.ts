@@ -251,8 +251,7 @@ function resolveColumnId(
     if (match) return match.id;
   }
   const defaultCol =
-    columns.find((c) => c.isDefault) ??
-    columns.sort((a, b) => a.sortOrder - b.sortOrder)[0];
+    columns.find((c) => c.isDefault) ?? columns.sort((a, b) => a.sortOrder - b.sortOrder)[0];
   return defaultCol?.id ?? null;
 }
 
