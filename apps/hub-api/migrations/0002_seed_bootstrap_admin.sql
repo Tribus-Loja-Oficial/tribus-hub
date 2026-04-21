@@ -12,6 +12,9 @@ VALUES (
   datetime('now')
 );
 
+-- Compatibility insert:
+-- - Legacy schema had users.password_hash
+-- - Current schema removes password_hash (auth delegated to CDS)
 INSERT OR IGNORE INTO users (
   id,
   workspace_id,
@@ -23,7 +26,7 @@ INSERT OR IGNORE INTO users (
   created_at,
   updated_at
 )
-VALUES (
+SELECT
   'seed_usr_admin_hub_01',
   'seed_ws_tribus_hub_01',
   'Admin Tribus',
@@ -33,4 +36,33 @@ VALUES (
   1,
   datetime('now'),
   datetime('now')
+WHERE EXISTS (
+  SELECT 1
+  FROM pragma_table_info('users')
+  WHERE name = 'password_hash'
+);
+
+INSERT OR IGNORE INTO users (
+  id,
+  workspace_id,
+  name,
+  email,
+  role,
+  is_active,
+  created_at,
+  updated_at
+)
+SELECT
+  'seed_usr_admin_hub_01',
+  'seed_ws_tribus_hub_01',
+  'Admin Tribus',
+  'admin@tribus.com.br',
+  'owner',
+  1,
+  datetime('now'),
+  datetime('now')
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM pragma_table_info('users')
+  WHERE name = 'password_hash'
 );

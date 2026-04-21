@@ -816,6 +816,11 @@ function ObjectiveBlock({
           >
             {objective.title}
           </Link>
+          {objective.externalRef && (
+            <p className="font-mono text-[10px] text-muted-foreground">
+              Ref: {objective.externalRef}
+            </p>
+          )}
           {objective.descriptionText && (
             <p className="w-full max-w-full truncate text-xs leading-tight text-muted-foreground">
               {objective.descriptionText}
@@ -985,6 +990,9 @@ function KrRow({ kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete }: KrRow
         >
           {kr.title}
         </Link>
+        {kr.externalRef && (
+          <p className="font-mono text-[10px] text-muted-foreground">Ref: {kr.externalRef}</p>
+        )}
       </div>
 
       <div

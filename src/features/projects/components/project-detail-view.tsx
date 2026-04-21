@@ -864,7 +864,7 @@ export function ProjectDetailView({ paramsPromise }: ProjectDetailViewProps) {
                       </span>
                       {t.externalRef && (
                         <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
-                          {t.externalRef}
+                          Ref: {t.externalRef}
                         </span>
                       )}
                       <PriorityBadge priority={t.priority} />
@@ -1102,7 +1102,7 @@ export function ProjectDetailView({ paramsPromise }: ProjectDetailViewProps) {
                       </span>
                       {t.externalRef && (
                         <span className="ml-1 shrink-0 font-mono text-[10px] text-muted-foreground">
-                          {t.externalRef}
+                          Ref: {t.externalRef}
                         </span>
                       )}
                     </div>

@@ -53,12 +53,21 @@ Cloudflare Worker interno para o `tribus-hub`.
 
 Na pasta `migrations/`:
 
+0. `0000_schema_migrations.sql` — tabela de controlo (`schema_migrations`) com histórico de execuções
 1. `0001_init.sql` — schema (inclui `users.consumer_id` em instalações novas)
 2. `0002_seed_bootstrap_admin.sql` — workspace + owner `admin@tribus.com.br` / `changeme123!` (idempotente)
 3. `0003_pm_okr_assets.sql`
 4. `0004_cds_consumer_link.sql` — índice + seed de vínculo CDS (idempotente; não usa `ALTER ADD COLUMN` para o CI poder reexecutar os ficheiros)
+5. `0005_external_refs.sql` — tabela de referências externas e backfill inicial
+6. `0006_remove_password_hash.sql`
+7. `0007_drop_legacy_project_objectives_key_results.sql`
+8. `0008_external_refs_simple_sequence.sql` — converte refs para formato humano `PREFIX-0001` (4 dígitos)
 
-`npm run d1:migrate:local` / `d1:migrate:remote` no pacote `@tribus/hub-api` encadeia `0001`–`0004`.
+`npm run d1:migrate:local` / `d1:migrate:remote` usa o runner `scripts/d1-migrate.mjs`, que:
+- cria a tabela `schema_migrations` (`0000`);
+- executa apenas migrations pendentes (`0001`–`0008`);
+- regista cada aplicação em `schema_migrations`;
+- faz bootstrap do histórico em D1 legados (schema já existente sem tabela de tracking), evitando reexecutar migrations antigas incompatíveis.
 
 **D1 legado** (tabela `users` criada antes de existir `consumer_id` em `0001` e nunca recebeu a coluna): uma vez, remoto:
 

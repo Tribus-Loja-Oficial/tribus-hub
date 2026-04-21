@@ -3,6 +3,11 @@
   "$id": "https://hub.tribus.dev/schemas/ingestion-payload-1.0.json",
   "title": "Tribus Hub — Ingestion payload",
   "description": "v1.0 · mode create only. Objects array may mix types. Dates: YYYY-MM-DD. User fields: real user UUIDs from workspace.",
+  "x-ai-instructions": [
+    "Use clear human references when reading user prompts, e.g. PRJ-0007, MS-0002, TSK-0009, CYC-0003, OBJ-0004, KR-0008.",
+    "External refs are generated per workspace and per entity type in sequence (PREFIX-0001, PREFIX-0002...).",
+    "For new objects in the same payload, prefer client_ref and *_ref links; external_ref is optional and mainly for linking with existing records."
+  ],
   "type": "object",
   "additionalProperties": false,
   "required": ["version", "mode", "objects"],
@@ -33,7 +38,10 @@
       "required": ["type", "data"],
       "properties": {
         "type": { "const": "okr_cycle" },
-        "client_ref": { "type": "string", "description": "Unique within payload; for *_ref from other objects." },
+        "client_ref": {
+          "type": "string",
+          "description": "Unique within payload; for *_ref from other objects."
+        },
         "data": {
           "type": "object",
           "additionalProperties": false,
@@ -41,7 +49,11 @@
           "properties": {
             "title": { "type": "string", "minLength": 1, "maxLength": 200 },
             "description": { "type": "string", "maxLength": 2000 },
-            "start_date": { "type": "string", "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+            "start_date": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
             "end_date": { "type": "string", "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
             "status": { "type": "string", "enum": ["planned", "active", "closed", "archived"] }
           }
@@ -115,10 +127,7 @@
               }
             },
             {
-              "oneOf": [
-                { "required": ["objective_id"] },
-                { "required": ["objective_ref"] }
-              ]
+              "oneOf": [{ "required": ["objective_id"] }, { "required": ["objective_ref"] }]
             }
           ]
         }

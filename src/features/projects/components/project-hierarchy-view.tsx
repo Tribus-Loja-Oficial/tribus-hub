@@ -104,7 +104,7 @@ function TaskRow({ task, members }: { task: HierarchyTask; members: Map<string, 
       </span>
       {task.externalRef && (
         <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
-          {task.externalRef}
+          Ref: {task.externalRef}
         </span>
       )}
       <div className="flex shrink-0 items-center gap-2 opacity-70 transition-opacity group-hover:opacity-100">
@@ -184,7 +184,7 @@ function MilestoneRow({
         <span className="truncate text-sm font-medium text-foreground">{milestone.title}</span>
         {milestone.externalRef && (
           <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
-            {milestone.externalRef}
+            Ref: {milestone.externalRef}
           </span>
         )}
 
@@ -364,7 +364,7 @@ function ProjectRow({
             </Link>
             {project.externalRef && (
               <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
-                {project.externalRef}
+                Ref: {project.externalRef}
               </span>
             )}
             {project.projectStats.overdueMilestones > 0 && (

@@ -318,7 +318,7 @@ function ObjectiveRow({
           </Link>
           {objective.externalRef && (
             <span className="font-mono text-[10px] text-muted-foreground">
-              {objective.externalRef}
+              Ref: {objective.externalRef}
             </span>
           )}
           {objective.targetDate && (
@@ -412,7 +412,7 @@ function KrSubRow({ kr, onUpdate }: { kr: OkrKeyResult; onUpdate: () => void }) 
           {kr.title}
         </Link>
         {kr.externalRef && (
-          <p className="font-mono text-[10px] text-muted-foreground">{kr.externalRef}</p>
+          <p className="font-mono text-[10px] text-muted-foreground">Ref: {kr.externalRef}</p>
         )}
         {!isBoolean && (
           <p className="mt-0.5 text-xs tabular-nums text-muted-foreground/70">

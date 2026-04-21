@@ -233,7 +233,7 @@ export function OkrKeyResultsPage() {
                       </p>
                       {objective?.externalRef && (
                         <p className="font-mono text-[10px] text-muted-foreground">
-                          {objective.externalRef}
+                          Ref: {objective.externalRef}
                         </p>
                       )}
                       <p className="mt-0.5 text-xs text-muted-foreground">
@@ -349,7 +349,7 @@ function KrRow({
           {kr.title}
         </Link>
         {kr.externalRef && (
-          <p className="font-mono text-[10px] text-muted-foreground">{kr.externalRef}</p>
+          <p className="font-mono text-[10px] text-muted-foreground">Ref: {kr.externalRef}</p>
         )}
         {showObjective && objectiveName && (
           <p className="mt-0.5 truncate text-xs text-muted-foreground">{objectiveName}</p>
