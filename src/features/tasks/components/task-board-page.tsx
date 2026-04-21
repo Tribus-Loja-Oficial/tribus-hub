@@ -270,7 +270,7 @@ export function TaskBoardPage() {
             <Search className="pointer-events-none absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Buscar em título, descrição, projeto, milestone, coluna, etiquetas, responsável, datas…"
+              placeholder="Buscar…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"

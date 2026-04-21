@@ -50,13 +50,6 @@ export function AppHeader() {
               <kbd className="rounded-md border border-border/80 bg-background/90 px-1.5 py-0.5 font-mono text-[10px] font-medium text-foreground/85 shadow-sm">
                 K
               </kbd>
-              <span className="mx-0.5 text-[10px] text-muted-foreground/70">·</span>
-              <kbd
-                className="rounded-md border border-border/80 bg-background/90 px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground shadow-sm"
-                title="Atalho no macOS"
-              >
-                ⌘K
-              </kbd>
             </span>
           </button>
         </div>
@@ -67,7 +60,7 @@ export function AppHeader() {
               type="button"
               onClick={() => setSearchOpen(true)}
               className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
-              aria-label="Buscar (Ctrl+K ou ⌘K)"
+              aria-label="Buscar (Ctrl+K)"
             >
               <Search className="h-4 w-4" />
             </button>
