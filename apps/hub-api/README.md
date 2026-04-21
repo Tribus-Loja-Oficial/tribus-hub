@@ -53,7 +53,13 @@ Cloudflare Worker interno para o `tribus-hub`.
 
 Na pasta `migrations/`:
 
-1. `0001_init.sql` — schema
+1. `0001_init.sql` — schema (inclui `users.consumer_id` em instalações novas)
 2. `0002_seed_bootstrap_admin.sql` — workspace + owner `admin@tribus.com.br` / `changeme123!` (idempotente)
+3. `0003_pm_okr_assets.sql`
+4. `0004_cds_consumer_link.sql` — índice + seed de vínculo CDS (idempotente; não usa `ALTER ADD COLUMN` para o CI poder reexecutar os ficheiros)
 
-`npm run d1:migrate:local` / `d1:migrate:remote` no pacote `@tribus/hub-api` aplica `0001` e depois `0002`.
+`npm run d1:migrate:local` / `d1:migrate:remote` no pacote `@tribus/hub-api` encadeia `0001`–`0004`.
+
+**D1 legado** (tabela `users` criada antes de existir `consumer_id` em `0001` e nunca recebeu a coluna): uma vez, remoto:
+
+`npx wrangler d1 execute tribus_hub_db --remote --command "ALTER TABLE users ADD COLUMN consumer_id TEXT;"`

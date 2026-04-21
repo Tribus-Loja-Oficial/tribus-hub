@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS users (
   avatar_asset_id TEXT,
   is_active INTEGER NOT NULL DEFAULT 1,
   last_login_at TEXT,
+  consumer_id TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE,
