@@ -46,4 +46,6 @@ export type AuditAction =
   | "asset.uploaded"
   | "asset.deleted"
   | "user.created"
-  | "user.login";
+  | "user.login"
+  | "ingestion.validated"
+  | "ingestion.executed";

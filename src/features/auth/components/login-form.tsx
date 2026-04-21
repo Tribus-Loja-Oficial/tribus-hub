@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -9,6 +9,9 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TurnstileField } from "@/features/auth/components/turnstile-field";
+
+const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -20,6 +23,11 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export function LoginForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(turnstileSiteKey ? null : "");
+
+  const onTurnstileChange = useCallback((token: string | null) => {
+    setTurnstileToken(token);
+  }, []);
 
   const {
     register,
@@ -29,9 +37,14 @@ export function LoginForm() {
 
   async function onSubmit(data: LoginFormData) {
     setError(null);
+    if (turnstileSiteKey && !turnstileToken) {
+      setError("Complete a verificação de segurança antes de entrar.");
+      return;
+    }
     const result = await signIn("credentials", {
       email: data.email,
       password: data.password,
+      turnstileToken: turnstileToken ?? "",
       redirect: false,
     });
 
@@ -68,6 +81,10 @@ export function LoginForm() {
         />
         {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
       </div>
+
+      {turnstileSiteKey ? (
+        <TurnstileField siteKey={turnstileSiteKey} onChange={onTurnstileChange} />
+      ) : null}
 
       {error && (
         <div className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2">

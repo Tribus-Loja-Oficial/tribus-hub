@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search } from "lucide-react";
+import { Package, Search } from "lucide-react";
 import { SearchModal } from "@/features/search/search-modal";
+import { IngestionModal } from "@/features/ingestion/components/ingestion-modal";
 import { UserMenu } from "./user-menu";
 import { AppBreadcrumbs } from "./app-breadcrumbs";
 import { cn } from "@/lib/utils/cn";
 
 export function AppHeader() {
   const [searchOpen, setSearchOpen] = useState(false);
+  const [ingestionOpen, setIngestionOpen] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -65,10 +67,27 @@ export function AppHeader() {
               <Search className="h-4 w-4" />
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setIngestionOpen(true)}
+            className={cn(
+              "hidden items-center gap-1.5 rounded-lg border border-border/70 bg-muted/40 px-2.5 py-1.5 text-xs font-medium text-muted-foreground",
+              "transition-colors hover:border-border hover:bg-muted hover:text-foreground",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "md:flex",
+            )}
+            aria-label="Nova ingestão de dados"
+          >
+            <Package className="h-3.5 w-3.5" />
+            Ingestão
+          </button>
+
           <UserMenu />
         </div>
       </header>
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <IngestionModal open={ingestionOpen} onOpenChange={setIngestionOpen} />
     </>
   );
 }

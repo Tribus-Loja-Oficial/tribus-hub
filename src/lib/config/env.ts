@@ -24,6 +24,15 @@ const envSchema = z.object({
   HUB_API_URL: z.string().url().optional(),
   HUB_API_INTERNAL_SECRET: z.string().min(16).optional(),
 
+  // CDS (login + JWT; must match Worker `JWT_SECRET` / issuer / audience)
+  CDS_API_URL: z.string().url().optional(),
+  CDS_JWT_SECRET: z.string().min(16).optional(),
+  CDS_JWT_ISSUER: z.string().min(1).default("tribus-cds"),
+  CDS_JWT_AUDIENCE: z.string().min(1).default("tribus-platform"),
+
+  /** Cloudflare Turnstile site key (client). Login still works when unset if CDS has no Turnstile secret. */
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
+
   // Cloudflare R2 (optional — uploads are disabled when not configured)
   R2_ACCOUNT_ID: z.string().optional(),
   R2_ACCESS_KEY_ID: z.string().optional(),

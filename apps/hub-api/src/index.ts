@@ -1927,6 +1927,198 @@ async function getAuthUserByEmail(db: D1DatabaseLike, email: string) {
   };
 }
 
+/** Placeholder hash — CDS owns passwords; hub D1 row still requires a NOT NULL column. */
+const CDS_LINKED_USER_PASSWORD_HASH =
+  "$2a$10$xnMinrEBm319toNOEtQbWOpne1Y9.WIp5Wqo3Kf4xU7VH2pjvHJFu";
+
+type HubUserRole = "owner" | "admin" | "member";
+
+type HubUserRow = {
+  id: string;
+  workspace_id: string;
+  name: string;
+  email: string;
+  role: HubUserRole;
+  consumer_id: string | null;
+};
+
+function mapCdsHubGrantRole(roleName: string | null | undefined): HubUserRole {
+  const r = (roleName ?? "member").trim().toLowerCase();
+  if (r === "owner" || r === "hub_owner") return "owner";
+  if (r === "admin" || r === "hub_admin") return "admin";
+  if (r === "member" || r === "hub_member") return "member";
+  if (r.includes("owner")) return "owner";
+  if (r.includes("admin")) return "admin";
+  return "member";
+}
+
+function nameFromEmail(email: string): string {
+  const local = email.includes("@") ? email.split("@")[0] : email;
+  return (local || "User").slice(0, 200);
+}
+
+async function resolveCdsHubUser(
+  db: D1DatabaseLike,
+  input: {
+    consumerId: string;
+    email: string;
+    displayName?: string | null;
+    hubGrantRole?: string | null;
+  },
+): Promise<
+  | { ok: true; id: string; workspaceId: string; name: string; email: string; role: HubUserRole }
+  | { ok: false; code: string; message: string }
+> {
+  const normalizedEmail = input.email.trim().toLowerCase();
+  const hubRole = mapCdsHubGrantRole(input.hubGrantRole);
+  const incomingName = input.displayName?.trim() ? input.displayName.trim().slice(0, 200) : "";
+
+  const byConsumer = await db
+    .prepare(
+      `
+      SELECT id, workspace_id, name, email, role, consumer_id
+      FROM users
+      WHERE consumer_id = ?
+        AND is_active = 1
+      LIMIT 1
+    `,
+    )
+    .bind(input.consumerId)
+    .all<HubUserRow>();
+  if (!byConsumer.success) throw new Error(byConsumer.error ?? "Failed to query user");
+
+  const rowConsumer = byConsumer.results?.[0];
+  if (rowConsumer) {
+    const name = incomingName || rowConsumer.name;
+    const upConsumer = await db
+      .prepare(
+        `
+        UPDATE users
+        SET email = ?, name = ?, role = ?, updated_at = datetime('now')
+        WHERE id = ?
+      `,
+      )
+      .bind(normalizedEmail, name, hubRole, rowConsumer.id)
+      .all();
+    if (!upConsumer.success) throw new Error(upConsumer.error ?? "Failed to update user");
+    return {
+      ok: true,
+      id: rowConsumer.id,
+      workspaceId: rowConsumer.workspace_id,
+      name,
+      email: normalizedEmail,
+      role: hubRole,
+    };
+  }
+
+  const byEmail = await db
+    .prepare(
+      `
+      SELECT id, workspace_id, name, email, role, consumer_id
+      FROM users
+      WHERE email = ?
+        AND is_active = 1
+      LIMIT 1
+    `,
+    )
+    .bind(normalizedEmail)
+    .all<HubUserRow>();
+  if (!byEmail.success) throw new Error(byEmail.error ?? "Failed to query user");
+
+  const rowEmail = byEmail.results?.[0];
+  if (rowEmail) {
+    if (rowEmail.consumer_id && rowEmail.consumer_id !== input.consumerId) {
+      return {
+        ok: false,
+        code: "CONFLICT",
+        message: "This email is already linked to a different CDS identity",
+      };
+    }
+    const name = incomingName || rowEmail.name;
+    const upEmail = await db
+      .prepare(
+        `
+        UPDATE users
+        SET consumer_id = ?, name = ?, role = ?, updated_at = datetime('now')
+        WHERE id = ?
+      `,
+      )
+      .bind(input.consumerId, name, hubRole, rowEmail.id)
+      .all();
+    if (!upEmail.success) throw new Error(upEmail.error ?? "Failed to update user");
+    return {
+      ok: true,
+      id: rowEmail.id,
+      workspaceId: rowEmail.workspace_id,
+      name,
+      email: normalizedEmail,
+      role: hubRole,
+    };
+  }
+
+  const ws = await db
+    .prepare(
+      `
+      SELECT id
+      FROM workspaces
+      WHERE is_active = 1
+      ORDER BY created_at ASC
+      LIMIT 1
+    `,
+    )
+    .all<{ id: string }>();
+  if (!ws.success) throw new Error(ws.error ?? "Failed to query workspace");
+  const workspaceId = ws.results?.[0]?.id;
+  if (!workspaceId) {
+    return {
+      ok: false,
+      code: "NO_WORKSPACE",
+      message: "No active workspace available for provisioning",
+    };
+  }
+
+  const newId = crypto.randomUUID();
+  const name = incomingName || nameFromEmail(normalizedEmail);
+  const ins = await db
+    .prepare(
+      `
+      INSERT INTO users (
+        id,
+        workspace_id,
+        name,
+        email,
+        password_hash,
+        role,
+        is_active,
+        consumer_id,
+        created_at,
+        updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, 1, ?, datetime('now'), datetime('now'))
+    `,
+    )
+    .bind(
+      newId,
+      workspaceId,
+      name,
+      normalizedEmail,
+      CDS_LINKED_USER_PASSWORD_HASH,
+      hubRole,
+      input.consumerId,
+    )
+    .all();
+  if (!ins.success) throw new Error(ins.error ?? "Failed to create user");
+
+  return {
+    ok: true,
+    id: newId,
+    workspaceId,
+    name,
+    email: normalizedEmail,
+    role: hubRole,
+  };
+}
+
 function buildPageTree(
   pages: Array<
     ReturnType<typeof toPageDto> & {
@@ -2158,6 +2350,44 @@ export default {
         if (!email) return json({ error: { message: "email is required" } }, 400);
         const user = await getAuthUserByEmail(env.TRIBUS_HUB_DB, email);
         return json({ data: user });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unexpected error";
+        return json({ error: { message } }, 400);
+      }
+    }
+
+    if (request.method === "POST" && pathname === "/v1/internal/auth/cds-resolve-user") {
+      try {
+        const payload = parseJsonBody<{
+          consumerId?: string;
+          email?: string;
+          displayName?: string | null;
+          hubGrantRole?: string | null;
+        }>(body);
+        const consumerId = payload.consumerId?.trim();
+        const email = payload.email?.trim().toLowerCase();
+        if (!consumerId || !email) {
+          return json({ error: { message: "consumerId and email are required" } }, 400);
+        }
+        const result = await resolveCdsHubUser(env.TRIBUS_HUB_DB, {
+          consumerId,
+          email,
+          displayName: payload.displayName,
+          hubGrantRole: payload.hubGrantRole,
+        });
+        if (!result.ok) {
+          const status = result.code === "CONFLICT" ? 409 : 400;
+          return json({ error: { message: result.message, code: result.code } }, status);
+        }
+        return json({
+          data: {
+            id: result.id,
+            workspaceId: result.workspaceId,
+            name: result.name,
+            email: result.email,
+            role: result.role,
+          },
+        });
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unexpected error";
         return json({ error: { message } }, 400);

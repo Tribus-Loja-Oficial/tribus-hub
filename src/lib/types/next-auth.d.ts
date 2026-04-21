@@ -7,12 +7,15 @@ declare module "next-auth" {
       id: string;
       role: UserRole;
       workspaceId: string;
+      consumerId?: string;
     } & DefaultSession["user"];
   }
 
   interface User {
     role: UserRole;
     workspaceId: string;
+    cdsConsumerId?: string;
+    cdsRefreshToken?: string;
   }
 }
 
@@ -21,5 +24,7 @@ declare module "next-auth/jwt" {
     id: string;
     role: UserRole;
     workspaceId: string;
+    cdsConsumerId?: string;
+    cdsRefreshToken?: string;
   }
 }
