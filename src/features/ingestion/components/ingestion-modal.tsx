@@ -16,6 +16,7 @@ import {
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/components/ui/button";
 import { INGESTION_TEMPLATES } from "@/features/ingestion/lib/ingestion-templates";
+import { IngestionFieldReferencePanel } from "@/features/ingestion/components/ingestion-field-reference-panel";
 import type { ValidationResult, IngestionResult } from "@/lib/services/ingestion.service";
 import { INGESTION_TYPE_LABELS } from "@/lib/schemas/ingestion.schemas";
 import type { IngestionObjectType } from "@/lib/schemas/ingestion.schemas";
@@ -481,19 +482,21 @@ export function IngestionModal({ open, onOpenChange }: IngestionModalProps) {
             </div>
 
             {/* Right: validation/result panel */}
-            <div className="flex w-[340px] shrink-0 flex-col">
+            <div className="flex w-[min(380px,40vw)] shrink-0 flex-col">
               <div className="flex shrink-0 items-center border-b border-border/60 px-4 py-2">
                 <span className="text-xs font-medium text-muted-foreground">{rightPanelTitle}</span>
               </div>
               <div className="min-h-0 flex-1 overflow-y-auto p-4">
                 {step === "edit" && !validationResult && (
-                  <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
-                    <Package className="h-8 w-8 text-muted-foreground/40" />
-                    <p className="text-xs text-muted-foreground">
-                      Cole um payload JSON e clique em{" "}
-                      <strong className="text-foreground">Validar</strong> para verificar os objetos
-                      antes de ingeri-los.
+                  <div className="flex h-full min-h-[280px] flex-col gap-3">
+                    <p className="text-[11px] text-muted-foreground">
+                      Referência de campos <strong className="text-foreground">obrigatórios</strong>
+                      , <strong className="text-foreground">opcionais</strong>,{" "}
+                      <strong className="text-foreground">condicionais</strong> e listas de{" "}
+                      <strong className="text-foreground">enum</strong>. Use também um template ou o
+                      JSON Schema para outra IA.
                     </p>
+                    <IngestionFieldReferencePanel />
                   </div>
                 )}
                 {step === "validated" && validationResult && (

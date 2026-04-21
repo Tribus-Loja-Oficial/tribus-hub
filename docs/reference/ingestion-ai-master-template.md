@@ -5,6 +5,14 @@
 **Versão do contrato:** `1.0`  
 **Especificação detalhada:** [ingestion-spec.md](./ingestion-spec.md) · **Campos por tipo:** [ingestion-object-schemas.md](./ingestion-object-schemas.md)
 
+**Formatos complementares (recomendado usar os três em conjunto):**
+
+| Formato | Onde | Para quê |
+|--------|------|----------|
+| **Markdown (este ficheiro)** | Repositório | Contexto humano + prompts para IA |
+| **JSON Schema** | No app deployado: `/ingestion-payload.schema.json` (ficheiro em `public/`) | Validação em IDE, geradores e IAs que suportam `$schema` |
+| **UI “Nova ingestão”** | Modal no Hub | Tabelas obrigatório/opcional/condicional e enums por tipo (dados em `src/features/ingestion/lib/ingestion-field-reference.ts`, alinhado ao Zod) |
+
 ---
 
 ## Instruções para a IA geradora

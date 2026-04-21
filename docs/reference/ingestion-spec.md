@@ -6,6 +6,8 @@
 
 **Template único para IA (campos obrigatórios/opcionais + roadmap):** [ingestion-ai-master-template.md](./ingestion-ai-master-template.md)
 
+**JSON Schema (máquina / IDE):** no deploy, `GET /ingestion-payload.schema.json` (ficheiro em `public/`). **Referência na UI:** modal de ingestão — painel à direita com enums e obrigatoriedade por tipo.
+
 ---
 
 ## Visão geral
