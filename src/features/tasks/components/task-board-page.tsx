@@ -22,6 +22,47 @@ type MilestoneRow = { id: string; title: string };
 type LabelRow = { id: string; name: string };
 type MemberRow = { id: string; name: string; email: string };
 
+const PRIORITY_SEARCH: Record<string, string> = {
+  low: "baixa low",
+  medium: "média media medium",
+  high: "alta high",
+  urgent: "urgente urgent",
+};
+
+function boardTaskTextHaystack(
+  task: BoardTask,
+  col: { name: string; slug: string },
+  projects: { id: string; title: string }[],
+  members: MemberRow[],
+): string {
+  const assignee = members.find((m) => m.id === task.assigneeUserId);
+  const project = projects.find((p) => p.id === task.projectId);
+  const descJson =
+    task.descriptionJson != null ? JSON.stringify(task.descriptionJson).slice(0, 1200) : "";
+  const pieces = [
+    task.title,
+    task.slug,
+    task.descriptionText ?? "",
+    descJson,
+    col.name,
+    col.slug,
+    task.priority,
+    PRIORITY_SEARCH[task.priority] ?? "",
+    project?.title ?? "",
+    task.projectTitle ?? "",
+    task.milestoneTitle ?? "",
+    assignee?.name ?? "",
+    assignee?.email ?? "",
+    ...(task.labels?.map((l) => `${l.name} ${l.slug}`) ?? []),
+    task.dueDate
+      ? `${format(new Date(task.dueDate), "dd/MM/yyyy", { locale: ptBR })} ${String(task.dueDate).slice(0, 10)}`
+      : "sem data prazo vencimento",
+    task.completedAt ? "concluída feita completa done" : "aberta pendente ativa",
+    task.startDate ? String(task.startDate) : "",
+  ];
+  return pieces.join("\n").toLowerCase();
+}
+
 function matchesDueFilter(task: BoardTask, dueFilter: string): boolean {
   if (!dueFilter) return true;
   const today = startOfDay(new Date());
@@ -89,6 +130,11 @@ export function TaskBoardPage() {
     enabled: !!projectFilter,
   });
 
+  const projects = projectsRes?.data ?? [];
+  const milestones = milestonesRes?.data ?? [];
+  const labels = labelsRes?.data ?? [];
+  const members = membersRes?.data ?? [];
+
   const filteredBoard = useMemo(() => {
     if (!data?.data) return null;
     return {
@@ -103,11 +149,7 @@ export function TaskBoardPage() {
           if (!matchesDueFilter(t, dueFilter)) return false;
           if (searchQuery) {
             const q = searchQuery.trim().toLowerCase();
-            const hay = [t.title, col.name, col.slug, t.priority]
-              .filter(Boolean)
-              .join("\n")
-              .toLowerCase();
-            if (!hay.includes(q)) return false;
+            if (!boardTaskTextHaystack(t, col, projects, members).includes(q)) return false;
           }
           return true;
         }),
@@ -122,6 +164,8 @@ export function TaskBoardPage() {
     assigneeFilter,
     dueFilter,
     searchQuery,
+    projects,
+    members,
   ]);
 
   const flatRows = useMemo(() => {
@@ -135,10 +179,6 @@ export function TaskBoardPage() {
     return rows;
   }, [filteredBoard]);
 
-  const projects = projectsRes?.data ?? [];
-  const milestones = milestonesRes?.data ?? [];
-  const labels = labelsRes?.data ?? [];
-  const members = membersRes?.data ?? [];
   const columns = filteredBoard?.columns ?? [];
 
   const openCreate = (columnId?: string | null) => {
@@ -155,7 +195,24 @@ export function TaskBoardPage() {
     setFormOpen(true);
   };
 
-  const hasAdvancedFilters = !!priorityFilter || !!labelFilter || !!assigneeFilter || !!dueFilter;
+  const hasAnyFilters =
+    !!searchQuery.trim() ||
+    !!projectFilter ||
+    !!milestoneFilter ||
+    !!priorityFilter ||
+    !!labelFilter ||
+    !!assigneeFilter ||
+    !!dueFilter;
+
+  function clearAllFilters() {
+    setSearchQuery("");
+    setProjectFilter("");
+    setMilestoneFilter("");
+    setPriorityFilter("");
+    setLabelFilter("");
+    setAssigneeFilter("");
+    setDueFilter("");
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -207,16 +264,29 @@ export function TaskBoardPage() {
       </div>
 
       <div className="mb-5 space-y-3">
-        {/* Search */}
-        <div className="relative w-full max-w-sm">
-          <Search className="pointer-events-none absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Buscar por título, coluna, prioridade…"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          />
+        {/* Search + limpar filtros */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative min-w-[200px] max-w-md flex-1">
+            <Search className="pointer-events-none absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Buscar em título, descrição, projeto, milestone, coluna, etiquetas, responsável, datas…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+          {hasAnyFilters && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-9 shrink-0"
+              onClick={clearAllFilters}
+            >
+              Limpar filtros
+            </Button>
+          )}
         </div>
         <div className="flex flex-wrap gap-3 text-sm">
           <div className="flex flex-col gap-1">
@@ -323,20 +393,6 @@ export function TaskBoardPage() {
             </select>
           </div>
         </div>
-        {hasAdvancedFilters && (
-          <button
-            type="button"
-            onClick={() => {
-              setPriorityFilter("");
-              setLabelFilter("");
-              setAssigneeFilter("");
-              setDueFilter("");
-            }}
-            className="w-fit text-xs text-primary hover:underline"
-          >
-            Limpar filtros avançados
-          </button>
-        )}
       </div>
 
       {isLoading && (
@@ -430,7 +486,9 @@ export function TaskBoardPage() {
                       {task.milestoneId ? (
                         <span className="inline-flex items-center gap-1 rounded border border-amber-200/60 bg-amber-50 px-1.5 py-0.5 text-[11px] text-muted-foreground">
                           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
-                          <span className="max-w-[100px] truncate">Milestone</span>
+                          <span className="max-w-[140px] truncate">
+                            {task.milestoneTitle ?? "Milestone"}
+                          </span>
                         </span>
                       ) : (
                         <span className="text-xs text-muted-foreground/40">—</span>

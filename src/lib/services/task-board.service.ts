@@ -8,7 +8,11 @@ export type TaskLabelSummary = {
   colorToken: string | null;
 };
 
-export type BoardTask = Task & { labels: TaskLabelSummary[] };
+export type BoardTask = Task & {
+  labels: TaskLabelSummary[];
+  projectTitle?: string | null;
+  milestoneTitle?: string | null;
+};
 
 export interface BoardData {
   columns: Array<{

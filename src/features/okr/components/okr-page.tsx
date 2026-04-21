@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import Link from "next/link";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -91,6 +92,8 @@ const STATUS_FILTER_OPTIONS = [
 
 export function OkrPage() {
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
+  const prevExpandParam = useRef<string | null>(null);
 
   const [search, setSearch] = useState("");
   /** Vazio = todos. Vários valores = OR (união). */
@@ -194,6 +197,16 @@ export function OkrPage() {
     () => sortOkrObjectivesForList(filtered, sort.field, sort.dir),
     [filtered, sort.field, sort.dir],
   );
+
+  useEffect(() => {
+    const cur = searchParams.get("expand");
+    if (cur === "all" && sortedFiltered.length > 0) {
+      setExpanded(new Set(sortedFiltered.map((o) => o.id)));
+    } else if (prevExpandParam.current === "all" && cur !== "all") {
+      setExpanded(new Set());
+    }
+    prevExpandParam.current = cur;
+  }, [searchParams, sortedFiltered]);
 
   const hasNonDefaultTableState = Boolean(
     filterStatuses.size > 0 || filterCycleIds.size > 0 || search.trim() || sort.field !== null,

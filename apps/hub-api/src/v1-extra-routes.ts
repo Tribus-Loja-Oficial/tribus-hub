@@ -112,39 +112,94 @@ export async function handleV1ExtraRoutes(
     if (err) return err;
     const q = new URL(request.url).searchParams.get("q")?.trim() ?? "";
     if (q.length < 2) return json({ error: { message: "query must be at least 2 characters" } }, 400);
-    const pattern = `%${q.replace(/%/g, "\\%")}%`;
-    const limit = 30;
-    const q4 = Math.ceil(limit / 4);
+    const safe = q.replace(/[%_]/g, " ").trim();
+    if (safe.length < 2) return json({ error: { message: "query must be at least 2 characters" } }, 400);
+    const pattern = `%${safe}%`;
+    const limit = 48;
+    const each = 8;
     try {
-      const [pages, projects, milestones, tasks] = await Promise.all([
+      const [
+        pages,
+        projects,
+        milestones,
+        tasks,
+        objectives,
+        keyResults,
+        cycles,
+      ] = await Promise.all([
         db
           .prepare(
-            `SELECT id, title, slug, excerpt FROM pages WHERE workspace_id = ? AND deleted_at IS NULL AND (title LIKE ? OR slug LIKE ?) LIMIT ?`,
+            `SELECT id, title, slug, excerpt FROM pages
+             WHERE workspace_id = ? AND deleted_at IS NULL
+               AND (title LIKE ? OR slug LIKE ? OR IFNULL(excerpt,'') LIKE ? OR IFNULL(content_text,'') LIKE ?)
+             LIMIT ?`,
           )
-          .bind(workspaceId, pattern, pattern, q4)
+          .bind(workspaceId, pattern, pattern, pattern, pattern, each)
           .all<{ id: string; title: string; slug: string; excerpt: string | null }>(),
         db
           .prepare(
-            `SELECT id, title, slug, summary FROM projects WHERE workspace_id = ? AND deleted_at IS NULL AND title LIKE ? LIMIT ?`,
+            `SELECT id, title, slug, summary, description_text FROM projects
+             WHERE workspace_id = ? AND deleted_at IS NULL
+               AND (title LIKE ? OR IFNULL(summary,'') LIKE ? OR IFNULL(description_text,'') LIKE ?)
+             LIMIT ?`,
           )
-          .bind(workspaceId!, pattern, q4)
-          .all<{ id: string; title: string; slug: string; summary: string | null }>(),
+          .bind(workspaceId!, pattern, pattern, pattern, each)
+          .all<{ id: string; title: string; slug: string; summary: string | null; description_text: string | null }>(),
         db
           .prepare(
             `SELECT m.id, m.title, m.project_id FROM milestones m
              INNER JOIN projects p ON p.id = m.project_id
-             WHERE p.workspace_id = ? AND m.title LIKE ? LIMIT ?`,
+             WHERE p.workspace_id = ? AND m.title LIKE ?
+             LIMIT ?`,
           )
-          .bind(workspaceId!, pattern, q4)
+          .bind(workspaceId!, pattern, each)
           .all<{ id: string; title: string; project_id: string }>(),
         db
           .prepare(
-            `SELECT id, title, slug FROM tasks WHERE workspace_id = ? AND deleted_at IS NULL AND title LIKE ? LIMIT ?`,
+            `SELECT id, title, slug, description_text FROM tasks
+             WHERE workspace_id = ? AND deleted_at IS NULL
+               AND (title LIKE ? OR slug LIKE ? OR IFNULL(description_text,'') LIKE ?)
+             LIMIT ?`,
           )
-          .bind(workspaceId!, pattern, q4)
-          .all<{ id: string; title: string; slug: string }>(),
+          .bind(workspaceId!, pattern, pattern, pattern, each)
+          .all<{ id: string; title: string; slug: string; description_text: string | null }>(),
+        db
+          .prepare(
+            `SELECT id, title, slug, description_text FROM okr_objectives
+             WHERE workspace_id = ? AND deleted_at IS NULL
+               AND (title LIKE ? OR IFNULL(description_text,'') LIKE ?)
+             LIMIT ?`,
+          )
+          .bind(workspaceId!, pattern, pattern, each)
+          .all<{ id: string; title: string; slug: string; description_text: string | null }>(),
+        db
+          .prepare(
+            `SELECT id, title, slug, description_text FROM okr_key_results
+             WHERE workspace_id = ? AND deleted_at IS NULL
+               AND (title LIKE ? OR IFNULL(description_text,'') LIKE ?)
+             LIMIT ?`,
+          )
+          .bind(workspaceId!, pattern, pattern, each)
+          .all<{ id: string; title: string; slug: string; description_text: string | null }>(),
+        db
+          .prepare(
+            `SELECT id, title, slug, description FROM okr_cycles
+             WHERE workspace_id = ? AND deleted_at IS NULL
+               AND (title LIKE ? OR IFNULL(description,'') LIKE ?)
+             LIMIT ?`,
+          )
+          .bind(workspaceId!, pattern, pattern, each)
+          .all<{ id: string; title: string; slug: string; description: string | null }>(),
       ]);
-      if (!pages.success || !projects.success || !milestones.success || !tasks.success) {
+      if (
+        !pages.success ||
+        !projects.success ||
+        !milestones.success ||
+        !tasks.success ||
+        !objectives.success ||
+        !keyResults.success ||
+        !cycles.success
+      ) {
         throw new Error("search query failed");
       }
       const results = [
@@ -160,7 +215,7 @@ export async function handleV1ExtraRoutes(
           type: "project" as const,
           title: p.title,
           slug: p.slug,
-          excerpt: p.summary ?? undefined,
+          excerpt: p.summary ?? p.description_text ?? undefined,
         })),
         ...(milestones.results ?? []).map((m) => ({
           id: m.id,
@@ -173,6 +228,28 @@ export async function handleV1ExtraRoutes(
           type: "task" as const,
           title: t.title,
           slug: t.slug,
+          excerpt: t.description_text ?? undefined,
+        })),
+        ...(objectives.results ?? []).map((o) => ({
+          id: o.id,
+          type: "okr_objective" as const,
+          title: o.title,
+          slug: o.slug,
+          excerpt: o.description_text ?? undefined,
+        })),
+        ...(keyResults.results ?? []).map((k) => ({
+          id: k.id,
+          type: "okr_key_result" as const,
+          title: k.title,
+          slug: k.slug,
+          excerpt: k.description_text ?? undefined,
+        })),
+        ...(cycles.results ?? []).map((c) => ({
+          id: c.id,
+          type: "okr_cycle" as const,
+          title: c.title,
+          slug: c.slug,
+          excerpt: c.description ?? undefined,
         })),
       ].slice(0, limit);
       return json({
@@ -181,6 +258,9 @@ export async function handleV1ExtraRoutes(
           projects: results.filter((r) => r.type === "project"),
           milestones: results.filter((r) => r.type === "milestone"),
           tasks: results.filter((r) => r.type === "task"),
+          objectives: results.filter((r) => r.type === "okr_objective"),
+          keyResults: results.filter((r) => r.type === "okr_key_result"),
+          cycles: results.filter((r) => r.type === "okr_cycle"),
           total: results.length,
         },
       });

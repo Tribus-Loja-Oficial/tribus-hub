@@ -87,7 +87,16 @@ function StatCard({ label, value, sub, icon: Icon, iconClassName, href }: StatCa
       </div>
     </div>
   );
-  return href ? <Link href={href}>{inner}</Link> : inner;
+  return href ? (
+    <Link
+      href={href}
+      className="block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      {inner}
+    </Link>
+  ) : (
+    inner
+  );
 }
 
 interface OkrDashboardProps {
@@ -263,7 +272,7 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
                   sub={`${stats.onTrackObjectives} no rumo · ${stats.atRiskObjectives} em risco · ${stats.offTrackObjectives} fora`}
                   icon={Target}
                   iconClassName="bg-primary/10 text-primary"
-                  href="/okr/objectives"
+                  href="/okr/okrs"
                 />
                 <StatCard
                   label="Key Results"
@@ -271,7 +280,7 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
                   sub={`${stats.completedKrs} de ${stats.totalKeyResults} KRs concluídos`}
                   icon={TrendingUp}
                   iconClassName="bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400"
-                  href="/okr/key-results"
+                  href="/okr/okrs?expand=all"
                 />
                 <StatCard
                   label="Progresso médio (KRs)"

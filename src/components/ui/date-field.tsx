@@ -30,14 +30,20 @@ const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
 
     const fieldId = id ?? autoId;
 
+    function openPicker() {
+      if (disabled) return;
+      const el = innerRef.current;
+      if (!el) return;
+      try {
+        el.showPicker();
+      } catch {
+        el.focus();
+        el.click();
+      }
+    }
+
     return (
-      <div
-        className={cn(
-          "relative flex h-9 w-full rounded-md border border-input bg-background text-sm shadow-sm transition-colors focus-within:ring-1 focus-within:ring-ring hover:border-muted-foreground/25",
-          disabled && "pointer-events-none cursor-not-allowed opacity-50",
-          className,
-        )}
-      >
+      <div className={cn("relative w-full", className)}>
         <input
           id={fieldId}
           name={name}
@@ -49,21 +55,37 @@ const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
           min={min}
           max={max}
           required={required}
-          className="absolute inset-0 z-[1] h-full w-full cursor-pointer opacity-0"
-          title={display || undefined}
+          tabIndex={-1}
+          className="sr-only"
           {...props}
         />
-        <div className="pointer-events-none relative z-0 flex h-full min-h-9 w-full min-w-0 items-center gap-2 px-3">
+        <button
+          type="button"
+          disabled={disabled}
+          aria-label={display ? `Data: ${display}` : "Abrir calendário"}
+          onClick={openPicker}
+          onKeyDown={(e) => {
+            if (e.key === " " || e.key === "Enter") {
+              e.preventDefault();
+              openPicker();
+            }
+          }}
+          className={cn(
+            "flex h-9 w-full items-center gap-2 rounded-md border border-input bg-background px-3 text-left text-sm shadow-sm transition-colors",
+            "hover:border-muted-foreground/30 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+            disabled && "pointer-events-none cursor-not-allowed opacity-50",
+          )}
+        >
           <span
             className={cn(
-              "min-w-0 flex-1 truncate text-left tabular-nums text-foreground",
+              "min-w-0 flex-1 truncate tabular-nums text-foreground",
               !display && "text-muted-foreground",
             )}
           >
             {display || "dd/mm/aaaa"}
           </span>
-          <Calendar className="ml-auto h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-        </div>
+          <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+        </button>
       </div>
     );
   },

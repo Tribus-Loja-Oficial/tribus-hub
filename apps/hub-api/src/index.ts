@@ -83,6 +83,8 @@ type TaskRow = {
   updated_at: string;
   archived_at: string | null;
   deleted_at: string | null;
+  project_title?: string | null;
+  milestone_title?: string | null;
 };
 
 type TaskLabelSummaryRow = {
@@ -661,32 +663,36 @@ async function getTaskBoardData(db: D1DatabaseLike, workspaceId: string) {
     .prepare(
       `
       SELECT
-        id,
-        workspace_id,
-        project_id,
-        milestone_id,
-        column_id,
-        title,
-        slug,
-        description_json,
-        description_text,
-        priority,
-        assignee_user_id,
-        reporter_user_id,
-        due_date,
-        start_date,
-        completed_at,
-        sort_order,
-        created_by,
-        updated_by,
-        created_at,
-        updated_at,
-        archived_at,
-        deleted_at
-      FROM tasks
-      WHERE workspace_id = ?
-        AND deleted_at IS NULL
-      ORDER BY column_id ASC, sort_order ASC
+        t.id,
+        t.workspace_id,
+        t.project_id,
+        t.milestone_id,
+        t.column_id,
+        t.title,
+        t.slug,
+        t.description_json,
+        t.description_text,
+        t.priority,
+        t.assignee_user_id,
+        t.reporter_user_id,
+        t.due_date,
+        t.start_date,
+        t.completed_at,
+        t.sort_order,
+        t.created_by,
+        t.updated_by,
+        t.created_at,
+        t.updated_at,
+        t.archived_at,
+        t.deleted_at,
+        p.title AS project_title,
+        m.title AS milestone_title
+      FROM tasks t
+      LEFT JOIN projects p ON p.id = t.project_id
+      LEFT JOIN milestones m ON m.id = t.milestone_id
+      WHERE t.workspace_id = ?
+        AND t.deleted_at IS NULL
+      ORDER BY t.column_id ASC, t.sort_order ASC
     `,
     )
     .bind(workspaceId)
@@ -760,6 +766,8 @@ async function getTaskBoardData(db: D1DatabaseLike, workspaceId: string) {
         columnId: task.column_id,
         title: task.title,
         slug: task.slug,
+        projectTitle: task.project_title,
+        milestoneTitle: task.milestone_title,
         descriptionJson: safeJsonParse(task.description_json),
         descriptionText: task.description_text,
         priority: task.priority,

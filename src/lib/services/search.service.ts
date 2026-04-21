@@ -13,6 +13,9 @@ export async function search(user: AuthenticatedUser, query: string) {
     projects: unknown[];
     milestones: unknown[];
     tasks: unknown[];
+    objectives: unknown[];
+    keyResults: unknown[];
+    cycles: unknown[];
     total: number;
   }>({
     path: `/v1/search?q=${q}`,
