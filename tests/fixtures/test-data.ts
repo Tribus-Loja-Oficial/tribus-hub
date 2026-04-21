@@ -1,4 +1,28 @@
-import type { User, Workspace, Page, Project, Task, TaskColumn } from "@/lib/db/schema";
+import type { Page, Project, Task, TaskColumn } from "@/lib/types/domain";
+
+type Workspace = {
+  id: string;
+  name: string;
+  slug: string;
+  logoAssetId: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type User = {
+  id: string;
+  workspaceId: string;
+  name: string;
+  email: string;
+  passwordHash: string;
+  role: "owner" | "admin" | "member";
+  avatarAssetId: string | null;
+  isActive: boolean;
+  lastLoginAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
 
 export const testWorkspace: Workspace = {
   id: "workspace-test-01",
@@ -6,8 +30,8 @@ export const testWorkspace: Workspace = {
   slug: "tribus-test",
   logoAssetId: null,
   isActive: true,
-  createdAt: new Date("2024-01-01"),
-  updatedAt: new Date("2024-01-01"),
+  createdAt: "2024-01-01T00:00:00.000Z",
+  updatedAt: "2024-01-01T00:00:00.000Z",
 };
 
 export const testUser: User = {
@@ -20,8 +44,8 @@ export const testUser: User = {
   avatarAssetId: null,
   isActive: true,
   lastLoginAt: null,
-  createdAt: new Date("2024-01-01"),
-  updatedAt: new Date("2024-01-01"),
+  createdAt: "2024-01-01T00:00:00.000Z",
+  updatedAt: "2024-01-01T00:00:00.000Z",
 };
 
 export const testPage: Page = {
@@ -41,8 +65,8 @@ export const testPage: Page = {
   isDeleted: false,
   createdBy: "user-test-01",
   updatedBy: "user-test-01",
-  createdAt: new Date("2024-01-01"),
-  updatedAt: new Date("2024-01-01"),
+  createdAt: "2024-01-01T00:00:00.000Z",
+  updatedAt: "2024-01-01T00:00:00.000Z",
   archivedAt: null,
   deletedAt: null,
 };
@@ -55,8 +79,8 @@ export const testColumn: TaskColumn = {
   colorToken: "#60a5fa",
   sortOrder: 0,
   isDefault: true,
-  createdAt: new Date("2024-01-01"),
-  updatedAt: new Date("2024-01-01"),
+  createdAt: "2024-01-01T00:00:00.000Z",
+  updatedAt: "2024-01-01T00:00:00.000Z",
 };
 
 export const testAuthUser = {

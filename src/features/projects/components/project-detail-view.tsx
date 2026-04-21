@@ -92,7 +92,7 @@ function formatBytes(n: number) {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function isOverdue(dateStr: string | null | undefined, completedAt?: Date | null) {
+function isOverdue(dateStr: string | null | undefined, completedAt?: string | null) {
   if (!dateStr || completedAt) return false;
   return isBefore(startOfDay(new Date(dateStr)), startOfDay(new Date()));
 }

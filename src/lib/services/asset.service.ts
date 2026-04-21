@@ -55,7 +55,7 @@ function asAsset(row: HubAsset): Asset {
     width: row.width,
     height: row.height,
     uploadedBy: row.uploadedBy,
-    createdAt: new Date(row.createdAt),
+    createdAt: row.createdAt,
   };
 }
 
@@ -220,6 +220,6 @@ export async function linkAsset(
     entityType: link.entityType,
     entityId: link.entityId,
     usageKind: link.usageKind as AssetLink["usageKind"],
-    createdAt: new Date(link.createdAt),
+    createdAt: link.createdAt,
   };
 }
