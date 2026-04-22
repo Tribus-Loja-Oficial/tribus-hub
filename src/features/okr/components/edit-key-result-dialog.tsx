@@ -136,9 +136,7 @@ export function EditKeyResultDialog({ open, onOpenChange, keyResult }: EditKeyRe
     setStartDate(keyResult.startDate ?? "");
     setTargetDate(keyResult.targetDate ?? "");
     setConfidence(
-      keyResult.confidence != null && keyResult.confidence >= 0
-        ? String(keyResult.confidence)
-        : "",
+      keyResult.confidence != null && keyResult.confidence >= 0 ? String(keyResult.confidence) : "",
     );
     setDateErrors({});
     setValueError("");
@@ -164,8 +162,7 @@ export function EditKeyResultDialog({ open, onOpenChange, keyResult }: EditKeyRe
   const startNum = parseFloat(startValue);
   const currentNum = parseFloat(currentValue);
   const targetNum = parseFloat(targetValue);
-  const numsOk =
-    !Number.isNaN(startNum) && !Number.isNaN(currentNum) && !Number.isNaN(targetNum);
+  const numsOk = !Number.isNaN(startNum) && !Number.isNaN(currentNum) && !Number.isNaN(targetNum);
 
   const progressPreview = numsOk
     ? Math.round(calcKrProgress(startNum, currentNum, targetNum, metricType) * 10) / 10
@@ -274,7 +271,7 @@ export function EditKeyResultDialog({ open, onOpenChange, keyResult }: EditKeyRe
 
   return (
     <Dialog open={open} onOpenChange={emitOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar key result</DialogTitle>
         </DialogHeader>
@@ -289,7 +286,7 @@ export function EditKeyResultDialog({ open, onOpenChange, keyResult }: EditKeyRe
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ex.: Atingir 200 clientes ativos mensais"
             />
-            <p className="text-xs text-muted-foreground leading-relaxed">
+            <p className="text-xs leading-relaxed text-muted-foreground">
               Key result mensurável e verificável.
             </p>
           </div>
@@ -305,7 +302,7 @@ export function EditKeyResultDialog({ open, onOpenChange, keyResult }: EditKeyRe
               placeholder="Descreva a regra de medição, fonte do dado e critério de sucesso."
               className={cn(
                 "w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors",
-                "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring min-h-[4.5rem]",
+                "min-h-[4.5rem] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
               )}
             />
           </div>
@@ -406,7 +403,7 @@ export function EditKeyResultDialog({ open, onOpenChange, keyResult }: EditKeyRe
                   <Label>Atual</Label>
                   <button
                     type="button"
-                    className="text-[10px] font-medium text-primary hover:underline shrink-0"
+                    className="shrink-0 text-[10px] font-medium text-primary hover:underline"
                     onClick={() => setCurrentValue(startValue)}
                   >
                     Igual ao início
@@ -504,7 +501,8 @@ export function EditKeyResultDialog({ open, onOpenChange, keyResult }: EditKeyRe
 
                 <div className="space-y-1.5">
                   <Label>
-                    Confiança <span className="text-xs text-muted-foreground">(opcional, 0–100)</span>
+                    Confiança{" "}
+                    <span className="text-xs text-muted-foreground">(opcional, 0–100)</span>
                   </Label>
                   <select
                     className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"

@@ -257,9 +257,10 @@ function ListView({
   projects: Project[];
   onEditProject: (p: Project) => void;
 }) {
-  const { widths, startResize } = useResizableGridColumns("hub:projects-list-cols", [
-    280, 96, 88, 88, 88, 100, 44, 28,
-  ]);
+  const { widths, startResize } = useResizableGridColumns(
+    "hub:projects-list-cols",
+    [280, 96, 88, 88, 88, 100, 44, 28],
+  );
   const gridTpl = widths.map((w) => `${w}px`).join(" ");
 
   if (projects.length === 0) {
@@ -427,10 +428,7 @@ function BoardView({
                 >
                   <Pencil className="h-3.5 w-3.5" />
                 </button>
-                <Link
-                  href={projectHref(project)}
-                  className="block p-3 pr-10"
-                >
+                <Link href={projectHref(project)} className="block p-3 pr-10">
                   <p className="text-sm font-semibold leading-snug text-foreground">
                     {project.title}
                   </p>

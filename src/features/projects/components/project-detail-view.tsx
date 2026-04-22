@@ -623,7 +623,12 @@ export function ProjectDetailView({ paramsPromise }: ProjectDetailViewProps) {
           </div>
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">
-          <Button size="sm" variant="outline" onClick={() => setEditProjectOpen(true)} className="gap-1.5">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setEditProjectOpen(true)}
+            className="gap-1.5"
+          >
             <Pencil className="h-3.5 w-3.5" />
             Editar projeto
           </Button>

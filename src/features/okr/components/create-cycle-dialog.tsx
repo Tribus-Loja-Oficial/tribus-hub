@@ -133,7 +133,8 @@ export function CreateCycleDialog({ open, onOpenChange }: CreateCycleDialogProps
       : "";
 
   const durationDays = useMemo(
-    () => (startDate && endDate && !dateOrderError ? inclusiveCalendarDays(startDate, endDate) : null),
+    () =>
+      startDate && endDate && !dateOrderError ? inclusiveCalendarDays(startDate, endDate) : null,
     [startDate, endDate, dateOrderError],
   );
 
@@ -151,8 +152,9 @@ export function CreateCycleDialog({ open, onOpenChange }: CreateCycleDialogProps
     });
   }
 
-  const canSubmit =
-    Boolean(title.trim() && startDate && endDate && !dateOrderError && !mutation.isPending);
+  const canSubmit = Boolean(
+    title.trim() && startDate && endDate && !dateOrderError && !mutation.isPending,
+  );
 
   return (
     <Dialog open={open} onOpenChange={emitOpenChange}>
@@ -171,13 +173,15 @@ export function CreateCycleDialog({ open, onOpenChange }: CreateCycleDialogProps
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ex.: Q1 2026"
             />
-            <p className="text-xs text-muted-foreground leading-relaxed">
+            <p className="text-xs leading-relaxed text-muted-foreground">
               Exemplos: Q1 2026, 1º semestre 2026, Ciclo anual 2026
             </p>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <span className="w-full text-xs font-medium text-muted-foreground">Atalhos de período</span>
+            <span className="w-full text-xs font-medium text-muted-foreground">
+              Atalhos de período
+            </span>
             <Button
               type="button"
               variant="outline"
@@ -220,8 +224,9 @@ export function CreateCycleDialog({ open, onOpenChange }: CreateCycleDialogProps
             >
               Ano
             </Button>
-            <p className="w-full text-[11px] text-muted-foreground leading-snug">
-              Preenche início e fim com o período corrente no calendário (trimestre, semestre ou ano civil).
+            <p className="w-full text-[11px] leading-snug text-muted-foreground">
+              Preenche início e fim com o período corrente no calendário (trimestre, semestre ou ano
+              civil).
             </p>
           </div>
 
@@ -249,9 +254,7 @@ export function CreateCycleDialog({ open, onOpenChange }: CreateCycleDialogProps
                   setStatusPinned(false);
                 }}
               />
-              {dateOrderError ? (
-                <p className="text-xs text-destructive">{dateOrderError}</p>
-              ) : null}
+              {dateOrderError ? <p className="text-xs text-destructive">{dateOrderError}</p> : null}
             </div>
           </div>
 
@@ -287,7 +290,7 @@ export function CreateCycleDialog({ open, onOpenChange }: CreateCycleDialogProps
               ))}
             </select>
             {statusPinned && startDate && endDate && !dateOrderError ? (
-              <p className="text-[11px] text-muted-foreground leading-snug">
+              <p className="text-[11px] leading-snug text-muted-foreground">
                 Para estas datas, a sugestão automática é{" "}
                 <span className="text-foreground/90">
                   {STATUS_LABELS[inferCycleStatus(startDate, endDate)]}
@@ -295,7 +298,7 @@ export function CreateCycleDialog({ open, onOpenChange }: CreateCycleDialogProps
                 .{" "}
                 <button
                   type="button"
-                  className="text-primary hover:underline font-medium"
+                  className="font-medium text-primary hover:underline"
                   onClick={() => {
                     setStatusPinned(false);
                     setStatus(inferCycleStatus(startDate, endDate));
@@ -318,7 +321,7 @@ export function CreateCycleDialog({ open, onOpenChange }: CreateCycleDialogProps
               placeholder="Contexto do ciclo, foco estratégico e observações…"
               className={cn(
                 "w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors",
-                "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring min-h-[4.5rem]",
+                "min-h-[4.5rem] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
               )}
             />
           </div>

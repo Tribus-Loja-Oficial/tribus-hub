@@ -114,10 +114,7 @@ export function UpdateObjectiveDialog({
   const cycles = cyclesRes?.data ?? [];
   const members = membersRes?.data ?? [];
 
-  const selectedCycle = useMemo(
-    () => cycles.find((c) => c.id === cycleId),
-    [cycles, cycleId],
-  );
+  const selectedCycle = useMemo(() => cycles.find((c) => c.id === cycleId), [cycles, cycleId]);
 
   function applyDateValidation(): boolean {
     const next: DateFieldErrors = {};
@@ -160,7 +157,7 @@ export function UpdateObjectiveDialog({
 
   return (
     <Dialog open={open} onOpenChange={emitOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar objetivo</DialogTitle>
         </DialogHeader>
@@ -175,8 +172,9 @@ export function UpdateObjectiveDialog({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ex.: Aumentar receita recorrente no nicho corrida"
             />
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Objetivo descreve um <strong className="font-medium text-foreground/80">resultado desejado</strong>, não
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Objetivo descreve um{" "}
+              <strong className="font-medium text-foreground/80">resultado desejado</strong>, não
               uma atividade.
             </p>
           </div>
@@ -192,7 +190,7 @@ export function UpdateObjectiveDialog({
               placeholder="Explique contexto, motivação, impacto esperado e restrições."
               className={cn(
                 "w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors",
-                "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring min-h-[5.5rem]",
+                "min-h-[5.5rem] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
               )}
             />
           </div>

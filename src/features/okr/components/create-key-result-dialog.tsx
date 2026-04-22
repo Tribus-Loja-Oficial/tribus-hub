@@ -179,8 +179,7 @@ export function CreateKeyResultDialog({
   const startNum = parseFloat(startValue);
   const currentNum = parseFloat(currentValue);
   const targetNum = parseFloat(targetValue);
-  const numsOk =
-    !Number.isNaN(startNum) && !Number.isNaN(currentNum) && !Number.isNaN(targetNum);
+  const numsOk = !Number.isNaN(startNum) && !Number.isNaN(currentNum) && !Number.isNaN(targetNum);
 
   const progressPreview = numsOk
     ? Math.round(calcKrProgress(startNum, currentNum, targetNum, metricType) * 10) / 10
@@ -286,9 +285,11 @@ export function CreateKeyResultDialog({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ex.: Atingir 200 clientes ativos mensais"
             />
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Key result deve ser <strong className="font-medium text-foreground/80">mensurável e verificável</strong>.
-              Ex.: &quot;Atingir 200 clientes ativos&quot; ou &quot;Elevar conversão para 3,5%&quot;.
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Key result deve ser{" "}
+              <strong className="font-medium text-foreground/80">mensurável e verificável</strong>.
+              Ex.: &quot;Atingir 200 clientes ativos&quot; ou &quot;Elevar conversão para
+              3,5%&quot;.
             </p>
           </div>
 
@@ -303,7 +304,7 @@ export function CreateKeyResultDialog({
               placeholder="Descreva a regra de medição, fonte do dado e critério de sucesso."
               className={cn(
                 "w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors",
-                "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring min-h-[4.5rem]",
+                "min-h-[4.5rem] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
               )}
             />
           </div>
@@ -332,7 +333,8 @@ export function CreateKeyResultDialog({
                 <p className="text-xs text-muted-foreground">
                   {inheritedCycle ? (
                     <>
-                      Ciclo herdado: <span className="text-foreground/90">{inheritedCycle.title}</span>
+                      Ciclo herdado:{" "}
+                      <span className="text-foreground/90">{inheritedCycle.title}</span>
                     </>
                   ) : (
                     <>Sem ciclo vinculado ao objetivo</>
@@ -424,7 +426,7 @@ export function CreateKeyResultDialog({
                   <Label>Atual</Label>
                   <button
                     type="button"
-                    className="text-[10px] font-medium text-primary hover:underline shrink-0"
+                    className="shrink-0 text-[10px] font-medium text-primary hover:underline"
                     onClick={() => setCurrentValue(startValue)}
                   >
                     Igual ao início
@@ -522,7 +524,8 @@ export function CreateKeyResultDialog({
 
                 <div className="space-y-1.5">
                   <Label>
-                    Confiança <span className="text-xs text-muted-foreground">(opcional, 0–100)</span>
+                    Confiança{" "}
+                    <span className="text-xs text-muted-foreground">(opcional, 0–100)</span>
                   </Label>
                   <select
                     className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
@@ -540,7 +543,7 @@ export function CreateKeyResultDialog({
             )}
           </div>
 
-          <p className="text-xs text-muted-foreground leading-relaxed">
+          <p className="text-xs leading-relaxed text-muted-foreground">
             Você poderá registrar atualizações de valor e comentários depois que o KR existir.
           </p>
 

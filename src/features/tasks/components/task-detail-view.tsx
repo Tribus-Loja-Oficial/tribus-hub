@@ -99,7 +99,9 @@ export function TaskDetailView({ paramsPromise }: TaskDetailViewProps) {
             <div className="min-w-0">
               <h1 className="text-xl font-semibold text-foreground">{task.title}</h1>
               {task.externalRef && (
-                <p className="mt-1 font-mono text-[11px] text-muted-foreground">Ref: {task.externalRef}</p>
+                <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+                  Ref: {task.externalRef}
+                </p>
               )}
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <PriorityBadge priority={task.priority} />
@@ -115,10 +117,15 @@ export function TaskDetailView({ paramsPromise }: TaskDetailViewProps) {
                 )}
               </div>
               {task.descriptionText && (
-                <p className="mt-3 text-sm text-muted-foreground whitespace-pre-wrap">{task.descriptionText}</p>
+                <p className="mt-3 whitespace-pre-wrap text-sm text-muted-foreground">
+                  {task.descriptionText}
+                </p>
               )}
               {projectHref && (
-                <Link href={projectHref} className="mt-3 inline-block text-sm text-primary hover:underline">
+                <Link
+                  href={projectHref}
+                  className="mt-3 inline-block text-sm text-primary hover:underline"
+                >
                   Ver projeto
                 </Link>
               )}
@@ -132,7 +139,11 @@ export function TaskDetailView({ paramsPromise }: TaskDetailViewProps) {
             className="gap-1.5"
             title={!boardReady ? "Carregando colunas do board…" : undefined}
           >
-            {boardLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Pencil className="h-3.5 w-3.5" />}
+            {boardLoading ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Pencil className="h-3.5 w-3.5" />
+            )}
             Editar
           </Button>
         </div>

@@ -18,11 +18,7 @@ interface EditProjectDialogProps {
   project: Project | null;
 }
 
-export function EditProjectDialog({
-  open,
-  onOpenChange,
-  project,
-}: EditProjectDialogProps) {
+export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDialogProps) {
   const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
@@ -76,7 +72,7 @@ export function EditProjectDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar projeto</DialogTitle>
         </DialogHeader>

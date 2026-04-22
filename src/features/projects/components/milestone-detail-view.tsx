@@ -27,7 +27,9 @@ export function MilestoneDetailView({ paramsPromise }: MilestoneDetailViewProps)
   const [priority, setPriority] = useState("medium");
   const [dueDate, setDueDate] = useState("");
 
-  const { data, isLoading, isError, error } = useQuery<{ data: Milestone & { externalRef?: string | null } }>({
+  const { data, isLoading, isError, error } = useQuery<{
+    data: Milestone & { externalRef?: string | null };
+  }>({
     queryKey: ["milestone", projectId, milestoneId],
     queryFn: async () => {
       const res = await fetch(`/api/projects/${projectId}/milestones/${milestoneId}`);
@@ -101,7 +103,9 @@ export function MilestoneDetailView({ paramsPromise }: MilestoneDetailViewProps)
             <div className="min-w-0">
               <h1 className="text-xl font-semibold text-foreground">{m.title}</h1>
               {m.externalRef && (
-                <p className="mt-1 font-mono text-[11px] text-muted-foreground">Ref: {m.externalRef}</p>
+                <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+                  Ref: {m.externalRef}
+                </p>
               )}
               <div className="mt-2 flex flex-wrap gap-2">
                 <MilestoneStatusBadge status={m.status} />
@@ -113,7 +117,9 @@ export function MilestoneDetailView({ paramsPromise }: MilestoneDetailViewProps)
                 )}
               </div>
               {m.description && (
-                <p className="mt-3 text-sm text-muted-foreground whitespace-pre-wrap">{m.description}</p>
+                <p className="mt-3 whitespace-pre-wrap text-sm text-muted-foreground">
+                  {m.description}
+                </p>
               )}
             </div>
           </div>

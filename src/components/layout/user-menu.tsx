@@ -15,7 +15,7 @@ export function UserMenu() {
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
         <button className="flex items-center gap-2 rounded-lg py-0.5 pl-0.5 pr-1 text-sm font-medium text-foreground/85 transition-colors duration-200 hover:bg-accent/50 hover:text-foreground">
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/12 text-xs font-semibold text-primary ring-1 ring-inset ring-primary/10">
+          <div className="bg-primary/12 flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold text-primary ring-1 ring-inset ring-primary/10">
             {user.name?.charAt(0).toUpperCase() ?? "U"}
           </div>
           <span className="hidden max-w-[120px] truncate sm:block">{user.name}</span>

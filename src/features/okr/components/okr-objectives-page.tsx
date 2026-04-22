@@ -65,9 +65,10 @@ export function OkrObjectivesPage() {
   const [updateKrOpen, setUpdateKrOpen] = useState(false);
   const [selectedKr, setSelectedKr] = useState<OkrKeyResult | null>(null);
 
-  const { widths, startResize } = useResizableGridColumns("hub:okr-objectives-cols", [
-    20, 280, 110, 90, 80, 140, 36,
-  ]);
+  const { widths, startResize } = useResizableGridColumns(
+    "hub:okr-objectives-cols",
+    [20, 280, 110, 90, 80, 140, 36],
+  );
   const okrGridTpl = widths.map((w) => `${w}px`).join(" ");
 
   const params = new URLSearchParams();

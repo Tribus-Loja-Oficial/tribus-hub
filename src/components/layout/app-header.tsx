@@ -25,7 +25,7 @@ export function AppHeader() {
 
   return (
     <>
-      <header className="flex h-14 shrink-0 items-center gap-4 border-b border-border/80 bg-card/35 px-4 shadow-sm shadow-black/[0.02] backdrop-blur-md supports-[backdrop-filter]:bg-card/25 sm:px-6 dark:shadow-black/30">
+      <header className="flex h-14 shrink-0 items-center gap-4 border-b border-border/80 bg-card/35 px-4 shadow-sm shadow-black/[0.02] backdrop-blur-md supports-[backdrop-filter]:bg-card/25 dark:shadow-black/30 sm:px-6">
         <div className="hidden min-w-0 max-w-[min(40%,320px)] flex-1 md:block">
           <AppBreadcrumbs />
         </div>
@@ -36,7 +36,7 @@ export function AppHeader() {
             onClick={() => setSearchOpen(true)}
             className={cn(
               "group flex w-full max-w-md items-center gap-2.5 rounded-xl border border-border/80 bg-gradient-to-b from-card/90 to-muted/25 px-3 py-2.5 text-sm text-muted-foreground shadow-inset",
-              "transition-all duration-200 ease-out hover:border-primary/22 hover:from-card hover:to-muted/35 hover:text-foreground hover:shadow-card",
+              "hover:border-primary/22 transition-all duration-200 ease-out hover:from-card hover:to-muted/35 hover:text-foreground hover:shadow-card",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45 focus-visible:ring-offset-1",
             )}
           >

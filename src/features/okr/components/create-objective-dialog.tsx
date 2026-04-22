@@ -107,10 +107,7 @@ export function CreateObjectiveDialog({
   const cycles = cyclesRes?.data ?? [];
   const members = membersRes?.data ?? [];
 
-  const selectedCycle = useMemo(
-    () => cycles.find((c) => c.id === cycleId),
-    [cycles, cycleId],
-  );
+  const selectedCycle = useMemo(() => cycles.find((c) => c.id === cycleId), [cycles, cycleId]);
 
   function applyDateValidation(): boolean {
     const next: DateFieldErrors = {};
@@ -170,8 +167,9 @@ export function CreateObjectiveDialog({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ex.: Aumentar receita recorrente no nicho corrida"
             />
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Objetivo descreve um <strong className="font-medium text-foreground/80">resultado desejado</strong>, não
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Objetivo descreve um{" "}
+              <strong className="font-medium text-foreground/80">resultado desejado</strong>, não
               uma atividade. Ex.: &quot;Aumentar retenção de clientes no nicho corrida&quot;.
             </p>
           </div>
@@ -188,7 +186,7 @@ export function CreateObjectiveDialog({
               className={cn(
                 "w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors",
                 "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-                "disabled:cursor-not-allowed disabled:opacity-50 min-h-[5.5rem]",
+                "min-h-[5.5rem] disabled:cursor-not-allowed disabled:opacity-50",
               )}
             />
           </div>
@@ -304,7 +302,7 @@ export function CreateObjectiveDialog({
             )}
           </div>
 
-          <p className="text-xs text-muted-foreground leading-relaxed">
+          <p className="text-xs leading-relaxed text-muted-foreground">
             Depois de criar, você poderá adicionar key results ao objetivo na página seguinte.
           </p>
 

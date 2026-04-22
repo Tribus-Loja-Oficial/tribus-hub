@@ -436,7 +436,7 @@ function TreeRow({
           </DropdownMenu.Trigger>
           <DropdownMenu.Portal>
             <DropdownMenu.Content
-                className="z-[100] min-w-[12rem] rounded-lg border border-border/90 bg-popover p-1 shadow-popover"
+              className="z-[100] min-w-[12rem] rounded-lg border border-border/90 bg-popover p-1 shadow-popover"
               sideOffset={4}
               align="end"
             >

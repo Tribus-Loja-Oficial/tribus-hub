@@ -73,7 +73,7 @@ export function KnowledgeListPage() {
                 placeholder="Buscar páginas e pastas…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-9 w-full rounded-md border border-input/90 bg-card/40 pl-8 pr-3 text-sm shadow-inset placeholder:text-muted-foreground/80 transition-all duration-150 hover:border-border focus:border-primary/35 focus:outline-none focus:ring-2 focus:ring-ring/35"
+                className="h-9 w-full rounded-md border border-input/90 bg-card/40 pl-8 pr-3 text-sm shadow-inset transition-all duration-150 placeholder:text-muted-foreground/80 hover:border-border focus:border-primary/35 focus:outline-none focus:ring-2 focus:ring-ring/35"
               />
             </div>
           </div>

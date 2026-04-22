@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 
 /**
  * Persisted pixel widths for adjacent grid columns. Use `startResize(i, e)` to drag
@@ -61,7 +67,11 @@ export function useResizableGridColumns(storageKey: string, defaults: number[]) 
   return { widths, startResize };
 }
 
-export function GridColResizeHandle({ onMouseDown }: { onMouseDown: (e: ReactMouseEvent) => void }) {
+export function GridColResizeHandle({
+  onMouseDown,
+}: {
+  onMouseDown: (e: ReactMouseEvent) => void;
+}) {
   return (
     <div
       role="separator"

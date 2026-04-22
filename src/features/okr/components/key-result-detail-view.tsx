@@ -275,7 +275,11 @@ export function KeyResultDetailView({ keyResultId }: KeyResultDetailViewProps) {
         )}
       </div>
 
-      <EditKeyResultDialog open={editOpen} onOpenChange={setEditOpen} keyResult={editOpen ? kr : null} />
+      <EditKeyResultDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        keyResult={editOpen ? kr : null}
+      />
       <UpdateKeyResultDialog open={updateOpen} onOpenChange={setUpdateOpen} keyResult={kr} />
     </div>
   );
