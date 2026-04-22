@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -10,7 +9,9 @@ import { DateField } from "@/components/ui/date-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils/cn";
-import type { OkrCycle } from "@/lib/types/domain";
+import type { OkrCycle, OkrObjective } from "@/lib/types/domain";
+
+type ObjectiveForEdit = OkrObjective & { keyResults?: unknown[] };
 
 interface MemberRow {
   id: string;
@@ -18,10 +19,10 @@ interface MemberRow {
   email: string;
 }
 
-interface CreateObjectiveDialogProps {
+interface UpdateObjectiveDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  defaultCycleId?: string;
+  objective: ObjectiveForEdit | null;
 }
 
 type DateFieldErrors = {
@@ -30,22 +31,21 @@ type DateFieldErrors = {
   targetInCycle?: string;
 };
 
-export function CreateObjectiveDialog({
+export function UpdateObjectiveDialog({
   open,
   onOpenChange,
-  defaultCycleId,
-}: CreateObjectiveDialogProps) {
-  const router = useRouter();
+  objective,
+}: UpdateObjectiveDialogProps) {
   const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
-  const [cycleId, setCycleId] = useState(defaultCycleId ?? "");
+  const [cycleId, setCycleId] = useState("");
   const [ownerUserId, setOwnerUserId] = useState("");
   const [status, setStatus] = useState("draft");
   const [priority, setPriority] = useState("medium");
   const [startDate, setStartDate] = useState("");
   const [targetDate, setTargetDate] = useState("");
   const [description, setDescription] = useState("");
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(true);
   const [dateErrors, setDateErrors] = useState<DateFieldErrors>({});
 
   const { data: cyclesRes } = useQuery<{ data: OkrCycle[] }>({
@@ -62,33 +62,34 @@ export function CreateObjectiveDialog({
 
   const mutation = useMutation({
     mutationFn: async (payload: object) => {
-      const res = await fetch("/api/okr/objectives", {
-        method: "POST",
+      if (!objective) throw new Error("Sem objetivo");
+      const res = await fetch(`/api/okr/objectives/${objective.id}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error("Falha ao criar objetivo");
-      return res.json() as Promise<{ data: { id: string } }>;
+      if (!res.ok) throw new Error("Falha ao atualizar objetivo");
+      return res.json();
     },
-    onSuccess: (res) => {
+    onSuccess: () => {
+      if (!objective) return;
+      queryClient.invalidateQueries({ queryKey: ["okr-objective", objective.id] });
       queryClient.invalidateQueries({ queryKey: ["okr-objectives"] });
       queryClient.invalidateQueries({ queryKey: ["okr-dashboard"] });
-      const id = res?.data?.id;
       emitOpenChange(false);
-      if (id) router.push(`/okr/objectives/${id}`);
     },
   });
 
   function resetForm() {
     setTitle("");
-    setCycleId(defaultCycleId ?? "");
+    setCycleId("");
     setOwnerUserId("");
     setStatus("draft");
     setPriority("medium");
     setStartDate("");
     setTargetDate("");
     setDescription("");
-    setShowAdvanced(false);
+    setShowAdvanced(true);
     setDateErrors({});
   }
 
@@ -98,11 +99,17 @@ export function CreateObjectiveDialog({
   }
 
   useEffect(() => {
-    if (open) {
-      setCycleId(defaultCycleId ?? "");
-      setDateErrors({});
-    }
-  }, [open, defaultCycleId]);
+    if (!open || !objective) return;
+    setTitle(objective.title);
+    setCycleId(objective.cycleId ?? "");
+    setOwnerUserId(objective.ownerUserId ?? "");
+    setStatus(objective.status);
+    setPriority(objective.priority);
+    setStartDate(objective.startDate ?? "");
+    setTargetDate(objective.targetDate ?? "");
+    setDescription(objective.descriptionText ?? "");
+    setDateErrors({});
+  }, [open, objective]);
 
   const cycles = cyclesRes?.data ?? [];
   const members = membersRes?.data ?? [];
@@ -133,13 +140,9 @@ export function CreateObjectiveDialog({
     return Object.keys(next).length === 0;
   }
 
-  function handleClose() {
-    emitOpenChange(false);
-  }
-
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim() || !objective) return;
     if (!applyDateValidation()) return;
     mutation.mutate({
       title: title.trim(),
@@ -153,11 +156,13 @@ export function CreateObjectiveDialog({
     });
   }
 
+  if (!objective) return null;
+
   return (
     <Dialog open={open} onOpenChange={emitOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Novo objetivo</DialogTitle>
+          <DialogTitle>Editar objetivo</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
@@ -172,7 +177,7 @@ export function CreateObjectiveDialog({
             />
             <p className="text-xs text-muted-foreground leading-relaxed">
               Objetivo descreve um <strong className="font-medium text-foreground/80">resultado desejado</strong>, não
-              uma atividade. Ex.: &quot;Aumentar retenção de clientes no nicho corrida&quot;.
+              uma atividade.
             </p>
           </div>
 
@@ -187,8 +192,7 @@ export function CreateObjectiveDialog({
               placeholder="Explique contexto, motivação, impacto esperado e restrições."
               className={cn(
                 "w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors",
-                "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-                "disabled:cursor-not-allowed disabled:opacity-50 min-h-[5.5rem]",
+                "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring min-h-[5.5rem]",
               )}
             />
           </div>
@@ -304,17 +308,13 @@ export function CreateObjectiveDialog({
             )}
           </div>
 
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Depois de criar, você poderá adicionar key results ao objetivo na página seguinte.
-          </p>
-
           <div className="flex justify-end gap-2 pt-1">
-            <Button variant="outline" type="button" onClick={handleClose}>
+            <Button variant="outline" type="button" onClick={() => emitOpenChange(false)}>
               Cancelar
             </Button>
             <Button type="submit" disabled={!title.trim() || mutation.isPending}>
               {mutation.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-              {mutation.isPending ? "Criando…" : "Criar objetivo"}
+              {mutation.isPending ? "Salvando…" : "Salvar alterações"}
             </Button>
           </div>
         </form>

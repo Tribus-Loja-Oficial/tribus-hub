@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type MouseEvent, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -16,6 +16,7 @@ import {
   SlidersHorizontal,
   ChevronsUpDown,
   ChevronsDownUp,
+  Pencil,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -29,7 +30,9 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ProjectHealthBadge, ProjectStatusBadge, PriorityBadge } from "./project-badges";
 import { ProjectHierarchyView } from "./project-hierarchy-view";
+import { EditProjectDialog } from "./edit-project-dialog";
 import { cn } from "@/lib/utils/cn";
+import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resizable-grid-columns";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -74,6 +77,31 @@ const STATUS_ORDER: Record<string, number> = {
   completed: 3,
   cancelled: 4,
 };
+
+function projectHref(project: Project) {
+  return `/projects/${encodeURIComponent(project.slug || project.id)}`;
+}
+
+function ProjectsListHeaderCell({
+  children,
+  className,
+  resizeIndex,
+  startResize,
+}: {
+  children: ReactNode;
+  className?: string;
+  resizeIndex: number;
+  startResize: (leftIndex: number, e: MouseEvent) => void;
+}) {
+  return (
+    <div className={cn("relative flex min-w-0 items-center", className)}>
+      {children}
+      <div className="absolute right-0 top-1/2 z-10 -translate-y-1/2 translate-x-1/2">
+        <GridColResizeHandle onMouseDown={(e) => startResize(resizeIndex, e)} />
+      </div>
+    </div>
+  );
+}
 
 const BOARD_COLUMNS = [
   { key: "planned", label: "Planejado" },
@@ -222,7 +250,18 @@ function CreateProjectDialog({ open, onOpenChange, onCreated }: CreateProjectDia
 
 // ─── List View ────────────────────────────────────────────────────────────────
 
-function ListView({ projects }: { projects: Project[] }) {
+function ListView({
+  projects,
+  onEditProject,
+}: {
+  projects: Project[];
+  onEditProject: (p: Project) => void;
+}) {
+  const { widths, startResize } = useResizableGridColumns("hub:projects-list-cols", [
+    280, 96, 88, 88, 88, 100, 44, 28,
+  ]);
+  const gridTpl = widths.map((w) => `${w}px`).join(" ");
+
   if (projects.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -236,24 +275,47 @@ function ListView({ projects }: { projects: Project[] }) {
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border">
-      <div className="hidden items-center gap-3 border-b border-border bg-muted/30 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 sm:flex">
-        <span className="flex-1">Projeto</span>
-        <span className="w-[90px] shrink-0">Status</span>
-        <span className="w-[80px] shrink-0">Health</span>
-        <span className="w-[80px] shrink-0">Prioridade</span>
-        <span className="w-[70px] shrink-0">Progresso</span>
-        <span className="w-[90px] shrink-0">Prazo alvo</span>
-        <span className="w-6 shrink-0" />
+    <div className="overflow-x-auto rounded-xl border border-border">
+      <div
+        className="grid items-center gap-3 border-b border-border bg-muted/30 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60"
+        style={{ gridTemplateColumns: gridTpl }}
+      >
+        <ProjectsListHeaderCell resizeIndex={0} startResize={startResize}>
+          <span className="pr-1">Projeto</span>
+        </ProjectsListHeaderCell>
+        <ProjectsListHeaderCell resizeIndex={1} startResize={startResize}>
+          <span className="justify-center text-center sm:text-left">Status</span>
+        </ProjectsListHeaderCell>
+        <ProjectsListHeaderCell resizeIndex={2} startResize={startResize}>
+          <span>Health</span>
+        </ProjectsListHeaderCell>
+        <ProjectsListHeaderCell resizeIndex={3} startResize={startResize}>
+          <span>Prioridade</span>
+        </ProjectsListHeaderCell>
+        <ProjectsListHeaderCell resizeIndex={4} startResize={startResize}>
+          <span>Progresso</span>
+        </ProjectsListHeaderCell>
+        <ProjectsListHeaderCell resizeIndex={5} startResize={startResize}>
+          <span>Prazo alvo</span>
+        </ProjectsListHeaderCell>
+        <ProjectsListHeaderCell resizeIndex={6} startResize={startResize}>
+          <span className="sr-only">Editar</span>
+        </ProjectsListHeaderCell>
+        <div className="relative flex min-w-0 items-center justify-end" />
       </div>
       {projects.map((project) => (
-        <Link
+        <div
           key={project.id}
-          href={`/projects/${project.id}`}
-          className="flex items-center gap-3 border-b border-border/60 px-4 py-3 transition-colors last:border-b-0 hover:bg-muted/20"
+          className="grid items-center gap-3 border-b border-border/60 px-4 py-3 transition-colors last:border-b-0 hover:bg-muted/20"
+          style={{ gridTemplateColumns: gridTpl }}
         >
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-foreground">{project.title}</p>
+          <div className="min-w-0">
+            <Link
+              href={projectHref(project)}
+              className="truncate text-sm font-semibold text-foreground transition-colors hover:text-primary"
+            >
+              {project.title}
+            </Link>
             {project.externalRef && (
               <p className="mt-0.5 font-mono text-[10px] text-muted-foreground">
                 Ref: {project.externalRef}
@@ -263,23 +325,23 @@ function ListView({ projects }: { projects: Project[] }) {
               <p className="mt-0.5 truncate text-xs text-muted-foreground">{project.summary}</p>
             )}
           </div>
-          <div className="hidden w-[90px] shrink-0 sm:block">
+          <div className="flex justify-center sm:justify-start">
             <ProjectStatusBadge status={project.status} />
           </div>
-          <div className="hidden w-[80px] shrink-0 sm:block">
+          <div>
             {project.healthStatus ? (
               <ProjectHealthBadge health={project.healthStatus} />
             ) : (
               <span className="text-xs text-muted-foreground/40">—</span>
             )}
           </div>
-          <div className="hidden w-[80px] shrink-0 sm:block">
+          <div>
             <PriorityBadge priority={project.priority} />
           </div>
-          <div className="hidden w-[70px] shrink-0 md:block">
+          <div>
             {(project.progressPercent ?? 0) > 0 ? (
               <div className="flex items-center gap-1.5">
-                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-muted">
                   <div
                     className="h-full rounded-full bg-primary/60"
                     style={{ width: `${Math.min(100, project.progressPercent ?? 0)}%` }}
@@ -293,15 +355,33 @@ function ListView({ projects }: { projects: Project[] }) {
               <span className="text-xs text-muted-foreground/40">—</span>
             )}
           </div>
-          <div className="hidden w-[90px] shrink-0 text-xs text-muted-foreground sm:block">
+          <div className="text-xs text-muted-foreground">
             {project.targetDate
               ? format(new Date(project.targetDate), "dd MMM yy", { locale: ptBR })
               : "—"}
           </div>
-          <div className="flex w-6 shrink-0 justify-end">
-            <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
+          <div className="flex justify-center">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+              title="Editar projeto"
+              onClick={() => onEditProject(project)}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
           </div>
-        </Link>
+          <div className="flex justify-end">
+            <Link
+              href={projectHref(project)}
+              className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              title="Abrir projeto"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
       ))}
     </div>
   );
@@ -309,7 +389,13 @@ function ListView({ projects }: { projects: Project[] }) {
 
 // ─── Board View ────────────────────────────────────────────────────────────────
 
-function BoardView({ projects }: { projects: Project[] }) {
+function BoardView({
+  projects,
+  onEditProject,
+}: {
+  projects: Project[];
+  onEditProject: (p: Project) => void;
+}) {
   const grouped = BOARD_COLUMNS.map((col) => ({
     ...col,
     items: projects.filter((p) => p.status === col.key),
@@ -329,43 +415,55 @@ function BoardView({ projects }: { projects: Project[] }) {
           </div>
           <div className="space-y-2">
             {col.items.map((project) => (
-              <Link
+              <div
                 key={project.id}
-                href={`/projects/${project.id}`}
-                className="block rounded-lg border border-border bg-card p-3 transition-all hover:border-primary/30 hover:shadow-sm"
+                className="relative rounded-lg border border-border bg-card transition-all hover:border-primary/30 hover:shadow-sm"
               >
-                <p className="text-sm font-semibold leading-snug text-foreground">
-                  {project.title}
-                </p>
-                {project.summary && (
-                  <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                    {project.summary}
+                <button
+                  type="button"
+                  className="absolute right-2 top-2 z-[1] flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  title="Editar projeto"
+                  onClick={() => onEditProject(project)}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+                <Link
+                  href={projectHref(project)}
+                  className="block p-3 pr-10"
+                >
+                  <p className="text-sm font-semibold leading-snug text-foreground">
+                    {project.title}
                   </p>
-                )}
-                <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                  <PriorityBadge priority={project.priority} />
-                  {project.healthStatus && <ProjectHealthBadge health={project.healthStatus} />}
-                </div>
-                {project.targetDate && (
-                  <p className="mt-2 flex items-center gap-1 text-[10px] text-muted-foreground/60">
-                    <Calendar className="h-3 w-3" />
-                    {format(new Date(project.targetDate), "dd MMM yy", { locale: ptBR })}
-                  </p>
-                )}
-                {(project.progressPercent ?? 0) > 0 && (
-                  <div className="mt-2">
-                    <div className="h-1 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full rounded-full bg-primary/70"
-                        style={{ width: `${Math.min(100, project.progressPercent ?? 0)}%` }}
-                      />
-                    </div>
-                    <p className="mt-0.5 text-right text-[10px] tabular-nums text-muted-foreground/60">
-                      {Math.round(project.progressPercent ?? 0)}%
+                  {project.summary && (
+                    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                      {project.summary}
                     </p>
+                  )}
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <PriorityBadge priority={project.priority} />
+                    {project.healthStatus && <ProjectHealthBadge health={project.healthStatus} />}
                   </div>
-                )}
-              </Link>
+                  {project.targetDate && (
+                    <p className="mt-2 flex items-center gap-1 text-[10px] text-muted-foreground/60">
+                      <Calendar className="h-3 w-3" />
+                      {format(new Date(project.targetDate), "dd MMM yy", { locale: ptBR })}
+                    </p>
+                  )}
+                  {(project.progressPercent ?? 0) > 0 && (
+                    <div className="mt-2">
+                      <div className="h-1 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full bg-primary/70"
+                          style={{ width: `${Math.min(100, project.progressPercent ?? 0)}%` }}
+                        />
+                      </div>
+                      <p className="mt-0.5 text-right text-[10px] tabular-nums text-muted-foreground/60">
+                        {Math.round(project.progressPercent ?? 0)}%
+                      </p>
+                    </div>
+                  )}
+                </Link>
+              </div>
             ))}
             {col.items.length === 0 && (
               <div className="rounded-lg border border-dashed border-border/60 px-3 py-6 text-center">
@@ -387,6 +485,7 @@ export function ProjectsListPage() {
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const [createOpen, setCreateOpen] = useState(false);
+  const [editProject, setEditProject] = useState<Project | null>(null);
   const [view, setView] = useState<ViewMode>("hierarchy");
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
@@ -441,6 +540,7 @@ export function ProjectsListPage() {
 
   const viewButtons: { key: ViewMode; icon: React.ReactNode; label: string }[] = [
     { key: "hierarchy", icon: <GitBranch className="h-3.5 w-3.5" />, label: "Hierarquia" },
+    { key: "list", icon: <List className="h-3.5 w-3.5" />, label: "Lista" },
     { key: "board", icon: <LayoutGrid className="h-3.5 w-3.5" />, label: "Quadro" },
   ];
 
@@ -627,11 +727,12 @@ export function ProjectsListPage() {
           filterPriority={filterPriority}
           filterHealth={filterHealth}
           allExpanded={allExpanded}
+          onEditProject={(p) => setEditProject(p)}
         />
       ) : view === "list" ? (
-        <ListView projects={filtered} />
+        <ListView projects={filtered} onEditProject={(p) => setEditProject(p)} />
       ) : (
-        <BoardView projects={filtered} />
+        <BoardView projects={filtered} onEditProject={(p) => setEditProject(p)} />
       )}
 
       <CreateProjectDialog
@@ -641,6 +742,13 @@ export function ProjectsListPage() {
           queryClient.invalidateQueries({ queryKey: ["projects"] });
           queryClient.invalidateQueries({ queryKey: ["project-hierarchy"] });
         }}
+      />
+      <EditProjectDialog
+        open={!!editProject}
+        onOpenChange={(open) => {
+          if (!open) setEditProject(null);
+        }}
+        project={editProject}
       />
     </div>
   );

@@ -17,6 +17,7 @@ export const createMilestoneSchema = z.object({
   title: z.string().min(1).max(500),
   description: z.string().max(2000).optional(),
   status: z.enum(["pending", "in_progress", "completed", "missed"]).optional(),
+  priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
   dueDate: z.string().date().optional(),
   ownerUserId: z.string().optional(),
   sortOrder: z.number().int().optional(),

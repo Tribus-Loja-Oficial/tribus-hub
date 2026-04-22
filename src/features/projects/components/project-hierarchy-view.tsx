@@ -15,6 +15,7 @@ import {
   Calendar,
   User,
   ExternalLink,
+  Pencil,
 } from "lucide-react";
 import { format, isBefore, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -40,6 +41,14 @@ import type {
 import { projectMatchesSearch } from "@/features/projects/lib/project-hierarchy-search";
 
 type MemberRow = { id: string; name: string; email: string };
+
+function projectPath(project: { id: string; slug: string }) {
+  return `/projects/${encodeURIComponent(project.slug || project.id)}`;
+}
+
+function milestonePath(project: { id: string; slug: string }, milestoneId: string) {
+  return `${projectPath(project)}/milestones/${encodeURIComponent(milestoneId)}`;
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -94,14 +103,15 @@ function TaskRow({ task, members }: { task: HierarchyTask; members: Map<string, 
       ) : (
         <Square className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40" />
       )}
-      <span
+      <Link
+        href={`/tasks/${encodeURIComponent(task.id)}`}
         className={cn(
-          "flex-1 truncate text-sm",
+          "min-w-0 flex-1 truncate text-sm transition-colors hover:text-primary",
           done ? "text-muted-foreground/60 line-through" : "text-foreground",
         )}
       >
         {task.title}
-      </span>
+      </Link>
       {task.externalRef && (
         <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
           Ref: {task.externalRef}
@@ -151,12 +161,14 @@ function TaskRow({ task, members }: { task: HierarchyTask; members: Map<string, 
 function MilestoneRow({
   milestone,
   projectId,
+  projectSlug,
   members,
   onTaskCreated,
   onCreateTask,
 }: {
   milestone: HierarchyMilestone;
   projectId: string;
+  projectSlug: string;
   members: Map<string, MemberRow>;
   onTaskCreated: () => void;
   onCreateTask: (projectId: string, milestoneId: string) => void;
@@ -165,12 +177,17 @@ function MilestoneRow({
   const overdue = isOverdue(milestone.dueDate, milestone.completedAt);
   const owner = milestone.ownerUserId ? members.get(milestone.ownerUserId) : null;
 
+  const projectForPath = { id: projectId, slug: projectSlug };
+
   return (
     <div>
       {/* Milestone header */}
       <div
         className="group flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 transition-colors hover:bg-muted/20"
-        onClick={() => setExpanded((v) => !v)}
+        onClick={(e) => {
+          if ((e.target as HTMLElement).closest("a, button")) return;
+          setExpanded((v) => !v);
+        }}
       >
         {/* tree indent */}
         <div className="ml-1 h-5 w-4 shrink-0 border-l border-border/40" />
@@ -181,7 +198,13 @@ function MilestoneRow({
           )}
         />
         <Flag className="h-3.5 w-3.5 shrink-0 text-blue-500/70" />
-        <span className="truncate text-sm font-medium text-foreground">{milestone.title}</span>
+        <Link
+          href={milestonePath(projectForPath, milestone.id)}
+          onClick={(e) => e.stopPropagation()}
+          className="min-w-0 truncate text-sm font-medium text-foreground transition-colors hover:text-primary"
+        >
+          {milestone.title}
+        </Link>
         {milestone.externalRef && (
           <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
             Ref: {milestone.externalRef}
@@ -294,12 +317,14 @@ function ProjectRow({
   members,
   onMilestoneCreated,
   onCreateTask,
+  onEditProject,
   expandSignal,
 }: {
   project: ProjectHierarchyItem;
   members: Map<string, MemberRow>;
   onMilestoneCreated: () => void;
   onCreateTask: (projectId: string, milestoneId: string) => void;
+  onEditProject?: (p: ProjectHierarchyItem) => void;
   expandSignal: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -356,7 +381,7 @@ function ProjectRow({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <Link
-              href={`/projects/${project.id}`}
+              href={projectPath(project)}
               onClick={(e) => e.stopPropagation()}
               className="truncate text-sm font-semibold text-foreground transition-colors hover:text-primary"
             >
@@ -445,8 +470,21 @@ function ProjectRow({
             >
               <Plus className="h-3.5 w-3.5" />
             </button>
+            {onEditProject && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEditProject(project);
+                }}
+                className="rounded p-1 text-muted-foreground opacity-0 transition-all hover:bg-muted hover:text-foreground group-hover:opacity-100"
+                title="Editar projeto"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </button>
+            )}
             <Link
-              href={`/projects/${project.id}`}
+              href={projectPath(project)}
               onClick={(e) => e.stopPropagation()}
               className="rounded p-1 text-muted-foreground opacity-60 transition-all hover:bg-muted hover:opacity-100"
               title="Abrir projeto"
@@ -460,7 +498,7 @@ function ProjectRow({
           <ProjectStatusBadge status={project.status} />
           <PriorityBadge priority={project.priority} />
           <Link
-            href={`/projects/${project.id}`}
+            href={projectPath(project)}
             onClick={(e) => e.stopPropagation()}
             className="rounded p-1 text-muted-foreground opacity-60 transition-all hover:bg-muted hover:opacity-100"
           >
@@ -500,6 +538,7 @@ function ProjectRow({
                   key={milestone.id}
                   milestone={milestone}
                   projectId={project.id}
+                  projectSlug={project.slug || project.id}
                   members={members}
                   onTaskCreated={() =>
                     queryClient.invalidateQueries({ queryKey: ["project-hierarchy"] })
@@ -583,6 +622,7 @@ interface ProjectHierarchyViewProps {
   filterPriority: string;
   filterHealth: string;
   allExpanded: boolean;
+  onEditProject?: (p: ProjectHierarchyItem) => void;
 }
 
 export function ProjectHierarchyView({
@@ -591,6 +631,7 @@ export function ProjectHierarchyView({
   filterPriority,
   filterHealth,
   allExpanded,
+  onEditProject,
 }: ProjectHierarchyViewProps) {
   const queryClient = useQueryClient();
   const [createTaskOpen, setCreateTaskOpen] = useState(false);
@@ -685,6 +726,7 @@ export function ProjectHierarchyView({
               queryClient.invalidateQueries({ queryKey: ["project-hierarchy"] })
             }
             onCreateTask={handleCreateTask}
+            onEditProject={onEditProject}
             expandSignal={allExpanded}
           />
         ))}

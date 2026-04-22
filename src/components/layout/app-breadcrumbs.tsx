@@ -63,7 +63,7 @@ export function AppBreadcrumbs() {
           </Link>
         </span>
         <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
-        <span className="max-w-[200px] truncate font-medium text-foreground sm:max-w-[280px]">
+        <span className="max-w-[200px] truncate font-semibold tracking-tight text-foreground sm:max-w-[280px]">
           Dashboard
         </span>
       </nav>
@@ -103,7 +103,7 @@ export function AppBreadcrumbs() {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Home className="h-3.5 w-3.5 shrink-0 opacity-70" />
-        <span className="font-medium text-foreground/80">Workspace</span>
+        <span className="font-semibold tracking-tight text-foreground/85">Workspace</span>
       </div>
     );
   }
@@ -114,7 +114,7 @@ export function AppBreadcrumbs() {
         <span key={c.href} className="flex min-w-0 items-center gap-1">
           {idx > 0 && <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />}
           {idx === crumbs.length - 1 ? (
-            <span className="max-w-[200px] truncate font-medium text-foreground sm:max-w-[280px]">
+            <span className="max-w-[200px] truncate font-semibold tracking-tight text-foreground sm:max-w-[280px]">
               {c.label}
             </span>
           ) : (

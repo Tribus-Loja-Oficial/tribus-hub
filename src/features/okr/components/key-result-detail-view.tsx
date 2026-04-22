@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { ArrowLeft, TrendingUp, RefreshCw, Activity } from "lucide-react";
+import { ArrowLeft, TrendingUp, RefreshCw, Activity, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { OkrKeyResult, OkrKeyResultUpdate, OkrObjective } from "@/lib/types/domain";
 import { OkrStatusBadge } from "./okr-status-badge";
 import { OkrProgressBar, MiniProgressRing } from "./okr-progress-bar";
 import { UpdateKeyResultDialog } from "./update-key-result-dialog";
+import { EditKeyResultDialog } from "./edit-key-result-dialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -34,6 +35,7 @@ interface KeyResultDetailViewProps {
 export function KeyResultDetailView({ keyResultId }: KeyResultDetailViewProps) {
   const queryClient = useQueryClient();
   const [updateOpen, setUpdateOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [editingStatus, setEditingStatus] = useState(false);
 
   const { data, isLoading } = useQuery<{ data: OkrKeyResult }>({
@@ -158,10 +160,16 @@ export function KeyResultDetailView({ keyResultId }: KeyResultDetailViewProps) {
               {kr.unit && <span className="text-xs text-muted-foreground">· {kr.unit}</span>}
             </div>
           </div>
-          <Button size="sm" onClick={() => setUpdateOpen(true)}>
-            <RefreshCw className="mr-1 h-3.5 w-3.5" />
-            Atualizar
-          </Button>
+          <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
+            <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
+              <Pencil className="mr-1 h-3.5 w-3.5" />
+              Editar
+            </Button>
+            <Button size="sm" onClick={() => setUpdateOpen(true)}>
+              <RefreshCw className="mr-1 h-3.5 w-3.5" />
+              Atualizar progresso
+            </Button>
+          </div>
         </div>
 
         {/* Values */}
@@ -267,6 +275,7 @@ export function KeyResultDetailView({ keyResultId }: KeyResultDetailViewProps) {
         )}
       </div>
 
+      <EditKeyResultDialog open={editOpen} onOpenChange={setEditOpen} keyResult={editOpen ? kr : null} />
       <UpdateKeyResultDialog open={updateOpen} onOpenChange={setUpdateOpen} keyResult={kr} />
     </div>
   );

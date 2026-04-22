@@ -1,64 +1,117 @@
 "use client";
 
+const chip =
+  "inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ring-black/[0.04] dark:ring-white/[0.06]";
+
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  planned: { label: "Planejado", className: "bg-slate-100 text-slate-700 border-slate-200" },
-  active: { label: "Ativo", className: "bg-blue-50 text-blue-700 border-blue-200" },
-  on_hold: { label: "Em espera", className: "bg-yellow-50 text-yellow-700 border-yellow-200" },
-  completed: { label: "Concluído", className: "bg-green-50 text-green-700 border-green-200" },
-  cancelled: { label: "Cancelado", className: "bg-red-50 text-red-700 border-red-200" },
+  planned: {
+    label: "Planejado",
+    className:
+      "border-border/80 bg-muted/60 text-muted-foreground dark:bg-muted/40 dark:text-muted-foreground",
+  },
+  active: {
+    label: "Ativo",
+    className:
+      "border-primary/20 bg-primary/[0.08] text-primary dark:border-primary/25 dark:bg-primary/15 dark:text-blue-100",
+  },
+  on_hold: {
+    label: "Em espera",
+    className:
+      "border-amber-500/25 bg-amber-500/[0.09] text-amber-900/90 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100",
+  },
+  completed: {
+    label: "Concluído",
+    className:
+      "border-emerald-600/22 bg-emerald-600/[0.08] text-emerald-900/90 dark:border-emerald-500/25 dark:bg-emerald-500/12 dark:text-emerald-100",
+  },
+  cancelled: {
+    label: "Cancelado",
+    className:
+      "border-rose-500/22 bg-rose-500/[0.07] text-rose-900/90 dark:border-rose-500/25 dark:bg-rose-500/10 dark:text-rose-100",
+  },
 };
 
 const HEALTH_CONFIG: Record<string, { label: string; className: string; dot: string }> = {
   on_track: {
     label: "No rumo",
-    className: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    dot: "bg-emerald-500",
+    className:
+      "border-emerald-600/22 bg-emerald-600/[0.07] text-emerald-900/90 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-100",
+    dot: "bg-emerald-600 dark:bg-emerald-400",
   },
   at_risk: {
     label: "Em risco",
-    className: "bg-yellow-50 text-yellow-700 border-yellow-200",
-    dot: "bg-yellow-500",
+    className:
+      "border-amber-600/22 bg-amber-500/[0.09] text-amber-950/85 dark:border-amber-500/28 dark:bg-amber-500/10 dark:text-amber-100",
+    dot: "bg-amber-600 dark:bg-amber-400",
   },
   blocked: {
     label: "Bloqueado",
-    className: "bg-red-50 text-red-700 border-red-200",
-    dot: "bg-red-500",
+    className:
+      "border-rose-600/22 bg-rose-500/[0.08] text-rose-900/90 dark:border-rose-500/28 dark:bg-rose-500/12 dark:text-rose-100",
+    dot: "bg-rose-600 dark:bg-rose-400",
   },
   off_track: {
     label: "Fora do rumo",
-    className: "bg-orange-50 text-orange-700 border-orange-200",
-    dot: "bg-orange-500",
+    className:
+      "border-orange-600/22 bg-orange-500/[0.08] text-orange-950/85 dark:border-orange-500/28 dark:bg-orange-500/10 dark:text-orange-100",
+    dot: "bg-orange-600 dark:bg-orange-400",
   },
 };
 
 const PRIORITY_CONFIG: Record<string, { label: string; className: string }> = {
-  low: { label: "Baixa", className: "bg-muted text-muted-foreground border-border" },
-  medium: { label: "Média", className: "bg-blue-50 text-blue-600 border-blue-100" },
-  high: { label: "Alta", className: "bg-orange-50 text-orange-700 border-orange-200" },
-  urgent: { label: "Urgente", className: "bg-red-50 text-red-700 border-red-200" },
+  low: {
+    label: "Baixa",
+    className:
+      "border-border/70 bg-muted/50 text-muted-foreground dark:bg-muted/30 dark:text-muted-foreground",
+  },
+  medium: {
+    label: "Média",
+    className:
+      "border-primary/18 bg-primary/[0.07] text-primary dark:border-primary/25 dark:bg-primary/12 dark:text-blue-100",
+  },
+  high: {
+    label: "Alta",
+    className:
+      "border-amber-600/22 bg-amber-500/[0.09] text-amber-950/85 dark:border-amber-500/28 dark:bg-amber-500/10 dark:text-amber-100",
+  },
+  urgent: {
+    label: "Urgente",
+    className:
+      "border-rose-600/22 bg-rose-500/[0.08] text-rose-900/90 dark:border-rose-500/28 dark:bg-rose-500/12 dark:text-rose-100",
+  },
 };
 
 const MILESTONE_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  pending: { label: "Pendente", className: "bg-slate-100 text-slate-600 border-slate-200" },
-  in_progress: { label: "Em progresso", className: "bg-blue-50 text-blue-700 border-blue-200" },
-  completed: { label: "Concluído", className: "bg-green-50 text-green-700 border-green-200" },
-  missed: { label: "Atrasado", className: "bg-red-50 text-red-700 border-red-200" },
+  pending: {
+    label: "Pendente",
+    className:
+      "border-border/80 bg-muted/55 text-muted-foreground dark:bg-muted/35 dark:text-muted-foreground",
+  },
+  in_progress: {
+    label: "Em progresso",
+    className:
+      "border-primary/20 bg-primary/[0.08] text-primary dark:border-primary/25 dark:bg-primary/15 dark:text-blue-100",
+  },
+  completed: {
+    label: "Concluído",
+    className:
+      "border-emerald-600/22 bg-emerald-600/[0.08] text-emerald-900/90 dark:border-emerald-500/25 dark:bg-emerald-500/12 dark:text-emerald-100",
+  },
+  missed: {
+    label: "Atrasado",
+    className:
+      "border-rose-600/22 bg-rose-500/[0.08] text-rose-900/90 dark:border-rose-500/28 dark:bg-rose-500/12 dark:text-rose-100",
+  },
 };
 
 function Badge({ className, children }: { className: string; children: React.ReactNode }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium ${className}`}
-    >
-      {children}
-    </span>
-  );
+  return <span className={`${chip} ${className}`}>{children}</span>;
 }
 
 export function ProjectStatusBadge({ status }: { status: string }) {
   const cfg = STATUS_CONFIG[status] ?? {
     label: status,
-    className: "bg-muted text-muted-foreground border-border",
+    className: "border-border/70 bg-muted/50 text-muted-foreground",
   };
   return <Badge className={cfg.className}>{cfg.label}</Badge>;
 }
@@ -66,7 +119,7 @@ export function ProjectStatusBadge({ status }: { status: string }) {
 export function ProjectHealthBadge({ health }: { health: string }) {
   const cfg = HEALTH_CONFIG[health] ?? {
     label: health,
-    className: "bg-muted text-muted-foreground border-border",
+    className: "border-border/70 bg-muted/50 text-muted-foreground",
     dot: "bg-muted-foreground",
   };
   return (
@@ -80,7 +133,7 @@ export function ProjectHealthBadge({ health }: { health: string }) {
 export function PriorityBadge({ priority }: { priority: string }) {
   const cfg = PRIORITY_CONFIG[priority] ?? {
     label: priority,
-    className: "bg-muted text-muted-foreground border-border",
+    className: "border-border/70 bg-muted/50 text-muted-foreground",
   };
   return <Badge className={cfg.className}>{cfg.label}</Badge>;
 }
@@ -88,7 +141,7 @@ export function PriorityBadge({ priority }: { priority: string }) {
 export function MilestoneStatusBadge({ status }: { status: string }) {
   const cfg = MILESTONE_STATUS_CONFIG[status] ?? {
     label: status,
-    className: "bg-muted text-muted-foreground border-border",
+    className: "border-border/70 bg-muted/50 text-muted-foreground",
   };
   return <Badge className={cfg.className}>{cfg.label}</Badge>;
 }

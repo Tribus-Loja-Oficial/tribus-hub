@@ -8,6 +8,7 @@ import {
   Plus,
   ChevronRight,
   MoreHorizontal,
+  Pencil,
   Trash2,
   CheckCircle,
   RotateCcw,
@@ -34,6 +35,7 @@ import type {
 import { OkrStatusBadge } from "./okr-status-badge";
 import { OkrProgressBar } from "./okr-progress-bar";
 import { CreateCycleDialog } from "./create-cycle-dialog";
+import { UpdateCycleDialog } from "./update-cycle-dialog";
 import { differenceInDays, isAfter, isBefore, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils/cn";
@@ -114,6 +116,7 @@ function cycleCardTone(status: OkrCycle["status"]): string {
 export function OkrCyclesPage() {
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
+  const [cycleToEdit, setCycleToEdit] = useState<OkrCycle | null>(null);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -524,7 +527,7 @@ export function OkrCyclesPage() {
               <div
                 key={cycle.id}
                 className={cn(
-                  "overflow-hidden rounded-2xl border transition-all",
+                  "overflow-visible rounded-2xl border transition-all",
                   cycleCardTone(cycle.status),
                 )}
               >
@@ -704,7 +707,7 @@ export function OkrCyclesPage() {
                         Mais ações
                       </Button>
                       {menuOpen === cycle.id && (
-                        <div className="absolute right-0 top-full z-20 mt-1 w-52 rounded-lg border border-border bg-popover py-1 shadow-lg">
+                        <div className="absolute right-0 top-full z-[100] mt-1 w-52 rounded-lg border border-border bg-popover py-1 shadow-lg">
                           <Link
                             href={`/okr/cycles/${cycle.id}`}
                             className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted/60"
@@ -713,6 +716,17 @@ export function OkrCyclesPage() {
                             <ChevronRight className="h-3.5 w-3.5" />
                             Ver detalhes
                           </Link>
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted/60"
+                            onClick={() => {
+                              setCycleToEdit(cycle);
+                              setMenuOpen(null);
+                            }}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                            Editar ciclo
+                          </button>
                           <div className="my-1 border-t border-border" />
                           <p className="px-3 py-1 text-[10px] font-semibold uppercase text-muted-foreground">
                             Status
@@ -823,6 +837,13 @@ export function OkrCyclesPage() {
       )}
 
       <CreateCycleDialog open={createOpen} onOpenChange={setCreateOpen} />
+      <UpdateCycleDialog
+        open={Boolean(cycleToEdit)}
+        onOpenChange={(o) => {
+          if (!o) setCycleToEdit(null);
+        }}
+        cycle={cycleToEdit}
+      />
     </div>
   );
 }

@@ -9,12 +9,14 @@ import { DateField } from "@/components/ui/date-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils/cn";
+import type { OkrCycle } from "@/lib/types/domain";
 
 type CycleStatus = "planned" | "active" | "closed" | "archived";
 
-interface CreateCycleDialogProps {
+interface UpdateCycleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  cycle: OkrCycle | null;
 }
 
 function formatLocalYmd(d: Date): string {
@@ -81,26 +83,29 @@ const STATUS_LABELS: Record<CycleStatus, string> = {
   archived: "Arquivado",
 };
 
-export function CreateCycleDialog({ open, onOpenChange }: CreateCycleDialogProps) {
+export function UpdateCycleDialog({ open, onOpenChange, cycle }: UpdateCycleDialogProps) {
   const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState<CycleStatus>("planned");
-  const [statusPinned, setStatusPinned] = useState(false);
+  const [statusPinned, setStatusPinned] = useState(true);
 
   const mutation = useMutation({
     mutationFn: async (payload: object) => {
-      const res = await fetch("/api/okr/cycles", {
-        method: "POST",
+      if (!cycle) throw new Error("Sem ciclo");
+      const res = await fetch(`/api/okr/cycles/${cycle.id}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error("Falha ao criar ciclo");
+      if (!res.ok) throw new Error("Falha ao atualizar ciclo");
       return res.json();
     },
     onSuccess: () => {
+      if (!cycle) return;
+      queryClient.invalidateQueries({ queryKey: ["okr-cycle", cycle.id] });
       queryClient.invalidateQueries({ queryKey: ["okr-cycles"] });
       queryClient.invalidateQueries({ queryKey: ["okr-dashboard"] });
       emitOpenChange(false);
@@ -113,13 +118,23 @@ export function CreateCycleDialog({ open, onOpenChange }: CreateCycleDialogProps
     setEndDate("");
     setDescription("");
     setStatus("planned");
-    setStatusPinned(false);
+    setStatusPinned(true);
   }
 
   function emitOpenChange(next: boolean) {
     onOpenChange(next);
     if (!next) resetForm();
   }
+
+  useEffect(() => {
+    if (!open || !cycle) return;
+    setTitle(cycle.title);
+    setStartDate(cycle.startDate);
+    setEndDate(cycle.endDate);
+    setDescription(cycle.description ?? "");
+    setStatus(cycle.status);
+    setStatusPinned(true);
+  }, [open, cycle]);
 
   useEffect(() => {
     if (!startDate || !endDate || endDate < startDate) return;
@@ -141,7 +156,7 @@ export function CreateCycleDialog({ open, onOpenChange }: CreateCycleDialogProps
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim() || !startDate || !endDate || dateOrderError) return;
+    if (!title.trim() || !startDate || !endDate || !cycle || dateOrderError) return;
     mutation.mutate({
       title: title.trim(),
       startDate,
@@ -154,11 +169,13 @@ export function CreateCycleDialog({ open, onOpenChange }: CreateCycleDialogProps
   const canSubmit =
     Boolean(title.trim() && startDate && endDate && !dateOrderError && !mutation.isPending);
 
+  if (!cycle) return null;
+
   return (
     <Dialog open={open} onOpenChange={emitOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Novo ciclo OKR</DialogTitle>
+          <DialogTitle>Editar ciclo</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
@@ -329,7 +346,7 @@ export function CreateCycleDialog({ open, onOpenChange }: CreateCycleDialogProps
             </Button>
             <Button type="submit" disabled={!canSubmit}>
               {mutation.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-              {mutation.isPending ? "Criando ciclo…" : "Criar ciclo"}
+              {mutation.isPending ? "Salvando…" : "Salvar alterações"}
             </Button>
           </div>
         </form>

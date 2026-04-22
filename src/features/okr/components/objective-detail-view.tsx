@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { use } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { ArrowLeft, Target, TrendingUp, Plus, RefreshCw, Pencil, Trash2 } from "lucide-react";
@@ -11,6 +10,7 @@ import { OkrStatusBadge, OkrPriorityBadge } from "./okr-status-badge";
 import { OkrProgressBar, MiniProgressRing } from "./okr-progress-bar";
 import { CreateKeyResultDialog } from "./create-key-result-dialog";
 import { UpdateKeyResultDialog } from "./update-key-result-dialog";
+import { UpdateObjectiveDialog } from "./update-objective-dialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -28,6 +28,7 @@ interface ObjectiveDetailViewProps {
 export function ObjectiveDetailView({ objectiveId }: ObjectiveDetailViewProps) {
   const queryClient = useQueryClient();
   const [createKrOpen, setCreateKrOpen] = useState(false);
+  const [editObjectiveOpen, setEditObjectiveOpen] = useState(false);
   const [updateKrOpen, setUpdateKrOpen] = useState(false);
   const [selectedKr, setSelectedKr] = useState<OkrKeyResult | null>(null);
   const [editingStatus, setEditingStatus] = useState(false);
@@ -131,7 +132,19 @@ export function ObjectiveDetailView({ objectiveId }: ObjectiveDetailViewProps) {
             status={objective.status}
           />
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl font-bold text-foreground">{objective.title}</h1>
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <h1 className="text-xl font-bold text-foreground">{objective.title}</h1>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0 gap-1.5"
+                onClick={() => setEditObjectiveOpen(true)}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Editar
+              </Button>
+            </div>
             {objective.descriptionText && (
               <p className="mt-1 text-sm text-muted-foreground">{objective.descriptionText}</p>
             )}
@@ -288,6 +301,11 @@ export function ObjectiveDetailView({ objectiveId }: ObjectiveDetailViewProps) {
         onOpenChange={setCreateKrOpen}
         defaultObjectiveId={objectiveId}
         defaultCycleId={objective.cycleId ?? undefined}
+      />
+      <UpdateObjectiveDialog
+        open={editObjectiveOpen}
+        onOpenChange={setEditObjectiveOpen}
+        objective={editObjectiveOpen ? objective : null}
       />
       <UpdateKeyResultDialog
         open={updateKrOpen}

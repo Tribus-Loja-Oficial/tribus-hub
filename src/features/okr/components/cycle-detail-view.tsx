@@ -1,12 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { ArrowLeft, CalendarRange, Target, TrendingUp, CheckCircle } from "lucide-react";
+import { ArrowLeft, CalendarRange, Target, TrendingUp, CheckCircle, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { OkrCycle, OkrObjective, OkrKeyResult } from "@/lib/types/domain";
 import { OkrStatusBadge } from "./okr-status-badge";
 import { OkrProgressBar, MiniProgressRing } from "./okr-progress-bar";
+import { UpdateCycleDialog } from "./update-cycle-dialog";
 import { format, differenceInDays, isAfter, isBefore } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -30,6 +32,7 @@ interface CycleDetailViewProps {
 
 export function CycleDetailView({ cycleId }: CycleDetailViewProps) {
   const queryClient = useQueryClient();
+  const [editCycleOpen, setEditCycleOpen] = useState(false);
 
   const { data: cycleRes, isLoading: cycleLoading } = useQuery<{ data: OkrCycle }>({
     queryKey: ["okr-cycle", cycleId],
@@ -134,7 +137,11 @@ export function CycleDetailView({ cycleId }: CycleDetailViewProps) {
               <p className="mt-2 text-sm text-muted-foreground">{cycle.description}</p>
             )}
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+            <Button size="sm" variant="outline" onClick={() => setEditCycleOpen(true)}>
+              <Pencil className="mr-1 h-3.5 w-3.5" />
+              Editar
+            </Button>
             {cycle.status === "planned" && (
               <Button
                 size="sm"
@@ -265,6 +272,12 @@ export function CycleDetailView({ cycleId }: CycleDetailViewProps) {
           </div>
         )}
       </div>
+
+      <UpdateCycleDialog
+        open={editCycleOpen}
+        onOpenChange={setEditCycleOpen}
+        cycle={editCycleOpen ? cycle : null}
+      />
     </div>
   );
 }

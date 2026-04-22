@@ -34,6 +34,22 @@ function createId() {
   return crypto.randomUUID().replace(/-/g, "");
 }
 
+/** Resolve project route param (UUID or slug) to canonical project id. */
+async function resolveProjectIdByIdOrSlug(
+  db: D1DatabaseLike,
+  workspaceId: string,
+  idOrSlug: string,
+): Promise<string | null> {
+  const row = await db
+    .prepare(
+      `SELECT id FROM projects WHERE workspace_id = ? AND deleted_at IS NULL AND (id = ? OR slug = ?) LIMIT 1`,
+    )
+    .bind(workspaceId, idOrSlug, idOrSlug)
+    .all<{ id: string }>();
+  if (!row.success || !row.results?.[0]) return null;
+  return row.results[0].id;
+}
+
 function parseJson<T>(body: string): T {
   try {
     return JSON.parse(body) as T;
@@ -665,7 +681,9 @@ export async function handleV1ExtraRoutes(
     const segments = tail.split("/").filter(Boolean);
 
     if (segments.length === 1) {
-      const projectId = segments[0]!;
+      const idOrSlug = segments[0]!;
+      const projectId = await resolveProjectIdByIdOrSlug(db, workspaceId, idOrSlug);
+      if (!projectId) return json({ error: { message: "Not found" } }, 404);
       if (method === "GET") {
         const row = await db
           .prepare(
@@ -736,7 +754,8 @@ export async function handleV1ExtraRoutes(
 
     // /v1/projects/:id/hub
     if (segments.length === 2 && segments[1] === "hub") {
-      const projectId = segments[0]!;
+      const projectId = await resolveProjectIdByIdOrSlug(db, workspaceId, segments[0]!);
+      if (!projectId) return json({ error: { message: "Not found" } }, 404);
       if (method !== "GET") return null;
       const proj = await db
         .prepare(`SELECT * FROM projects WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`)
@@ -877,7 +896,8 @@ export async function handleV1ExtraRoutes(
 
     // milestones
     if (segments.length === 2 && segments[1] === "milestones") {
-      const projectId = segments[0]!;
+      const projectId = await resolveProjectIdByIdOrSlug(db, workspaceId, segments[0]!);
+      if (!projectId) return json({ error: { message: "Not found" } }, 404);
       const ok = await db
         .prepare(`SELECT id FROM projects WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`)
         .bind(projectId, workspaceId)
@@ -931,9 +951,10 @@ export async function handleV1ExtraRoutes(
       }
     }
 
-    // /v1/projects/:projectId/milestones/:milestoneId — PATCH, DELETE
+    // /v1/projects/:projectId/milestones/:milestoneId — GET, PATCH, DELETE
     if (segments.length === 3 && segments[1] === "milestones") {
-      const projectId = segments[0]!;
+      const projectId = await resolveProjectIdByIdOrSlug(db, workspaceId, segments[0]!);
+      if (!projectId) return json({ error: { message: "Not found" } }, 404);
       const milestoneId = segments[2]!;
       const pcheck = await db
         .prepare(`SELECT id FROM projects WHERE id = ? AND workspace_id = ?`)
@@ -947,6 +968,21 @@ export async function handleV1ExtraRoutes(
         .all<{ id: string }>();
       if (!mcheck.success || !mcheck.results?.[0])
         return json({ error: { message: "Not found" } }, 404);
+      if (method === "GET") {
+        const row = await db
+          .prepare(`SELECT * FROM milestones WHERE id = ? AND project_id = ?`)
+          .bind(milestoneId, projectId)
+          .all<Record<string, unknown>>();
+        if (!row.success || !row.results?.[0])
+          return json({ error: { message: "Not found" } }, 404);
+        const mref = await getExternalRefMap(db, workspaceId, "milestone", [milestoneId]);
+        return json({
+          data: {
+            ...mapMilestoneCamel(row.results[0]),
+            externalRef: mref.get(milestoneId) ?? null,
+          },
+        });
+      }
       if (method === "PATCH") {
         const aerr = needActor();
         if (aerr) return aerr;
@@ -957,6 +993,7 @@ export async function handleV1ExtraRoutes(
           ["title", "title"],
           ["description", "description"],
           ["status", "status"],
+          ["priority", "priority"],
           ["dueDate", "due_date"],
           ["ownerUserId", "owner_user_id"],
           ["sortOrder", "sort_order"],
@@ -996,7 +1033,8 @@ export async function handleV1ExtraRoutes(
 
     // okr-links
     if (segments.length === 2 && segments[1] === "okr-links") {
-      const projectId = segments[0]!;
+      const projectId = await resolveProjectIdByIdOrSlug(db, workspaceId, segments[0]!);
+      if (!projectId) return json({ error: { message: "Not found" } }, 404);
       if (method === "GET") {
         const objLinks = await db
           .prepare(
@@ -1147,7 +1185,8 @@ export async function handleV1ExtraRoutes(
     }
 
     if (segments.length === 4 && segments[1] === "okr-links") {
-      const projectId = segments[0]!;
+      const projectId = await resolveProjectIdByIdOrSlug(db, workspaceId, segments[0]!);
+      if (!projectId) return json({ error: { message: "Not found" } }, 404);
       const kind = segments[2];
       const linkId = segments[3]!;
       if (method !== "DELETE") return null;

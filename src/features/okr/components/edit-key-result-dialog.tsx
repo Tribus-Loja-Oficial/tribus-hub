@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -9,7 +10,7 @@ import { DateField } from "@/components/ui/date-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils/cn";
-import type { OkrCycle, OkrObjective } from "@/lib/types/domain";
+import type { OkrCycle, OkrKeyResult, OkrObjective } from "@/lib/types/domain";
 
 type ObjectiveWithKRs = OkrObjective & { keyResults: unknown[] };
 
@@ -19,11 +20,10 @@ interface MemberRow {
   email: string;
 }
 
-interface CreateKeyResultDialogProps {
+interface EditKeyResultDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  defaultObjectiveId?: string;
-  defaultCycleId?: string;
+  keyResult: OkrKeyResult | null;
 }
 
 function calcKrProgress(
@@ -35,22 +35,15 @@ function calcKrProgress(
   if (metricType === "boolean") return current >= 1 ? 100 : 0;
   const range = target - start;
   if (range === 0) return current >= target ? 100 : 0;
-  const progress = ((current - start) / range) * 100;
-  return Math.min(100, Math.max(0, progress));
+  return Math.min(100, Math.max(0, ((current - start) / range) * 100));
 }
 
 type DateErrors = { order?: string; startInCycle?: string; targetInCycle?: string };
 
-export function CreateKeyResultDialog({
-  open,
-  onOpenChange,
-  defaultObjectiveId,
-  defaultCycleId,
-}: CreateKeyResultDialogProps) {
+export function EditKeyResultDialog({ open, onOpenChange, keyResult }: EditKeyResultDialogProps) {
   const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [objectiveId, setObjectiveId] = useState(defaultObjectiveId ?? "");
   const [ownerUserId, setOwnerUserId] = useState("");
   const [metricType, setMetricType] = useState("number");
   const [unit, setUnit] = useState("");
@@ -61,11 +54,10 @@ export function CreateKeyResultDialog({
   const [startDate, setStartDate] = useState("");
   const [targetDate, setTargetDate] = useState("");
   const [confidence, setConfidence] = useState("");
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(true);
   const [dateErrors, setDateErrors] = useState<DateErrors>({});
   const [valueError, setValueError] = useState("");
-  const prevStartRef = useRef(startValue);
-  const prevMetricTypeRef = useRef(metricType);
+  const prevStartRef = useRef("0");
 
   const { data: objectivesRes } = useQuery<{ data: ObjectiveWithKRs[] }>({
     queryKey: ["okr-objectives"],
@@ -87,15 +79,18 @@ export function CreateKeyResultDialog({
 
   const mutation = useMutation({
     mutationFn: async (payload: object) => {
-      const res = await fetch("/api/okr/key-results", {
-        method: "POST",
+      if (!keyResult) throw new Error("Sem key result");
+      const res = await fetch(`/api/okr/key-results/${keyResult.id}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error("Falha ao criar key result");
+      if (!res.ok) throw new Error("Falha ao atualizar key result");
       return res.json();
     },
     onSuccess: () => {
+      if (!keyResult) return;
+      queryClient.invalidateQueries({ queryKey: ["okr-key-result", keyResult.id] });
       queryClient.invalidateQueries({ queryKey: ["okr-key-results"] });
       queryClient.invalidateQueries({ queryKey: ["okr-objectives"] });
       queryClient.invalidateQueries({ queryKey: ["okr-dashboard"] });
@@ -106,7 +101,6 @@ export function CreateKeyResultDialog({
   function resetForm() {
     setTitle("");
     setDescription("");
-    setObjectiveId(defaultObjectiveId ?? "");
     setOwnerUserId("");
     setMetricType("number");
     setUnit("");
@@ -117,11 +111,10 @@ export function CreateKeyResultDialog({
     setStartDate("");
     setTargetDate("");
     setConfidence("");
-    setShowAdvanced(false);
+    setShowAdvanced(true);
     setDateErrors({});
     setValueError("");
     prevStartRef.current = "0";
-    prevMetricTypeRef.current = "number";
   }
 
   function emitOpenChange(next: boolean) {
@@ -130,50 +123,42 @@ export function CreateKeyResultDialog({
   }
 
   useEffect(() => {
-    if (open) {
-      setObjectiveId(defaultObjectiveId ?? "");
-      setDateErrors({});
-      setValueError("");
-    }
-  }, [open, defaultObjectiveId]);
-
-  useEffect(() => {
-    if (metricType === "percentage") setUnit("%");
-    else if (metricType === "currency") setUnit("R$");
-    else if (metricType === "boolean") setUnit("");
-    else setUnit("");
-  }, [metricType]);
-
-  useEffect(() => {
-    const prev = prevMetricTypeRef.current;
-    prevMetricTypeRef.current = metricType;
-    if (metricType === "boolean") {
-      setStartValue("0");
-      setTargetValue("1");
-      setCurrentValue((c) => (c === "1" || c === "0" ? c : "0"));
-    } else if (prev === "boolean") {
-      setStartValue("0");
-      setCurrentValue("0");
-      setTargetValue("100");
-    }
-  }, [metricType]);
+    if (!open || !keyResult) return;
+    setTitle(keyResult.title);
+    setDescription(keyResult.descriptionText ?? "");
+    setOwnerUserId(keyResult.ownerUserId ?? "");
+    setMetricType(keyResult.metricType);
+    setUnit(keyResult.unit ?? "");
+    setStartValue(String(keyResult.startValue));
+    setCurrentValue(String(keyResult.currentValue));
+    setTargetValue(String(keyResult.targetValue));
+    setStatus(keyResult.status);
+    setStartDate(keyResult.startDate ?? "");
+    setTargetDate(keyResult.targetDate ?? "");
+    setConfidence(
+      keyResult.confidence != null && keyResult.confidence >= 0
+        ? String(keyResult.confidence)
+        : "",
+    );
+    setDateErrors({});
+    setValueError("");
+    prevStartRef.current = String(keyResult.startValue);
+  }, [open, keyResult]);
 
   const objectives = objectivesRes?.data ?? [];
   const cycles = cyclesRes?.data ?? [];
   const members = membersRes?.data ?? [];
 
-  const selectedObjective = useMemo(
-    () => objectives.find((o) => o.id === objectiveId),
-    [objectives, objectiveId],
+  const linkedObjective = useMemo(
+    () => (keyResult ? objectives.find((o) => o.id === keyResult.objectiveId) : undefined),
+    [objectives, keyResult],
   );
 
-  const inheritedCycleId = selectedObjective?.cycleId ?? undefined;
+  const inheritedCycleId = linkedObjective?.cycleId ?? keyResult?.cycleId ?? undefined;
   const inheritedCycle = useMemo(
     () => cycles.find((c) => c.id === inheritedCycleId),
     [cycles, inheritedCycleId],
   );
-
-  const effectiveCycleId = inheritedCycleId ?? defaultCycleId ?? undefined;
 
   const isBoolean = metricType === "boolean";
   const startNum = parseFloat(startValue);
@@ -196,6 +181,25 @@ export function CreateKeyResultDialog({
     }
     return null;
   }, [numsOk, isBoolean, startNum, currentNum, targetNum]);
+
+  function handleMetricTypeChange(next: string) {
+    const prev = metricType;
+    setMetricType(next);
+    if (next === "percentage") setUnit("%");
+    else if (next === "currency") setUnit("R$");
+    else if (next === "boolean") setUnit("");
+    else setUnit("");
+
+    if (next === "boolean") {
+      setStartValue("0");
+      setTargetValue("1");
+      setCurrentValue((c) => (c === "1" || c === "0" ? c : "0"));
+    } else if (prev === "boolean" && keyResult) {
+      setStartValue(String(keyResult.startValue));
+      setCurrentValue(String(keyResult.currentValue));
+      setTargetValue(String(keyResult.targetValue));
+    }
+  }
 
   function handleStartChange(next: string) {
     const prev = prevStartRef.current;
@@ -227,7 +231,7 @@ export function CreateKeyResultDialog({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim() || !objectiveId) return;
+    if (!title.trim() || !keyResult) return;
 
     if (!isBoolean) {
       if (targetValue.trim() === "" || Number.isNaN(parseFloat(targetValue))) {
@@ -236,7 +240,6 @@ export function CreateKeyResultDialog({
       }
     }
     setValueError("");
-
     if (!applyDateValidation()) return;
 
     const confParsed = confidence.trim() === "" ? undefined : parseInt(confidence, 10);
@@ -251,8 +254,6 @@ export function CreateKeyResultDialog({
     mutation.mutate({
       title: title.trim(),
       descriptionText: description.trim() || undefined,
-      objectiveId,
-      cycleId: effectiveCycleId,
       ownerUserId: ownerUserId || undefined,
       metricType,
       unit: unit.trim() || undefined,
@@ -269,11 +270,13 @@ export function CreateKeyResultDialog({
   const valueStep =
     metricType === "currency" ? "0.01" : metricType === "percentage" ? "0.1" : "any";
 
+  if (!keyResult) return null;
+
   return (
     <Dialog open={open} onOpenChange={emitOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Novo key result</DialogTitle>
+          <DialogTitle>Editar key result</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
@@ -287,8 +290,7 @@ export function CreateKeyResultDialog({
               placeholder="Ex.: Atingir 200 clientes ativos mensais"
             />
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Key result deve ser <strong className="font-medium text-foreground/80">mensurável e verificável</strong>.
-              Ex.: &quot;Atingir 200 clientes ativos&quot; ou &quot;Elevar conversão para 3,5%&quot;.
+              Key result mensurável e verificável.
             </p>
           </div>
 
@@ -308,54 +310,43 @@ export function CreateKeyResultDialog({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>
-                Objetivo <span className="text-destructive">*</span>
-              </Label>
-              <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                value={objectiveId}
-                onChange={(e) => {
-                  setObjectiveId(e.target.value);
-                  setDateErrors({});
-                }}
+          <div className="space-y-1.5">
+            <Label>Objetivo vinculado</Label>
+            {linkedObjective ? (
+              <Link
+                href={`/okr/objectives/${linkedObjective.id}`}
+                className="block truncate text-sm font-medium text-primary hover:underline"
               >
-                <option value="">Selecione o objetivo vinculado…</option>
-                {objectives.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.title}
-                  </option>
-                ))}
-              </select>
-              {objectiveId && (
-                <p className="text-xs text-muted-foreground">
-                  {inheritedCycle ? (
-                    <>
-                      Ciclo herdado: <span className="text-foreground/90">{inheritedCycle.title}</span>
-                    </>
-                  ) : (
-                    <>Sem ciclo vinculado ao objetivo</>
-                  )}
-                </p>
+                {linkedObjective.title}
+              </Link>
+            ) : (
+              <p className="text-sm text-muted-foreground">—</p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              {inheritedCycle ? (
+                <>
+                  Ciclo herdado: <span className="text-foreground/90">{inheritedCycle.title}</span>
+                </>
+              ) : (
+                <>Sem ciclo vinculado ao objetivo</>
               )}
-            </div>
+            </p>
+          </div>
 
-            <div className="space-y-1.5">
-              <Label>Responsável</Label>
-              <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                value={ownerUserId}
-                onChange={(e) => setOwnerUserId(e.target.value)}
-              >
-                <option value="">Sem responsável</option>
-                {members.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="space-y-1.5">
+            <Label>Responsável</Label>
+            <select
+              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+              value={ownerUserId}
+              onChange={(e) => setOwnerUserId(e.target.value)}
+            >
+              <option value="">Sem responsável</option>
+              {members.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className={cn("grid gap-3", isBoolean ? "grid-cols-1" : "grid-cols-2")}>
@@ -364,7 +355,7 @@ export function CreateKeyResultDialog({
               <select
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 value={metricType}
-                onChange={(e) => setMetricType(e.target.value)}
+                onChange={(e) => handleMetricTypeChange(e.target.value)}
               >
                 <option value="number">Número</option>
                 <option value="percentage">Percentual</option>
@@ -380,13 +371,7 @@ export function CreateKeyResultDialog({
                 <Input
                   value={unit}
                   onChange={(e) => setUnit(e.target.value)}
-                  placeholder={
-                    metricType === "currency"
-                      ? "Ex.: R$, mil R$"
-                      : metricType === "percentage"
-                        ? "Ex.: %"
-                        : "Ex.: clientes, leads, tickets"
-                  }
+                  placeholder="Ex.: clientes, %, R$"
                 />
               </div>
             )}
@@ -403,9 +388,6 @@ export function CreateKeyResultDialog({
                 <option value="0">Não atingido</option>
                 <option value="1">Atingido</option>
               </select>
-              <p className="text-xs text-muted-foreground">
-                Meta fixa: resultado &quot;sim&quot; (1). Ajuste apenas o estado atual.
-              </p>
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-3">
@@ -540,17 +522,13 @@ export function CreateKeyResultDialog({
             )}
           </div>
 
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Você poderá registrar atualizações de valor e comentários depois que o KR existir.
-          </p>
-
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" type="button" onClick={() => emitOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={!title.trim() || !objectiveId || mutation.isPending}>
+            <Button type="submit" disabled={!title.trim() || mutation.isPending}>
               {mutation.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-              {mutation.isPending ? "Criando…" : "Criar key result"}
+              {mutation.isPending ? "Salvando…" : "Salvar alterações"}
             </Button>
           </div>
         </form>

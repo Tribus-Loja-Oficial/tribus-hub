@@ -3,42 +3,44 @@ import type { OkrObjectiveStatus, OkrKeyResultStatus, OkrCycleStatus } from "@/l
 
 type AnyStatus = OkrObjectiveStatus | OkrKeyResultStatus | OkrCycleStatus | string;
 
+const ring = "ring-1 ring-inset ring-black/[0.04] dark:ring-white/[0.06]";
+
 const CONFIG: Record<string, { label: string; className: string }> = {
   draft: {
     label: "Rascunho",
-    className: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
+    className: `border-border/75 bg-muted/70 text-muted-foreground dark:bg-muted/40 dark:text-muted-foreground ${ring}`,
   },
   planned: {
     label: "Planejado",
-    className: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+    className: `border-border/75 bg-muted/60 text-muted-foreground dark:bg-muted/35 dark:text-muted-foreground ${ring}`,
   },
   on_track: {
     label: "No rumo",
-    className: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+    className: `border-emerald-600/20 bg-emerald-600/[0.07] text-emerald-900/90 dark:border-emerald-500/25 dark:bg-emerald-500/12 dark:text-emerald-100 ${ring}`,
   },
   at_risk: {
     label: "Em risco",
-    className: "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+    className: `border-amber-600/22 bg-amber-500/[0.09] text-amber-950/85 dark:border-amber-500/28 dark:bg-amber-500/10 dark:text-amber-100 ${ring}`,
   },
   off_track: {
     label: "Fora do rumo",
-    className: "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+    className: `border-rose-600/22 bg-rose-500/[0.08] text-rose-900/90 dark:border-rose-500/28 dark:bg-rose-500/12 dark:text-rose-100 ${ring}`,
   },
   completed: {
     label: "Concluído",
-    className: "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    className: `border-primary/20 bg-primary/[0.08] text-primary dark:border-primary/25 dark:bg-primary/15 dark:text-blue-100 ${ring}`,
   },
   active: {
     label: "Ativo",
-    className: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+    className: `border-emerald-600/20 bg-emerald-600/[0.07] text-emerald-900/90 dark:border-emerald-500/25 dark:bg-emerald-500/12 dark:text-emerald-100 ${ring}`,
   },
   closed: {
     label: "Encerrado",
-    className: "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500",
+    className: `border-border/70 bg-muted/55 text-muted-foreground dark:bg-muted/30 ${ring}`,
   },
   archived: {
     label: "Arquivado",
-    className: "bg-zinc-100 text-zinc-400 dark:bg-zinc-900 dark:text-zinc-600",
+    className: `border-border/60 bg-muted/40 text-muted-foreground/90 dark:bg-muted/25 ${ring}`,
   },
 };
 
@@ -49,11 +51,14 @@ interface OkrStatusBadgeProps {
 }
 
 export function OkrStatusBadge({ status, size = "sm", className }: OkrStatusBadgeProps) {
-  const config = CONFIG[status] ?? { label: status, className: "bg-zinc-100 text-zinc-600" };
+  const config = CONFIG[status] ?? {
+    label: status,
+    className: `border-border/70 bg-muted/60 text-muted-foreground ${ring}`,
+  };
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-md font-medium ring-1 ring-inset ring-black/5",
+        "inline-flex items-center rounded-md border font-medium",
         size === "sm" ? "px-2 py-0.5 text-[11px]" : "px-2.5 py-1 text-xs",
         config.className,
         className,
@@ -70,21 +75,33 @@ interface OkrPriorityBadgeProps {
 }
 
 const PRIORITY_CONFIG: Record<string, { label: string; className: string }> = {
-  low: { label: "Baixa", className: "bg-zinc-100 text-zinc-500" },
-  medium: { label: "Média", className: "bg-blue-50 text-blue-600" },
-  high: { label: "Alta", className: "bg-orange-50 text-orange-600" },
-  critical: { label: "Crítica", className: "bg-red-50 text-red-700" },
+  low: {
+    label: "Baixa",
+    className: `border-border/70 bg-muted/55 text-muted-foreground dark:bg-muted/30 ${ring}`,
+  },
+  medium: {
+    label: "Média",
+    className: `border-primary/18 bg-primary/[0.07] text-primary dark:border-primary/25 dark:bg-primary/12 dark:text-blue-100 ${ring}`,
+  },
+  high: {
+    label: "Alta",
+    className: `border-amber-600/22 bg-amber-500/[0.09] text-amber-950/85 dark:border-amber-500/28 dark:bg-amber-500/10 dark:text-amber-100 ${ring}`,
+  },
+  critical: {
+    label: "Crítica",
+    className: `border-rose-600/22 bg-rose-500/[0.08] text-rose-900/90 dark:border-rose-500/28 dark:bg-rose-500/12 dark:text-rose-100 ${ring}`,
+  },
 };
 
 export function OkrPriorityBadge({ priority, className }: OkrPriorityBadgeProps) {
   const config = PRIORITY_CONFIG[priority] ?? {
     label: priority,
-    className: "bg-zinc-100 text-zinc-500",
+    className: `border-border/70 bg-muted/55 text-muted-foreground ${ring}`,
   };
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ring-black/5",
+        "inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-medium",
         config.className,
         className,
       )}

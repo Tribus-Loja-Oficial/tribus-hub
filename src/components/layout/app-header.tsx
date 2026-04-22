@@ -25,7 +25,7 @@ export function AppHeader() {
 
   return (
     <>
-      <header className="flex h-14 shrink-0 items-center gap-4 border-b border-border bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:px-6">
+      <header className="flex h-14 shrink-0 items-center gap-4 border-b border-border/80 bg-card/35 px-4 shadow-sm shadow-black/[0.02] backdrop-blur-md supports-[backdrop-filter]:bg-card/25 sm:px-6 dark:shadow-black/30">
         <div className="hidden min-w-0 max-w-[min(40%,320px)] flex-1 md:block">
           <AppBreadcrumbs />
         </div>
@@ -35,9 +35,9 @@ export function AppHeader() {
             type="button"
             onClick={() => setSearchOpen(true)}
             className={cn(
-              "group flex w-full max-w-md items-center gap-2.5 rounded-xl border border-border/90 bg-gradient-to-b from-muted/40 to-muted/20 px-3 py-2.5 text-sm text-muted-foreground",
-              "shadow-sm transition-all hover:border-primary/25 hover:from-muted/50 hover:to-muted/30 hover:text-foreground",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "group flex w-full max-w-md items-center gap-2.5 rounded-xl border border-border/80 bg-gradient-to-b from-card/90 to-muted/25 px-3 py-2.5 text-sm text-muted-foreground shadow-inset",
+              "transition-all duration-200 ease-out hover:border-primary/22 hover:from-card hover:to-muted/35 hover:text-foreground hover:shadow-card",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45 focus-visible:ring-offset-1",
             )}
           >
             <Search className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
@@ -45,11 +45,11 @@ export function AppHeader() {
               Buscar no workspace…
             </span>
             <span className="hidden shrink-0 items-center gap-0.5 sm:flex" aria-hidden>
-              <kbd className="rounded-md border border-border/80 bg-background/90 px-1.5 py-0.5 font-mono text-[10px] font-medium text-foreground/85 shadow-sm">
+              <kbd className="rounded-md border border-border/70 bg-muted/40 px-1.5 py-0.5 font-mono text-[10px] font-medium text-foreground/80 shadow-inset">
                 Ctrl
               </kbd>
               <span className="text-[10px] text-muted-foreground">+</span>
-              <kbd className="rounded-md border border-border/80 bg-background/90 px-1.5 py-0.5 font-mono text-[10px] font-medium text-foreground/85 shadow-sm">
+              <kbd className="rounded-md border border-border/70 bg-muted/40 px-1.5 py-0.5 font-mono text-[10px] font-medium text-foreground/80 shadow-inset">
                 K
               </kbd>
             </span>
@@ -72,9 +72,9 @@ export function AppHeader() {
             type="button"
             onClick={() => setIngestionOpen(true)}
             className={cn(
-              "hidden items-center gap-1.5 rounded-lg border border-border/70 bg-muted/40 px-2.5 py-1.5 text-xs font-medium text-muted-foreground",
-              "transition-colors hover:border-border hover:bg-muted hover:text-foreground",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "hidden items-center gap-1.5 rounded-lg border border-border/75 bg-muted/35 px-2.5 py-1.5 text-xs font-medium text-muted-foreground shadow-inset",
+              "transition-all duration-200 ease-out hover:border-border hover:bg-muted/70 hover:text-foreground hover:shadow-card",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45 focus-visible:ring-offset-1",
               "md:flex",
             )}
             aria-label="Nova ingestão de dados"

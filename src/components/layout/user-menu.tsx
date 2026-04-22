@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ChevronDown, LogOut, User } from "lucide-react";
@@ -13,8 +14,8 @@ export function UserMenu() {
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
-        <button className="flex items-center gap-2 text-sm font-medium text-foreground/80 transition-colors hover:text-foreground">
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+        <button className="flex items-center gap-2 rounded-lg py-0.5 pl-0.5 pr-1 text-sm font-medium text-foreground/85 transition-colors duration-200 hover:bg-accent/50 hover:text-foreground">
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/12 text-xs font-semibold text-primary ring-1 ring-inset ring-primary/10">
             {user.name?.charAt(0).toUpperCase() ?? "U"}
           </div>
           <span className="hidden max-w-[120px] truncate sm:block">{user.name}</span>
@@ -25,19 +26,21 @@ export function UserMenu() {
       <DropdownMenu.Portal>
         <DropdownMenu.Content
           align="end"
-          className="z-50 min-w-[180px] animate-fade-in rounded-md border border-border bg-popover p-1 shadow-md"
+          className="z-50 min-w-[180px] animate-fade-in rounded-lg border border-border/90 bg-popover p-1 shadow-popover"
         >
           <DropdownMenu.Label className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
             {user.email}
           </DropdownMenu.Label>
           <DropdownMenu.Separator className="my-1 h-px bg-border" />
 
-          <DropdownMenu.Item
-            className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
-            onSelect={() => {}}
-          >
-            <User className="h-3.5 w-3.5" />
-            Perfil
+          <DropdownMenu.Item asChild>
+            <Link
+              href="/settings"
+              className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
+            >
+              <User className="h-3.5 w-3.5" />
+              Meu perfil
+            </Link>
           </DropdownMenu.Item>
 
           <DropdownMenu.Separator className="my-1 h-px bg-border" />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type MouseEvent, type ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import Link from "next/link";
 import {
@@ -23,12 +23,34 @@ import { CreateObjectiveDialog } from "./create-objective-dialog";
 import { UpdateKeyResultDialog } from "./update-key-result-dialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resizable-grid-columns";
 
 type ObjectiveWithKRs = OkrObjective & { keyResults: OkrKeyResult[] };
 
 function formatDate(d: string | null | undefined) {
   if (!d) return null;
   return format(new Date(d), "dd MMM yy", { locale: ptBR });
+}
+
+function OkrTableHeaderCell({
+  children,
+  className,
+  resizeIndex,
+  startResize,
+}: {
+  children: ReactNode;
+  className?: string;
+  resizeIndex: number;
+  startResize: (leftIndex: number, e: MouseEvent) => void;
+}) {
+  return (
+    <div className={`relative flex min-w-0 items-center ${className ?? ""}`}>
+      {children}
+      <div className="absolute right-0 top-1/2 z-10 -translate-y-1/2 translate-x-1/2">
+        <GridColResizeHandle onMouseDown={(e) => startResize(resizeIndex, e)} />
+      </div>
+    </div>
+  );
 }
 
 export function OkrObjectivesPage() {
@@ -42,6 +64,11 @@ export function OkrObjectivesPage() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [updateKrOpen, setUpdateKrOpen] = useState(false);
   const [selectedKr, setSelectedKr] = useState<OkrKeyResult | null>(null);
+
+  const { widths, startResize } = useResizableGridColumns("hub:okr-objectives-cols", [
+    20, 280, 110, 90, 80, 140, 36,
+  ]);
+  const okrGridTpl = widths.map((w) => `${w}px`).join(" ");
 
   const params = new URLSearchParams();
   if (filterStatus) params.set("status", filterStatus);
@@ -194,32 +221,48 @@ export function OkrObjectivesPage() {
       )}
 
       {!isLoading && filtered.length > 0 && (
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <div className="overflow-x-auto rounded-xl border border-border bg-card">
           {/* Table header */}
-          <div className="grid grid-cols-[20px_1fr_100px_90px_80px_140px_36px] gap-3 border-b border-border bg-muted/30 px-5 py-2.5">
-            <span />
-            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Objetivo
-            </span>
-            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Ciclo
-            </span>
-            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Status
-            </span>
-            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              KRs
-            </span>
-            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Progresso
-            </span>
-            <span />
+          <div
+            className="grid gap-3 border-b border-border bg-muted/30 px-5 py-2.5"
+            style={{ gridTemplateColumns: okrGridTpl }}
+          >
+            <OkrTableHeaderCell resizeIndex={0} startResize={startResize}>
+              <span />
+            </OkrTableHeaderCell>
+            <OkrTableHeaderCell resizeIndex={1} startResize={startResize}>
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Objetivo
+              </span>
+            </OkrTableHeaderCell>
+            <OkrTableHeaderCell resizeIndex={2} startResize={startResize}>
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Ciclo
+              </span>
+            </OkrTableHeaderCell>
+            <OkrTableHeaderCell resizeIndex={3} startResize={startResize}>
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Status
+              </span>
+            </OkrTableHeaderCell>
+            <OkrTableHeaderCell resizeIndex={4} startResize={startResize}>
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                KRs
+              </span>
+            </OkrTableHeaderCell>
+            <OkrTableHeaderCell resizeIndex={5} startResize={startResize}>
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Progresso
+              </span>
+            </OkrTableHeaderCell>
+            <div className="relative flex min-w-0 items-center justify-end" />
           </div>
 
           <div className="divide-y divide-border">
             {filtered.map((obj) => (
               <ObjectiveRow
                 key={obj.id}
+                gridTpl={okrGridTpl}
                 objective={obj}
                 cycleName={obj.cycleId ? (cycleMap.get(obj.cycleId) ?? "—") : "—"}
                 isExpanded={expanded.has(obj.id)}
@@ -251,6 +294,7 @@ export function OkrObjectivesPage() {
 }
 
 interface ObjectiveRowProps {
+  gridTpl: string;
   objective: ObjectiveWithKRs;
   cycleName: string;
   isExpanded: boolean;
@@ -262,6 +306,7 @@ interface ObjectiveRowProps {
 }
 
 function ObjectiveRow({
+  gridTpl,
   objective,
   cycleName,
   isExpanded,
@@ -279,9 +324,10 @@ function ObjectiveRow({
     <div>
       {/* Objective row */}
       <div
-        className={`grid cursor-pointer grid-cols-[20px_1fr_100px_90px_80px_140px_36px] items-center gap-3 px-5 py-3.5 transition-colors ${
+        className={`grid cursor-pointer items-center gap-3 px-5 py-3.5 transition-colors ${
           isExpanded ? "bg-muted/20" : "hover:bg-muted/20"
         }`}
+        style={{ gridTemplateColumns: gridTpl }}
         onClick={(e) => {
           const el = e.target as HTMLElement;
           if (el.closest("a, button")) return;
@@ -384,7 +430,7 @@ function ObjectiveRow({
       {isExpanded && hasKrs && (
         <div className="border-t border-border/60 bg-muted/10">
           {objective.keyResults.map((kr) => (
-            <KrSubRow key={kr.id} kr={kr} onUpdate={() => onUpdateKr(kr)} />
+            <KrSubRow key={kr.id} gridTpl={gridTpl} kr={kr} onUpdate={() => onUpdateKr(kr)} />
           ))}
         </div>
       )}
@@ -392,11 +438,22 @@ function ObjectiveRow({
   );
 }
 
-function KrSubRow({ kr, onUpdate }: { kr: OkrKeyResult; onUpdate: () => void }) {
+function KrSubRow({
+  gridTpl,
+  kr,
+  onUpdate,
+}: {
+  gridTpl: string;
+  kr: OkrKeyResult;
+  onUpdate: () => void;
+}) {
   const isBoolean = kr.metricType === "boolean";
 
   return (
-    <div className="grid grid-cols-[20px_1fr_100px_90px_80px_140px_36px] items-center gap-3 border-b border-border/40 py-2.5 pl-5 pr-5 transition-colors last:border-b-0 hover:bg-muted/20">
+    <div
+      className="grid items-center gap-3 border-b border-border/40 py-2.5 pl-5 pr-5 transition-colors last:border-b-0 hover:bg-muted/20"
+      style={{ gridTemplateColumns: gridTpl }}
+    >
       {/* indent indicator */}
       <div className="flex items-center justify-center">
         <div className="ml-1 h-3 w-px bg-border" />

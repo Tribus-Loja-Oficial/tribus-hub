@@ -59,6 +59,13 @@ const config: Config = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      boxShadow: {
+        card: "0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 3px 0 rgb(15 23 42 / 0.03)",
+        "card-hover":
+          "0 2px 8px -2px rgb(15 23 42 / 0.07), 0 1px 2px 0 rgb(15 23 42 / 0.04)",
+        popover: "0 4px 24px -6px rgb(15 23 42 / 0.12), 0 2px 8px -4px rgb(15 23 42 / 0.06)",
+        inset: "inset 0 1px 1px 0 rgb(15 23 42 / 0.04)",
+      },
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
         mono: ["var(--font-mono)", "monospace"],

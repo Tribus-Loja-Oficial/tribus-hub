@@ -24,6 +24,7 @@ import {
   AlertTriangle,
   User,
   Kanban,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DateField } from "@/components/ui/date-field";
@@ -41,6 +42,7 @@ import {
   MilestoneStatusBadge,
 } from "./project-badges";
 import type { OkrObjective, OkrKeyResult } from "@/lib/types/domain";
+import { EditProjectDialog } from "./edit-project-dialog";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -445,10 +447,17 @@ export function ProjectDetailView({ paramsPromise }: ProjectDetailViewProps) {
   const { projectId } = use(paramsPromise);
   const queryClient = useQueryClient();
   const [createMilestoneOpen, setCreateMilestoneOpen] = useState(false);
+  const [editProjectOpen, setEditProjectOpen] = useState(false);
 
-  const { data, isLoading } = useQuery<{ data: HubPayload }>({
+  const { data, isLoading, isError, error } = useQuery<{ data: HubPayload }>({
     queryKey: ["project-hub", projectId],
-    queryFn: () => fetch(`/api/projects/${projectId}/hub`).then((r) => r.json()),
+    queryFn: async () => {
+      const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/hub`);
+      const json = (await res.json()) as { data?: HubPayload; error?: { message?: string } };
+      if (!res.ok) throw new Error(json.error?.message ?? `Erro ${res.status}`);
+      if (!json.data) throw new Error("Resposta inválida do servidor");
+      return { data: json.data };
+    },
     enabled: !!projectId,
   });
 
@@ -505,6 +514,21 @@ export function ProjectDetailView({ paramsPromise }: ProjectDetailViewProps) {
         <div className="h-9 w-1/2 rounded bg-muted" />
         <div className="h-10 w-full max-w-md rounded bg-muted" />
         <div className="h-48 rounded-xl bg-muted" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="py-20 text-center">
+        <p className="text-sm text-muted-foreground">
+          {error instanceof Error ? error.message : "Não foi possível carregar o projeto."}
+        </p>
+        <Link href="/projects/list">
+          <Button variant="outline" className="mt-4">
+            Voltar para projetos
+          </Button>
+        </Link>
       </div>
     );
   }
@@ -599,6 +623,10 @@ export function ProjectDetailView({ paramsPromise }: ProjectDetailViewProps) {
           </div>
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={() => setEditProjectOpen(true)} className="gap-1.5">
+            <Pencil className="h-3.5 w-3.5" />
+            Editar projeto
+          </Button>
           <select
             className="h-8 rounded-md border border-input bg-background px-2.5 text-xs"
             value={project.status}
@@ -1198,6 +1226,11 @@ export function ProjectDetailView({ paramsPromise }: ProjectDetailViewProps) {
         open={createMilestoneOpen}
         onOpenChange={setCreateMilestoneOpen}
         onCreated={() => queryClient.invalidateQueries({ queryKey: ["project-hub", projectId] })}
+      />
+      <EditProjectDialog
+        open={editProjectOpen}
+        onOpenChange={setEditProjectOpen}
+        project={project}
       />
     </div>
   );

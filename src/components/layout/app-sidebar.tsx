@@ -47,9 +47,9 @@ function KnowledgeItem({
 
   const indent = 8 + depth * 12;
   const iconEl = node.isFolder ? (
-    <Folder className="h-3 w-3 shrink-0 text-amber-500/70" />
+    <Folder className="h-3 w-3 shrink-0 text-amber-700/55 dark:text-amber-500/60" />
   ) : (
-    <FileText className="h-3 w-3 shrink-0 text-muted-foreground/50" />
+    <FileText className="h-3 w-3 shrink-0 text-muted-foreground/45" />
   );
   const label = `${node.icon ? `${node.icon} ` : ""}${node.title}`;
 
@@ -60,8 +60,8 @@ function KnowledgeItem({
         className={cn(
           "group flex items-center gap-1.5 rounded-md py-1.5 pr-2 text-xs font-medium transition-colors",
           isActive && !node.isFolder
-            ? "bg-sidebar-accent/70 text-sidebar-accent-foreground"
-            : "text-sidebar-foreground/65 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground",
+            ? "bg-primary/[0.08] text-sidebar-accent-foreground ring-1 ring-inset ring-primary/10 dark:ring-primary/20"
+            : "text-sidebar-foreground/65 hover:bg-sidebar-accent/45 hover:text-sidebar-foreground",
         )}
       >
         {/* Expand indicator */}
@@ -164,10 +164,10 @@ export function AppSidebar() {
 
   const navItemClass = (active: boolean) =>
     cn(
-      "group flex items-center gap-3 rounded-lg border-l-2 py-2.5 pl-[calc(0.625rem-2px)] pr-2.5 text-sm font-medium transition-colors",
+      "group flex items-center gap-3 rounded-lg border-l-2 py-2.5 pl-[calc(0.625rem-2px)] pr-2.5 text-sm font-medium transition-all duration-200 ease-out",
       active
-        ? "border-primary bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
-        : "border-transparent text-sidebar-foreground/75 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
+        ? "border-primary/90 bg-primary/[0.07] text-sidebar-accent-foreground shadow-sm shadow-black/[0.03] dark:bg-primary/10 dark:shadow-black/20"
+        : "border-transparent text-sidebar-foreground/78 hover:bg-sidebar-accent/55 hover:text-sidebar-foreground",
     );
 
   const iconClass = (active: boolean) =>
@@ -178,10 +178,10 @@ export function AppSidebar() {
 
   const subItemClass = (active: boolean) =>
     cn(
-      "group flex items-center gap-2.5 rounded-md px-2.5 py-2 text-xs font-medium transition-colors",
+      "group flex items-center gap-2.5 rounded-md px-2.5 py-2 text-xs font-medium transition-all duration-200 ease-out",
       active
-        ? "bg-sidebar-accent/70 text-sidebar-accent-foreground"
-        : "text-sidebar-foreground/65 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground",
+        ? "bg-primary/[0.08] text-sidebar-accent-foreground shadow-sm shadow-black/[0.02] ring-1 ring-inset ring-primary/10 dark:ring-primary/20"
+        : "text-sidebar-foreground/68 hover:bg-sidebar-accent/45 hover:text-sidebar-foreground",
     );
 
   const subIconClass = (active: boolean) =>
@@ -194,22 +194,22 @@ export function AppSidebar() {
         style={{ width: sidebarWidth }}
       >
         {/* Logo */}
-        <div className="flex h-[3.25rem] items-center gap-3 border-b border-sidebar-border px-4">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+        <div className="flex h-[3.25rem] items-center gap-3 border-b border-sidebar-border/90 bg-sidebar/80 px-4 shadow-inset">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/90 text-primary-foreground shadow-sm ring-1 ring-black/[0.06] dark:ring-white/10">
             <span className="text-xs font-bold tracking-tight">T</span>
           </div>
           <div className="min-w-0">
             <span className="block truncate text-sm font-semibold tracking-tight text-sidebar-foreground">
               Tribus Hub
             </span>
-            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/90">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/80">
               Workspace
             </span>
           </div>
         </div>
 
         <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-4">
-          <p className="px-2.5 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+          <p className="px-2.5 pb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/65">
             Navegação
           </p>
 
@@ -376,7 +376,7 @@ export function AppSidebar() {
 
         {/* Bottom: settings */}
         <div className="space-y-1 border-t border-sidebar-border px-2 pb-2 pt-3">
-          <p className="px-2.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+          <p className="px-2.5 pb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/65">
             Sistema
           </p>
           {bottomItems.map(({ href, label, icon: Icon }) => {
@@ -391,7 +391,7 @@ export function AppSidebar() {
         </div>
 
         <div className="mt-auto border-t border-sidebar-border bg-sidebar-accent/20 px-2 py-3">
-          <p className="px-2.5 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+          <p className="px-2.5 pb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/65">
             Conta
           </p>
           <div className="px-1 [&_button]:w-full [&_button]:justify-start [&_button]:rounded-lg [&_button]:py-2">

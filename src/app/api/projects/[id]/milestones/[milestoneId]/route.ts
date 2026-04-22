@@ -6,6 +6,22 @@ import { toApiError } from "@/lib/errors";
 
 type Params = { params: Promise<{ id: string; milestoneId: string }> };
 
+export async function GET(_req: NextRequest, { params }: Params) {
+  try {
+    const { id, milestoneId } = await params;
+    const user = await requireAuth();
+    const milestone = await hubApiFetch({
+      path: `/v1/projects/${id}/milestones/${milestoneId}`,
+      workspaceId: user.workspaceId,
+      actorUserId: user.id,
+    });
+    return NextResponse.json({ data: milestone });
+  } catch (err) {
+    const error = toApiError(err);
+    return NextResponse.json({ error }, { status: error.status });
+  }
+}
+
 export async function PATCH(request: NextRequest, { params }: Params) {
   try {
     const { id, milestoneId } = await params;
