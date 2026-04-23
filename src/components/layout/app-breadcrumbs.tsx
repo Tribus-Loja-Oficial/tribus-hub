@@ -13,6 +13,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   tasks: "Tasks",
   assets: "Assets",
   settings: "Configurações",
+  profile: "Perfil",
   login: "Entrar",
   okr: "OKR Manager",
   okrs: "OKRs",

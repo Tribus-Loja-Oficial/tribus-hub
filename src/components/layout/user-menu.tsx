@@ -37,7 +37,7 @@ export function UserMenu() {
           <DropdownMenu.Item
             className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
             onSelect={() => {
-              router.push("/settings");
+              router.push("/profile");
             }}
           >
             <User className="h-3.5 w-3.5" />

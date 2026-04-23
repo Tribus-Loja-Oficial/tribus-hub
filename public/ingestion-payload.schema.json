@@ -48,9 +48,10 @@
           "additionalProperties": false,
           "required": ["title", "start_date", "end_date"],
           "x-required-fields": ["title", "start_date", "end_date"],
-          "x-optional-fields": ["description", "status"],
+          "x-optional-fields": ["external_ref", "description", "status"],
           "properties": {
             "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+            "external_ref": { "type": "string", "maxLength": 100 },
             "description": { "type": "string", "maxLength": 2000 },
             "start_date": {
               "type": "string",
@@ -77,10 +78,13 @@
           "required": ["title"],
           "x-required-fields": ["title"],
           "x-optional-fields": [
+            "external_ref",
             "description",
             "cycle_id",
             "cycle_ref",
+            "cycle_external_ref",
             "owner_user_id",
+            "owner_user_external_ref",
             "status",
             "priority",
             "start_date",
@@ -88,10 +92,13 @@
           ],
           "properties": {
             "title": { "type": "string", "minLength": 1, "maxLength": 500 },
+            "external_ref": { "type": "string", "maxLength": 100 },
             "description": { "type": "string", "maxLength": 5000 },
             "cycle_id": { "type": "string" },
             "cycle_ref": { "type": "string" },
+            "cycle_external_ref": { "type": "string", "maxLength": 100 },
             "owner_user_id": { "type": "string" },
+            "owner_user_external_ref": { "type": "string", "maxLength": 100 },
             "status": {
               "type": "string",
               "enum": ["draft", "on_track", "at_risk", "off_track", "completed"]
@@ -107,7 +114,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["type", "data"],
-      "description": "OKR key result object. Required: type, data.title, data.target_value, and one of objective_id/objective_ref.",
+      "description": "OKR key result object. Required: type, data.title, data.target_value, and one of objective_id/objective_ref/objective_external_ref.",
       "properties": {
         "type": { "const": "okr_key_result" },
         "client_ref": { "type": "string" },
@@ -115,14 +122,18 @@
           "type": "object",
           "additionalProperties": false,
           "x-required-fields": ["title", "target_value"],
-          "x-conditional-required": ["objective_id OR objective_ref"],
+          "x-conditional-required": ["objective_id OR objective_ref OR objective_external_ref"],
           "x-optional-fields": [
+            "external_ref",
             "description",
             "objective_id",
             "objective_ref",
+            "objective_external_ref",
             "cycle_id",
             "cycle_ref",
+            "cycle_external_ref",
             "owner_user_id",
+            "owner_user_external_ref",
             "metric_type",
             "unit",
             "start_value",
@@ -137,12 +148,16 @@
               "required": ["title", "target_value"],
               "properties": {
                 "title": { "type": "string", "minLength": 1, "maxLength": 500 },
+                "external_ref": { "type": "string", "maxLength": 100 },
                 "description": { "type": "string", "maxLength": 5000 },
                 "objective_id": { "type": "string" },
                 "objective_ref": { "type": "string" },
+                "objective_external_ref": { "type": "string", "maxLength": 100 },
                 "cycle_id": { "type": "string" },
                 "cycle_ref": { "type": "string" },
+                "cycle_external_ref": { "type": "string", "maxLength": 100 },
                 "owner_user_id": { "type": "string" },
+                "owner_user_external_ref": { "type": "string", "maxLength": 100 },
                 "metric_type": {
                   "type": "string",
                   "enum": ["percentage", "number", "currency", "boolean", "custom"]
@@ -161,7 +176,11 @@
               }
             },
             {
-              "oneOf": [{ "required": ["objective_id"] }, { "required": ["objective_ref"] }]
+              "oneOf": [
+                { "required": ["objective_id"] },
+                { "required": ["objective_ref"] },
+                { "required": ["objective_external_ref"] }
+              ]
             }
           ]
         }
@@ -181,16 +200,19 @@
           "required": ["title"],
           "x-required-fields": ["title"],
           "x-optional-fields": [
+            "external_ref",
             "summary",
             "status",
             "health_status",
             "priority",
             "owner_user_id",
+            "owner_user_external_ref",
             "start_date",
             "target_date"
           ],
           "properties": {
             "title": { "type": "string", "minLength": 1, "maxLength": 500 },
+            "external_ref": { "type": "string", "maxLength": 100 },
             "summary": { "type": "string", "maxLength": 1000 },
             "status": {
               "type": "string",
@@ -202,6 +224,7 @@
             },
             "priority": { "type": "string", "enum": ["low", "medium", "high", "urgent"] },
             "owner_user_id": { "type": "string" },
+            "owner_user_external_ref": { "type": "string", "maxLength": 100 },
             "start_date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
             "target_date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }
           }
@@ -212,7 +235,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["type", "data"],
-      "description": "Milestone object. Required: type, data.title, and one of project_id/project_ref.",
+      "description": "Milestone object. Required: type, data.title, and one of project_id/project_ref/project_external_ref.",
       "properties": {
         "type": { "const": "milestone" },
         "client_ref": { "type": "string" },
@@ -220,14 +243,17 @@
           "type": "object",
           "additionalProperties": false,
           "x-required-fields": ["title"],
-          "x-conditional-required": ["project_id OR project_ref"],
+          "x-conditional-required": ["project_id OR project_ref OR project_external_ref"],
           "x-optional-fields": [
+            "external_ref",
             "description",
             "project_id",
             "project_ref",
+            "project_external_ref",
             "status",
             "priority",
             "owner_user_id",
+            "owner_user_external_ref",
             "due_date"
           ],
           "allOf": [
@@ -235,20 +261,27 @@
               "required": ["title"],
               "properties": {
                 "title": { "type": "string", "minLength": 1, "maxLength": 500 },
+                "external_ref": { "type": "string", "maxLength": 100 },
                 "description": { "type": "string", "maxLength": 2000 },
                 "project_id": { "type": "string" },
                 "project_ref": { "type": "string" },
+                "project_external_ref": { "type": "string", "maxLength": 100 },
                 "status": {
                   "type": "string",
                   "enum": ["pending", "in_progress", "completed", "missed"]
                 },
                 "priority": { "type": "string", "enum": ["low", "medium", "high", "urgent"] },
                 "owner_user_id": { "type": "string" },
+                "owner_user_external_ref": { "type": "string", "maxLength": 100 },
                 "due_date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }
               }
             },
             {
-              "oneOf": [{ "required": ["project_id"] }, { "required": ["project_ref"] }]
+              "oneOf": [
+                { "required": ["project_id"] },
+                { "required": ["project_ref"] },
+                { "required": ["project_external_ref"] }
+              ]
             }
           ]
         }
@@ -268,29 +301,37 @@
           "required": ["title"],
           "x-required-fields": ["title"],
           "x-optional-fields": [
+            "external_ref",
             "description",
             "project_id",
             "project_ref",
+            "project_external_ref",
             "milestone_id",
             "milestone_ref",
+            "milestone_external_ref",
             "column_id",
             "column_name",
             "priority",
             "assignee_user_id",
+            "assignee_user_external_ref",
             "due_date",
             "label_ids"
           ],
           "properties": {
             "title": { "type": "string", "minLength": 1, "maxLength": 500 },
+            "external_ref": { "type": "string", "maxLength": 100 },
             "description": { "type": "string", "maxLength": 5000 },
             "project_id": { "type": "string" },
             "project_ref": { "type": "string" },
+            "project_external_ref": { "type": "string", "maxLength": 100 },
             "milestone_id": { "type": "string" },
             "milestone_ref": { "type": "string" },
+            "milestone_external_ref": { "type": "string", "maxLength": 100 },
             "column_id": { "type": "string" },
             "column_name": { "type": "string" },
             "priority": { "type": "string", "enum": ["low", "medium", "high", "urgent"] },
             "assignee_user_id": { "type": "string" },
+            "assignee_user_external_ref": { "type": "string", "maxLength": 100 },
             "due_date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
             "label_ids": { "type": "array", "items": { "type": "string" } }
           }
