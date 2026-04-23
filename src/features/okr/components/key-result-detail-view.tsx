@@ -30,9 +30,11 @@ function formatDate(d: string | null | undefined) {
 
 interface KeyResultDetailViewProps {
   keyResultId: string;
+  /** Full width inside quick-view dialog (no max-w-4xl cap). */
+  embedded?: boolean;
 }
 
-export function KeyResultDetailView({ keyResultId }: KeyResultDetailViewProps) {
+export function KeyResultDetailView({ keyResultId, embedded }: KeyResultDetailViewProps) {
   const queryClient = useQueryClient();
   const [updateOpen, setUpdateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -76,7 +78,7 @@ export function KeyResultDetailView({ keyResultId }: KeyResultDetailViewProps) {
 
   if (isLoading) {
     return (
-      <div className="max-w-4xl space-y-4">
+      <div className={embedded ? "w-full max-w-none space-y-4" : "max-w-4xl space-y-4"}>
         <div className="h-8 w-48 animate-pulse rounded bg-muted" />
         <div className="h-32 animate-pulse rounded-xl bg-muted" />
       </div>
@@ -103,7 +105,7 @@ export function KeyResultDetailView({ keyResultId }: KeyResultDetailViewProps) {
   const isBoolean = kr.metricType === "boolean";
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className={embedded ? "w-full max-w-none space-y-6" : "max-w-4xl space-y-6"}>
       {/* Back */}
       <Link
         href="/okr/okrs"

@@ -61,11 +61,16 @@ export function EntityQuickViewDialog({
     if (!entity) return null;
     switch (entity.kind) {
       case "objective":
-        return <ObjectiveDetailView objectiveId={entity.id} />;
+        return <ObjectiveDetailView objectiveId={entity.id} embedded />;
       case "keyResult":
-        return <KeyResultDetailView keyResultId={entity.id} />;
+        return <KeyResultDetailView keyResultId={entity.id} embedded />;
       case "project":
-        return <ProjectDetailView paramsPromise={Promise.resolve({ projectId: entity.id })} />;
+        return (
+          <ProjectDetailView
+            paramsPromise={Promise.resolve({ projectId: entity.id })}
+            embedded
+          />
+        );
       case "milestone":
         return (
           <MilestoneDetailView
@@ -73,10 +78,11 @@ export function EntityQuickViewDialog({
               projectId: entity.projectId,
               milestoneId: entity.milestoneId,
             })}
+            embedded
           />
         );
       case "task":
-        return <TaskDetailView paramsPromise={Promise.resolve({ taskId: entity.id })} />;
+        return <TaskDetailView paramsPromise={Promise.resolve({ taskId: entity.id })} embedded />;
     }
   }
 
@@ -88,7 +94,9 @@ export function EntityQuickViewDialog({
             {entity ? dialogTitle(entity) : "Detalhes"}
           </DialogTitle>
         </DialogHeader>
-        <div className="max-h-[82vh] overflow-y-auto px-4 pb-4">{renderDetailContent()}</div>
+        <div className="min-w-0 w-full max-h-[82vh] overflow-y-auto px-4 pb-4">
+          {renderDetailContent()}
+        </div>
       </DialogContent>
     </Dialog>
   );

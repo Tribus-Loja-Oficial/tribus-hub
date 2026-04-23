@@ -23,9 +23,11 @@ function formatDate(d: string | null | undefined) {
 
 interface ObjectiveDetailViewProps {
   objectiveId: string;
+  /** Full width inside quick-view dialog (no max-w-4xl cap). */
+  embedded?: boolean;
 }
 
-export function ObjectiveDetailView({ objectiveId }: ObjectiveDetailViewProps) {
+export function ObjectiveDetailView({ objectiveId, embedded }: ObjectiveDetailViewProps) {
   const queryClient = useQueryClient();
   const [createKrOpen, setCreateKrOpen] = useState(false);
   const [editObjectiveOpen, setEditObjectiveOpen] = useState(false);
@@ -81,7 +83,7 @@ export function ObjectiveDetailView({ objectiveId }: ObjectiveDetailViewProps) {
 
   if (isLoading) {
     return (
-      <div className="max-w-4xl space-y-4">
+      <div className={embedded ? "w-full max-w-none space-y-4" : "max-w-4xl space-y-4"}>
         <div className="h-8 w-48 animate-pulse rounded bg-muted" />
         <div className="h-32 animate-pulse rounded-xl bg-muted" />
       </div>
@@ -112,7 +114,7 @@ export function ObjectiveDetailView({ objectiveId }: ObjectiveDetailViewProps) {
   const completedKrs = krs.filter((kr) => kr.status === "completed").length;
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className={embedded ? "w-full max-w-none space-y-6" : "max-w-4xl space-y-6"}>
       {/* Back */}
       <Link
         href="/okr/okrs"

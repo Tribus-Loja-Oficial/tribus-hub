@@ -23,6 +23,7 @@ import {
   User,
   ExternalLink,
   Pencil,
+  Eye,
 } from "lucide-react";
 import { format, isBefore, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -131,7 +132,15 @@ function ProgressBar({
 
 // ─── Task Row ─────────────────────────────────────────────────────────────────
 
-function TaskRow({ task, members }: { task: HierarchyTask; members: Map<string, MemberRow> }) {
+function TaskRow({
+  task,
+  members,
+  onEditTask,
+}: {
+  task: HierarchyTask;
+  members: Map<string, MemberRow>;
+  onEditTask: (taskId: string) => void;
+}) {
   const done = !!task.completedAt;
   const overdue = isOverdue(task.dueDate, task.completedAt);
   const assignee = task.assigneeUserId ? members.get(task.assigneeUserId) : null;
@@ -147,7 +156,21 @@ function TaskRow({ task, members }: { task: HierarchyTask; members: Map<string, 
       ) : (
         <Square className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40" />
       )}
-      <EntityQuickViewEyeButton entity={{ kind: "task", id: task.id }} className="h-6 w-6" />
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="h-6 w-6 shrink-0 text-muted-foreground hover:text-foreground"
+        title="Editar tarefa"
+        aria-label="Editar tarefa"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onEditTask(task.id);
+        }}
+      >
+        <Eye className="h-3.5 w-3.5" />
+      </Button>
       <Link
         href={`/tasks/${encodeURIComponent(task.id)}`}
         className={cn(
@@ -210,6 +233,7 @@ function MilestoneRow({
   members,
   onTaskCreated,
   onCreateTask,
+  onEditTask,
   hierarchyGridTpl,
   columnWidths,
 }: {
@@ -219,6 +243,7 @@ function MilestoneRow({
   members: Map<string, MemberRow>;
   onTaskCreated: () => void;
   onCreateTask: (projectId: string, milestoneId: string) => void;
+  onEditTask: (taskId: string) => void;
   hierarchyGridTpl: string;
   columnWidths: number[];
 }) {
@@ -424,7 +449,7 @@ function MilestoneRow({
               </div>
               <div className="space-y-0.5 py-1">
                 {milestone.tasks.map((task) => (
-                  <TaskRow key={task.id} task={task} members={members} />
+                  <TaskRow key={task.id} task={task} members={members} onEditTask={onEditTask} />
                 ))}
               </div>
               {/* Footer: always-visible add task */}
@@ -454,6 +479,7 @@ function ProjectRow({
   members,
   onMilestoneCreated,
   onCreateTask,
+  onEditTask,
   onEditProject,
   expandSignal,
   hierarchyGridTpl,
@@ -463,6 +489,7 @@ function ProjectRow({
   members: Map<string, MemberRow>;
   onMilestoneCreated: () => void;
   onCreateTask: (projectId: string, milestoneId: string) => void;
+  onEditTask: (taskId: string) => void;
   onEditProject?: (p: ProjectHierarchyItem) => void;
   expandSignal: boolean;
   hierarchyGridTpl: string;
@@ -735,6 +762,7 @@ function ProjectRow({
                     queryClient.invalidateQueries({ queryKey: ["project-hierarchy"] })
                   }
                   onCreateTask={onCreateTask}
+                  onEditTask={onEditTask}
                   hierarchyGridTpl={hierarchyGridTpl}
                   columnWidths={columnWidths}
                 />
@@ -835,6 +863,8 @@ export function ProjectHierarchyView({
   const [createTaskOpen, setCreateTaskOpen] = useState(false);
   const [createTaskProjectId, setCreateTaskProjectId] = useState("");
   const [createTaskMilestoneId, setCreateTaskMilestoneId] = useState("");
+  const [editTaskOpen, setEditTaskOpen] = useState(false);
+  const [editTaskId, setEditTaskId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery<{ data: ProjectHierarchyItem[] }>({
     queryKey: ["project-hierarchy"],
@@ -876,6 +906,11 @@ export function ProjectHierarchyView({
     setCreateTaskProjectId(projectId);
     setCreateTaskMilestoneId(milestoneId);
     setCreateTaskOpen(true);
+  };
+
+  const handleEditTask = (taskId: string) => {
+    setEditTaskId(taskId);
+    setEditTaskOpen(true);
   };
 
   if (isLoading) {
@@ -947,6 +982,7 @@ export function ProjectHierarchyView({
                 queryClient.invalidateQueries({ queryKey: ["project-hierarchy"] })
               }
               onCreateTask={handleCreateTask}
+              onEditTask={handleEditTask}
               onEditProject={onEditProject}
               expandSignal={allExpanded}
               hierarchyGridTpl={hierarchyGridTpl}
@@ -969,6 +1005,20 @@ export function ProjectHierarchyView({
         columns={columns}
         initialProjectId={createTaskProjectId}
         initialMilestoneId={createTaskMilestoneId}
+      />
+      <TaskFormDialog
+        open={editTaskOpen}
+        onOpenChange={(v) => {
+          setEditTaskOpen(v);
+          if (!v) {
+            setEditTaskId(null);
+            queryClient.invalidateQueries({ queryKey: ["project-hierarchy"] });
+            queryClient.invalidateQueries({ queryKey: ["board"] });
+          }
+        }}
+        mode="edit"
+        taskId={editTaskId}
+        columns={columns}
       />
     </>
   );

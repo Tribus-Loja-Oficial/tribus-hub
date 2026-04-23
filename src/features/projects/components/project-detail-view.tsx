@@ -3,7 +3,7 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Project, Milestone, Task } from "@/lib/types/domain";
+import type { Project, Milestone, Task, TaskColumn } from "@/lib/types/domain";
 import type { OkrObjectiveLink, OkrKrLink } from "@/lib/types/pm-hierarchy";
 import {
   FolderKanban,
@@ -25,6 +25,7 @@ import {
   User,
   Kanban,
   Pencil,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DateField } from "@/components/ui/date-field";
@@ -44,6 +45,7 @@ import {
 import type { OkrObjective, OkrKeyResult } from "@/lib/types/domain";
 import { EditProjectDialog } from "./edit-project-dialog";
 import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
+import { TaskFormDialog } from "@/features/tasks/components/task-form-dialog";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -83,6 +85,8 @@ interface OkrLinksPayload {
 
 interface ProjectDetailViewProps {
   paramsPromise: Promise<{ projectId: string }>;
+  /** Full width inside quick-view dialog (no max-w-5xl cap). */
+  embedded?: boolean;
 }
 
 type MemberRow = { id: string; name: string; email: string };
@@ -444,11 +448,13 @@ function OkrLinksTab({ projectId }: { projectId: string }) {
 
 // ─── Main View ────────────────────────────────────────────────────────────────
 
-export function ProjectDetailView({ paramsPromise }: ProjectDetailViewProps) {
+export function ProjectDetailView({ paramsPromise, embedded }: ProjectDetailViewProps) {
   const { projectId } = use(paramsPromise);
   const queryClient = useQueryClient();
   const [createMilestoneOpen, setCreateMilestoneOpen] = useState(false);
   const [editProjectOpen, setEditProjectOpen] = useState(false);
+  const [taskEditOpen, setTaskEditOpen] = useState(false);
+  const [taskEditingId, setTaskEditingId] = useState<string | null>(null);
 
   const { data, isLoading, isError, error } = useQuery<{ data: HubPayload }>({
     queryKey: ["project-hub", projectId],
@@ -467,6 +473,13 @@ export function ProjectDetailView({ paramsPromise }: ProjectDetailViewProps) {
     queryFn: () => fetch("/api/workspace/members").then((r) => r.json()),
     staleTime: 5 * 60 * 1000,
   });
+
+  const { data: boardRes } = useQuery<{ data: { columns: TaskColumn[] } }>({
+    queryKey: ["board"],
+    queryFn: () => fetch("/api/tasks/board").then((r) => r.json()),
+    staleTime: 5 * 60 * 1000,
+  });
+  const boardColumns = boardRes?.data?.columns ?? [];
 
   const membersMap = new Map((membersRes?.data ?? []).map((m) => [m.id, m]));
 
@@ -511,7 +524,11 @@ export function ProjectDetailView({ paramsPromise }: ProjectDetailViewProps) {
 
   if (isLoading) {
     return (
-      <div className="max-w-5xl animate-pulse space-y-6">
+      <div
+        className={
+          embedded ? "w-full max-w-none animate-pulse space-y-6" : "max-w-5xl animate-pulse space-y-6"
+        }
+      >
         <div className="h-9 w-1/2 rounded bg-muted" />
         <div className="h-10 w-full max-w-md rounded bg-muted" />
         <div className="h-48 rounded-xl bg-muted" />
@@ -562,7 +579,7 @@ export function ProjectDetailView({ paramsPromise }: ProjectDetailViewProps) {
   const owner = project.ownerUserId ? membersMap.get(project.ownerUserId) : null;
 
   return (
-    <div className="max-w-5xl space-y-6">
+    <div className={embedded ? "w-full max-w-none space-y-6" : "max-w-5xl space-y-6"}>
       {/* Back */}
       <Link
         href="/projects/list"

@@ -6,13 +6,12 @@ import { useQuery } from "@tanstack/react-query";
 import { addDays, isBefore, isWithinInterval, startOfDay, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils/cn";
-import { CheckSquare, Kanban, LayoutList, Plus, Search } from "lucide-react";
+import { CheckSquare, Eye, Kanban, LayoutList, Plus, Search } from "lucide-react";
 import type { TaskColumn } from "@/lib/types/domain";
 import type { BoardTask } from "@/lib/services/task-board.service";
 import { KanbanBoard } from "@/components/board/kanban-board";
 import { Button } from "@/components/ui/button";
 import { TaskFormDialog } from "./task-form-dialog";
-import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
 
 interface BoardPayload {
   columns: Array<TaskColumn & { tasks: BoardTask[] }>;
@@ -563,7 +562,17 @@ export function TaskBoardPage() {
                         : "—"}
                     </td>
                     <td className="px-2 py-2.5 text-center" onClick={(e) => e.stopPropagation()}>
-                      <EntityQuickViewEyeButton entity={{ kind: "task", id: task.id }} />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                        title="Editar tarefa"
+                        aria-label="Editar tarefa"
+                        onClick={() => openEdit(task)}
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                      </Button>
                     </td>
                   </tr>
                 );

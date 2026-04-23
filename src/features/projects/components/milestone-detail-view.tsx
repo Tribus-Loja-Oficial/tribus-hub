@@ -15,9 +15,11 @@ import { ptBR } from "date-fns/locale";
 
 interface MilestoneDetailViewProps {
   paramsPromise: Promise<{ projectId: string; milestoneId: string }>;
+  /** Full width inside quick-view dialog (no max-w-2xl cap). */
+  embedded?: boolean;
 }
 
-export function MilestoneDetailView({ paramsPromise }: MilestoneDetailViewProps) {
+export function MilestoneDetailView({ paramsPromise, embedded }: MilestoneDetailViewProps) {
   const { projectId, milestoneId } = use(paramsPromise);
   const queryClient = useQueryClient();
   const [editOpen, setEditOpen] = useState(false);
@@ -62,7 +64,7 @@ export function MilestoneDetailView({ paramsPromise }: MilestoneDetailViewProps)
 
   if (isLoading) {
     return (
-      <div className="max-w-2xl space-y-4">
+      <div className={embedded ? "w-full max-w-none space-y-4" : "max-w-2xl space-y-4"}>
         <div className="h-8 w-40 animate-pulse rounded bg-muted" />
         <div className="h-32 animate-pulse rounded-xl bg-muted" />
       </div>
@@ -85,7 +87,7 @@ export function MilestoneDetailView({ paramsPromise }: MilestoneDetailViewProps)
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className={embedded ? "w-full max-w-none space-y-6" : "max-w-2xl space-y-6"}>
       <Link
         href={`/projects/${projectId}`}
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"

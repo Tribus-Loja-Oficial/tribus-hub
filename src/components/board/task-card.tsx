@@ -4,10 +4,10 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { BoardTask } from "@/lib/services/task-board.service";
 import { cn } from "@/lib/utils/cn";
-import { CalendarDays, GripVertical } from "lucide-react";
+import { CalendarDays, Eye, GripVertical } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
+import { Button } from "@/components/ui/button";
 
 const priorityColors: Record<string, string> = {
   low: "bg-slate-100 text-slate-600",
@@ -107,10 +107,21 @@ export function TaskCard({ task, isDragging, onOpen }: TaskCardProps) {
             )}
           </div>
         </button>
-        <EntityQuickViewEyeButton
-          entity={{ kind: "task", id: task.id }}
-          className="h-7 w-7 shrink-0"
-        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+          title="Editar tarefa"
+          aria-label="Editar tarefa"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onOpen?.(task);
+          }}
+        >
+          <Eye className="h-3.5 w-3.5" />
+        </Button>
       </div>
     </div>
   );
