@@ -40,7 +40,7 @@ export default async function ProfilePage() {
               className="h-20 w-20 shrink-0 rounded-full object-cover ring-1 ring-border"
             />
           ) : (
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-primary/12 text-2xl font-semibold text-primary ring-1 ring-inset ring-primary/15">
+            <div className="bg-primary/12 flex h-20 w-20 shrink-0 items-center justify-center rounded-full text-2xl font-semibold text-primary ring-1 ring-inset ring-primary/15">
               {displayName.charAt(0).toUpperCase()}
             </div>
           )}
