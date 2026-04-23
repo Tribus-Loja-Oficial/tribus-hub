@@ -526,7 +526,9 @@ export function ProjectDetailView({ paramsPromise, embedded }: ProjectDetailView
     return (
       <div
         className={
-          embedded ? "w-full max-w-none animate-pulse space-y-6" : "max-w-5xl animate-pulse space-y-6"
+          embedded
+            ? "w-full max-w-none animate-pulse space-y-6"
+            : "max-w-5xl animate-pulse space-y-6"
         }
       >
         <div className="h-9 w-1/2 rounded bg-muted" />

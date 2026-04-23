@@ -1,5 +1,6 @@
 #!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+cd "$(dirname "$0")/.." || exit 1
+set -e
 
-npm run format:check
-npm run typecheck
+# Mirrors GitHub Actions "quality" job (typecheck → format → lint) before code reaches remote
+npm run ci:quality

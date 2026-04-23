@@ -1,6 +1,14 @@
 #!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+# Run from repository root (Git sets this; cd is a safeguard for GUI clients).
+cd "$(dirname "$0")/.." || exit 1
+set -e
 
+# Staged files: format + eslint fix, then re-stage via lint-staged
 npx lint-staged
+
+# Related unit tests (no-op if no staged src/*.ts(x))
 node scripts/vitest-staged.js
+
+# Full-tree checks (same as CI — catches edits outside the commit or CRLF drift)
 npm run format:check
+npm run typecheck
