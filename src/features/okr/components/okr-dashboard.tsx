@@ -503,12 +503,12 @@ function CyclePaceBadge({
 }) {
   const copy = {
     ahead: {
-      label: "À frente do tempo",
+      label: "Adiantado",
       className: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-100",
     },
     aligned: { label: "Alinhado ao tempo", className: "bg-muted text-foreground" },
     behind: {
-      label: "Atrasado vs. tempo",
+      label: "Atrasado",
       className: "bg-amber-500/15 text-amber-900 dark:text-amber-100",
     },
   }[verdict];

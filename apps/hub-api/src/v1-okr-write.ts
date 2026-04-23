@@ -40,6 +40,47 @@ function safeJsonParse(value: string | null): unknown {
   }
 }
 
+/** Calendar-day based, aligned with hub web `calcCycleTimeProgress` (okr-dashboard). */
+function calcCycleElapsedPercent(startDateStr: string, endDateStr: string, now = new Date()): number {
+  const start = new Date(startDateStr);
+  const end = new Date(endDateStr);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0;
+  if (now.getTime() < start.getTime()) return 0;
+  if (now.getTime() > end.getTime()) return 100;
+  const day = (d: Date) => Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  const totalDays = Math.max(0, (day(end) - day(start)) / 86400000);
+  const elapsedDays = Math.max(0, (day(now) - day(start)) / 86400000);
+  if (totalDays === 0) return 100;
+  return Math.min(100, Math.round((elapsedDays / totalDays) * 100));
+}
+
+function calcCycleElapsedPercentFromRow(cycle: Record<string, unknown>): number {
+  const sd = cycle.start_date as string | undefined;
+  const ed = cycle.end_date as string | undefined;
+  if (!sd || !ed) return 0;
+  return calcCycleElapsedPercent(sd, ed);
+}
+
+/** Δ = média dos KRs − % do tempo decorrido no ciclo (pontos percentuais, arredondado). */
+function buildCyclePace(
+  avgKrProgress: number,
+  cycle: Record<string, unknown>,
+): {
+  elapsedPercent: number;
+  avgKrProgress: number;
+  verdict: "ahead" | "aligned" | "behind";
+  diff: number;
+} {
+  const elapsedPercent = calcCycleElapsedPercentFromRow(cycle);
+  const diff = Math.round((avgKrProgress - elapsedPercent) * 10) / 10;
+  const band = 8;
+  let verdict: "ahead" | "aligned" | "behind";
+  if (diff > band) verdict = "ahead";
+  else if (diff < -band) verdict = "behind";
+  else verdict = "aligned";
+  return { elapsedPercent, avgKrProgress, verdict, diff };
+}
+
 function slugifyTitle(input: string): string {
   return input
     .trim()
@@ -353,14 +394,7 @@ export async function handleV1OkrWriteRoutes(
           attentionItems: buildAttention(objectives),
           recentUpdates,
           objectives: objectivesForDashboard,
-          cyclePace: activeCycle
-            ? {
-                elapsedPercent: 50,
-                avgKrProgress: stats.avgKrProgress,
-                verdict: "aligned" as const,
-                diff: 0,
-              }
-            : null,
+          cyclePace: activeCycle ? buildCyclePace(stats.avgKrProgress, activeCycle) : null,
         },
       });
     } catch (e) {
