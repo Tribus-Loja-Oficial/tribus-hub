@@ -70,7 +70,7 @@ interface StatCardProps {
 
 function StatCard({ label, value, sub, icon: Icon, iconClassName, href }: StatCardProps) {
   const inner = (
-    <div className="space-y-3 rounded-xl border border-border bg-card p-5 transition-all hover:border-primary/20 hover:shadow-sm">
+    <div className="flex h-full flex-col justify-between gap-3 rounded-xl border border-border bg-card p-5 transition-all hover:border-primary/20 hover:shadow-sm">
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           {label}
@@ -90,7 +90,7 @@ function StatCard({ label, value, sub, icon: Icon, iconClassName, href }: StatCa
   return href ? (
     <Link
       href={href}
-      className="block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="block h-full rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       {inner}
     </Link>

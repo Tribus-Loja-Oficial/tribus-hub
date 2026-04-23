@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,14 @@ export function UpdateKeyResultDialog({
   const [newValue, setNewValue] = useState("");
   const [comment, setComment] = useState("");
 
+  const isBoolean = keyResult?.metricType === "boolean";
+
+  useEffect(() => {
+    if (!open || !keyResult) return;
+    setComment("");
+    setNewValue(isBoolean ? "" : "0");
+  }, [open, keyResult, isBoolean]);
+
   const mutation = useMutation({
     mutationFn: async (payload: object) => {
       const res = await fetch(`/api/okr/key-results/${keyResult?.id}/updates`, {
@@ -47,31 +55,40 @@ export function UpdateKeyResultDialog({
 
   function handleClose() {
     onOpenChange(false);
-    setNewValue("");
+    setNewValue(isBoolean ? "" : "0");
     setComment("");
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (newValue === "" || !keyResult) return;
-    mutation.mutate({ newValue: parseFloat(newValue), comment: comment.trim() || undefined });
+    const parsed = parseFloat(newValue);
+    if (Number.isNaN(parsed)) return;
+    const finalValue = isBoolean ? parsed : keyResult.currentValue + parsed;
+    mutation.mutate({ newValue: finalValue, comment: comment.trim() || undefined });
   }
 
   if (!keyResult) return null;
 
-  const isBoolean = keyResult.metricType === "boolean";
-  const previewProgress =
-    newValue !== ""
-      ? (() => {
-          const sv = keyResult.startValue;
-          const tv = keyResult.targetValue;
-          const cv = parseFloat(newValue);
-          if (isBoolean) return cv >= 1 ? 100 : 0;
-          const range = tv - sv;
-          if (range === 0) return cv >= tv ? 100 : 0;
-          return Math.min(100, Math.max(0, ((cv - sv) / range) * 100));
-        })()
-      : keyResult.progressPercent;
+  const parsedInput = parseFloat(newValue);
+  const isInputValid = newValue !== "" && !Number.isNaN(parsedInput);
+  const deltaValue = isBoolean ? null : parsedInput;
+  const finalValue = isInputValid
+    ? isBoolean
+      ? parsedInput
+      : keyResult.currentValue + parsedInput
+    : keyResult.currentValue;
+  const previewProgress = isInputValid
+    ? (() => {
+        const sv = keyResult.startValue;
+        const tv = keyResult.targetValue;
+        const cv = finalValue;
+        if (isBoolean) return cv >= 1 ? 100 : 0;
+        const range = tv - sv;
+        if (range === 0) return cv >= tv ? 100 : 0;
+        return Math.min(100, Math.max(0, ((cv - sv) / range) * 100));
+      })()
+    : keyResult.progressPercent;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -125,7 +142,7 @@ export function UpdateKeyResultDialog({
           ) : (
             <div className="space-y-1.5">
               <Label>
-                Novo valor{keyResult.unit ? ` (${keyResult.unit})` : ""}{" "}
+                Ajuste{keyResult.unit ? ` (${keyResult.unit})` : ""}{" "}
                 <span className="text-destructive">*</span>
               </Label>
               <Input
@@ -133,13 +150,35 @@ export function UpdateKeyResultDialog({
                 type="number"
                 value={newValue}
                 onChange={(e) => setNewValue(e.target.value)}
-                placeholder={String(keyResult.currentValue)}
+                placeholder="0"
               />
+              <p className="text-xs text-muted-foreground">
+                Use positivo para aumentar e negativo para reduzir. Ex.:{" "}
+                <span className="font-medium text-foreground">10</span> aumenta 10;{" "}
+                <span className="font-medium text-foreground">-5</span> reduz 5.
+              </p>
             </div>
           )}
 
-          {newValue !== "" && (
+          {isInputValid && (
             <div className="space-y-1.5 rounded-lg bg-muted/50 px-3 py-2">
+              {!isBoolean && deltaValue !== null && (
+                <div className="flex items-center justify-between text-xs tabular-nums text-muted-foreground">
+                  <span>
+                    Atual: {keyResult.currentValue}
+                    {keyResult.unit ? ` ${keyResult.unit}` : ""}
+                  </span>
+                  <span>
+                    Ajuste: {deltaValue >= 0 ? "+" : ""}
+                    {deltaValue}
+                    {keyResult.unit ? ` ${keyResult.unit}` : ""}
+                  </span>
+                  <span className="font-semibold text-foreground">
+                    Final: {finalValue}
+                    {keyResult.unit ? ` ${keyResult.unit}` : ""}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>Preview</span>
                 <span className="font-semibold tabular-nums text-foreground">
@@ -165,7 +204,7 @@ export function UpdateKeyResultDialog({
             <Button variant="outline" type="button" onClick={handleClose}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={newValue === "" || mutation.isPending}>
+            <Button type="submit" disabled={!isInputValid || mutation.isPending}>
               {mutation.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
               {mutation.isPending ? "Salvando…" : "Salvar"}
             </Button>

@@ -122,6 +122,10 @@ export function ObjectiveDetailView({ objectiveId }: ObjectiveDetailViewProps) {
         OKRs
       </Link>
 
+      <div>
+        <h1 className="text-xl font-semibold text-foreground">Objetivo</h1>
+      </div>
+
       {/* Header card */}
       <div className="space-y-5 rounded-xl border border-border bg-card p-6">
         <div className="flex items-start gap-4">

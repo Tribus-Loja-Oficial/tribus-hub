@@ -433,7 +433,7 @@ export function PmDashboardPage() {
           )}
 
           {/* Recent activity */}
-          <div className="space-y-3">
+          <div className="space-y-3 rounded-xl border border-border bg-card p-4">
             <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
               <Clock className="h-4 w-4 text-muted-foreground/60" />
               Atualizados recentemente

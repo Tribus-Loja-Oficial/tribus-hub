@@ -104,10 +104,12 @@ function ProgressBar({
   done,
   total,
   className,
+  showFraction = true,
 }: {
   done: number;
   total: number;
   className?: string;
+  showFraction?: boolean;
 }) {
   const pct = total === 0 ? 0 : Math.round((done / total) * 100);
   return (
@@ -118,9 +120,11 @@ function ProgressBar({
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
-        {done}/{total}
-      </span>
+      {showFraction && (
+        <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
+          {done}/{total}
+        </span>
+      )}
     </div>
   );
 }
@@ -297,11 +301,15 @@ function MilestoneRow({
                 <span className="text-[10px] text-muted-foreground/25">—</span>
               )}
             </div>
-            <div className="flex items-center justify-center" style={{ width: w[7] }}>
+            <div
+              className="flex items-center justify-center overflow-hidden"
+              style={{ width: w[7] }}
+            >
               <ProgressBar
                 done={milestone.taskStats.done}
                 total={milestone.taskStats.total}
                 className="w-full"
+                showFraction={false}
               />
             </div>
           </div>
@@ -374,11 +382,12 @@ function MilestoneRow({
               <span className="text-[10px] text-muted-foreground/25">—</span>
             )}
           </div>
-          <div className="flex min-w-0 items-center justify-center opacity-75 transition-opacity group-hover:opacity-100">
+          <div className="flex min-w-0 items-center justify-center overflow-hidden opacity-75 transition-opacity group-hover:opacity-100">
             <ProgressBar
               done={milestone.taskStats.done}
               total={milestone.taskStats.total}
               className="w-full min-w-0"
+              showFraction={false}
             />
           </div>
           <div className="min-w-0" aria-hidden />
@@ -622,21 +631,22 @@ function ProjectRow({
               <span className="text-[10px] text-muted-foreground/25">—</span>
             )}
           </div>
-          <div className="flex min-w-0 items-center">
+          <div className="flex min-w-0 items-center overflow-hidden">
             <ProgressBar
               done={project.projectStats.doneTasks}
               total={project.projectStats.totalTasks}
               className="w-full min-w-0"
+              showFraction={false}
             />
           </div>
-          <div className="flex min-w-0 items-center justify-end gap-0.5">
+          <div className="flex min-w-0 items-center justify-end gap-0.5 overflow-hidden">
             {owner && (
               <span className="mr-0.5 flex min-w-0 items-center gap-0.5 text-[10px] text-muted-foreground">
                 <User className="h-3 w-3 shrink-0" />
                 <span className="truncate">{owner.name.split(" ")[0]}</span>
               </span>
             )}
-            <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
+            <span className="truncate text-[10px] tabular-nums text-muted-foreground">
               {project.projectStats.totalMilestones}m · {project.projectStats.totalTasks}t
             </span>
             <EntityQuickViewEyeButton

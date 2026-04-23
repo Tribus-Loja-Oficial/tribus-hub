@@ -5,6 +5,11 @@ import { Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils/cn";
+import { ObjectiveDetailView } from "@/features/okr/components/objective-detail-view";
+import { KeyResultDetailView } from "@/features/okr/components/key-result-detail-view";
+import { ProjectDetailView } from "@/features/projects/components/project-detail-view";
+import { MilestoneDetailView } from "@/features/projects/components/milestone-detail-view";
+import { TaskDetailView } from "@/features/tasks/components/task-detail-view";
 
 export type QuickViewEntity =
   | { kind: "objective"; id: string }
@@ -52,6 +57,29 @@ export function EntityQuickViewDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  function renderDetailContent() {
+    if (!entity) return null;
+    switch (entity.kind) {
+      case "objective":
+        return <ObjectiveDetailView objectiveId={entity.id} />;
+      case "keyResult":
+        return <KeyResultDetailView keyResultId={entity.id} />;
+      case "project":
+        return <ProjectDetailView paramsPromise={Promise.resolve({ projectId: entity.id })} />;
+      case "milestone":
+        return (
+          <MilestoneDetailView
+            paramsPromise={Promise.resolve({
+              projectId: entity.projectId,
+              milestoneId: entity.milestoneId,
+            })}
+          />
+        );
+      case "task":
+        return <TaskDetailView paramsPromise={Promise.resolve({ taskId: entity.id })} />;
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[96vw] max-w-[1200px] p-0">
@@ -60,15 +88,7 @@ export function EntityQuickViewDialog({
             {entity ? dialogTitle(entity) : "Detalhes"}
           </DialogTitle>
         </DialogHeader>
-        {entity ? (
-          <div className="px-4 pb-4">
-            <iframe
-              title={`Detalhes: ${dialogTitle(entity)}`}
-              src={entityDetailHref(entity)}
-              className="h-[82vh] w-full rounded-lg border border-border bg-background"
-            />
-          </div>
-        ) : null}
+        <div className="max-h-[82vh] overflow-y-auto px-4 pb-4">{renderDetailContent()}</div>
       </DialogContent>
     </Dialog>
   );

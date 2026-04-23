@@ -323,7 +323,7 @@ export function CreateKeyResultDialog({
                   setDateErrors({});
                 }}
               >
-                <option value="">Selecione o objetivo vinculado…</option>
+                <option value="">Objetivo vinculado…</option>
                 {objectives.map((o) => (
                   <option key={o.id} value={o.id}>
                     {o.title}
@@ -423,16 +423,7 @@ export function CreateKeyResultDialog({
                 />
               </div>
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between gap-1">
-                  <Label>Atual</Label>
-                  <button
-                    type="button"
-                    className="shrink-0 text-[10px] font-medium text-primary hover:underline"
-                    onClick={() => setCurrentValue(startValue)}
-                  >
-                    Igual ao início
-                  </button>
-                </div>
+                <Label>Atual</Label>
                 <Input
                   type="number"
                   inputMode="decimal"
@@ -440,6 +431,13 @@ export function CreateKeyResultDialog({
                   value={currentValue}
                   onChange={(e) => setCurrentValue(e.target.value)}
                 />
+                <button
+                  type="button"
+                  className="text-[10px] font-medium text-primary hover:underline"
+                  onClick={() => setCurrentValue(startValue)}
+                >
+                  Igual ao início
+                </button>
               </div>
               <div className="space-y-1.5">
                 <Label>Valor-alvo</Label>
