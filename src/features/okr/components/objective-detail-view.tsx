@@ -13,6 +13,10 @@ import { UpdateKeyResultDialog } from "./update-key-result-dialog";
 import { UpdateObjectiveDialog } from "./update-objective-dialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import {
+  invalidateAfterKeyResultMutation,
+  invalidateAfterObjectiveMutation,
+} from "@/lib/query/invalidate-hub-cache";
 
 type ObjectiveWithKRs = OkrObjective & { keyResults: OkrKeyResult[] };
 
@@ -61,9 +65,10 @@ export function ObjectiveDetailView({ objectiveId, embedded }: ObjectiveDetailVi
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["okr-objective", objectiveId] });
-      queryClient.invalidateQueries({ queryKey: ["okr-objectives"] });
-      queryClient.invalidateQueries({ queryKey: ["okr-dashboard"] });
+      invalidateAfterObjectiveMutation(queryClient, {
+        objectiveId,
+        cycleId: data?.data?.cycleId ?? null,
+      });
       setEditingStatus(false);
     },
   });
@@ -74,10 +79,12 @@ export function ObjectiveDetailView({ objectiveId, embedded }: ObjectiveDetailVi
       if (!res.ok) throw new Error("Falha ao remover KR");
       return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["okr-objective", objectiveId] });
-      queryClient.invalidateQueries({ queryKey: ["okr-key-results"] });
-      queryClient.invalidateQueries({ queryKey: ["okr-dashboard"] });
+    onSuccess: (_data, deletedKrId) => {
+      invalidateAfterKeyResultMutation(queryClient, {
+        keyResultId: deletedKrId,
+        objectiveId,
+        cycleId: data?.data?.cycleId ?? null,
+      });
     },
   });
 

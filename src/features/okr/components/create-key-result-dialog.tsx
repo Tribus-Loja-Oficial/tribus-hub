@@ -13,7 +13,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils/cn";
-import type { OkrCycle, OkrObjective } from "@/lib/types/domain";
+import type { OkrCycle, OkrKeyResult, OkrObjective } from "@/lib/types/domain";
+import { invalidateAfterKeyResultMutation } from "@/lib/query/invalidate-hub-cache";
 
 type ObjectiveWithKRs = OkrObjective & { keyResults: unknown[] };
 
@@ -99,10 +100,13 @@ export function CreateKeyResultDialog({
       if (!res.ok) throw new Error("Falha ao criar key result");
       return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["okr-key-results"] });
-      queryClient.invalidateQueries({ queryKey: ["okr-objectives"] });
-      queryClient.invalidateQueries({ queryKey: ["okr-dashboard"] });
+    onSuccess: (res: { data?: OkrKeyResult }) => {
+      const created = res?.data;
+      invalidateAfterKeyResultMutation(queryClient, {
+        keyResultId: created?.id,
+        objectiveId: objectiveId || created?.objectiveId,
+        cycleId: effectiveCycleId ?? created?.cycleId ?? null,
+      });
       emitOpenChange(false);
     },
   });

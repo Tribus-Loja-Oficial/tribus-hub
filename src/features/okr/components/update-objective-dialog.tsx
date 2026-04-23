@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { invalidateAfterObjectiveMutation } from "@/lib/query/invalidate-hub-cache";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -76,9 +77,10 @@ export function UpdateObjectiveDialog({
     },
     onSuccess: () => {
       if (!objective) return;
-      queryClient.invalidateQueries({ queryKey: ["okr-objective", objective.id] });
-      queryClient.invalidateQueries({ queryKey: ["okr-objectives"] });
-      queryClient.invalidateQueries({ queryKey: ["okr-dashboard"] });
+      invalidateAfterObjectiveMutation(queryClient, {
+        objectiveId: objective.id,
+        cycleId: objective.cycleId,
+      });
       emitOpenChange(false);
     },
   });

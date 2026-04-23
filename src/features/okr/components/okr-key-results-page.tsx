@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { OkrCycle, OkrKeyResult, OkrObjective } from "@/lib/types/domain";
+import { invalidateAfterKeyResultMutation } from "@/lib/query/invalidate-hub-cache";
 import { OkrStatusBadge } from "./okr-status-badge";
 import { OkrProgressBar } from "./okr-progress-bar";
 import { CreateKeyResultDialog } from "./create-key-result-dialog";
@@ -73,22 +74,27 @@ export function OkrKeyResultsPage() {
     },
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: ["okr-key-results"] });
-      const previous = queryClient.getQueryData(["okr-key-results", filterStatus, filterCycle]);
+      const previous = queryClient.getQueryData(["okr-key-results", filterStatus, filterCycle]) as
+        | { data: OkrKeyResult[] }
+        | undefined;
+      const row = previous?.data.find((k) => k.id === id);
       queryClient.setQueryData(
         ["okr-key-results", filterStatus, filterCycle],
         (old: { data: OkrKeyResult[] } | undefined) =>
           old ? { ...old, data: old.data.filter((kr) => kr.id !== id) } : old,
       );
-      return { previous };
+      return { previous, objectiveId: row?.objectiveId, cycleId: row?.cycleId };
     },
     onError: (_err, _vars, context) => {
       if (context?.previous)
         queryClient.setQueryData(["okr-key-results", filterStatus, filterCycle], context.previous);
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["okr-key-results"] });
-      queryClient.invalidateQueries({ queryKey: ["okr-objectives"] });
-      queryClient.invalidateQueries({ queryKey: ["okr-dashboard"] });
+    onSettled: (_data, _error, id, context) => {
+      invalidateAfterKeyResultMutation(queryClient, {
+        keyResultId: id,
+        objectiveId: context?.objectiveId,
+        cycleId: context?.cycleId,
+      });
     },
   });
 

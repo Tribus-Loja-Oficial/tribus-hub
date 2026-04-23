@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { OkrCycle } from "@/lib/types/domain";
+import { invalidateAfterObjectiveMutation } from "@/lib/query/invalidate-hub-cache";
 
 interface MemberRow {
   id: string;
@@ -73,12 +74,16 @@ export function CreateObjectiveDialog({
       if (!res.ok) throw new Error("Falha ao criar objetivo");
       return res.json() as Promise<{ data: { id: string } }>;
     },
-    onSuccess: (res) => {
-      queryClient.invalidateQueries({ queryKey: ["okr-objectives"] });
-      queryClient.invalidateQueries({ queryKey: ["okr-dashboard"] });
-      const id = res?.data?.id;
+    onSuccess: (res: { data?: { id: string; cycleId?: string | null } }) => {
+      const row = res?.data;
+      if (row?.id) {
+        invalidateAfterObjectiveMutation(queryClient, {
+          objectiveId: row.id,
+          cycleId: row.cycleId ?? null,
+        });
+      }
       emitOpenChange(false);
-      if (id) router.push(`/okr/objectives/${id}`);
+      if (row?.id) router.push(`/okr/objectives/${row.id}`);
     },
   });
 

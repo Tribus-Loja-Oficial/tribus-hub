@@ -9,6 +9,7 @@ import { nativeSelectClassName } from "@/components/ui/form-control-classes";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { OkrKeyResult } from "@/lib/types/domain";
+import { invalidateAfterKeyResultMutation } from "@/lib/query/invalidate-hub-cache";
 import { OkrProgressBar } from "./okr-progress-bar";
 
 interface UpdateKeyResultDialogProps {
@@ -45,10 +46,12 @@ export function UpdateKeyResultDialog({
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["okr-key-results"] });
-      queryClient.invalidateQueries({ queryKey: ["okr-objectives"] });
-      queryClient.invalidateQueries({ queryKey: ["okr-dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["okr-kr-updates", keyResult?.id] });
+      if (!keyResult) return;
+      invalidateAfterKeyResultMutation(queryClient, {
+        keyResultId: keyResult.id,
+        objectiveId: keyResult.objectiveId,
+        cycleId: keyResult.cycleId,
+      });
       handleClose();
     },
   });

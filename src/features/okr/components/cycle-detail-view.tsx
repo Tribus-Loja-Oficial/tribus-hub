@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { invalidateAfterCycleMutation } from "@/lib/query/invalidate-hub-cache";
 import Link from "next/link";
 import { ArrowLeft, CalendarRange, Target, TrendingUp, CheckCircle, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -57,9 +58,7 @@ export function CycleDetailView({ cycleId }: CycleDetailViewProps) {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["okr-cycle", cycleId] });
-      queryClient.invalidateQueries({ queryKey: ["okr-cycles"] });
-      queryClient.invalidateQueries({ queryKey: ["okr-dashboard"] });
+      invalidateAfterCycleMutation(queryClient, { cycleId });
     },
   });
 

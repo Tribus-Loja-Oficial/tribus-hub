@@ -248,6 +248,8 @@ export function TaskFormDialog({
       queryClient.invalidateQueries({ queryKey: ["task-labels"] });
       queryClient.invalidateQueries({ queryKey: ["project-hub"] });
       queryClient.invalidateQueries({ queryKey: ["project-hierarchy"] });
+      queryClient.invalidateQueries({ queryKey: ["okr-dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["okr-objectives"] });
       if (taskId) queryClient.invalidateQueries({ queryKey: ["task", taskId] });
       onOpenChange(false);
     },
@@ -264,6 +266,8 @@ export function TaskFormDialog({
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["project-hub"] });
       queryClient.invalidateQueries({ queryKey: ["project-hierarchy"] });
+      queryClient.invalidateQueries({ queryKey: ["okr-dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["okr-objectives"] });
       onOpenChange(false);
     },
   });

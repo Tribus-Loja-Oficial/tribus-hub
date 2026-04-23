@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { invalidateAfterCycleMutation } from "@/lib/query/invalidate-hub-cache";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -109,9 +110,7 @@ export function UpdateCycleDialog({ open, onOpenChange, cycle }: UpdateCycleDial
     },
     onSuccess: () => {
       if (!cycle) return;
-      queryClient.invalidateQueries({ queryKey: ["okr-cycle", cycle.id] });
-      queryClient.invalidateQueries({ queryKey: ["okr-cycles"] });
-      queryClient.invalidateQueries({ queryKey: ["okr-dashboard"] });
+      invalidateAfterCycleMutation(queryClient, { cycleId: cycle.id });
       emitOpenChange(false);
     },
   });

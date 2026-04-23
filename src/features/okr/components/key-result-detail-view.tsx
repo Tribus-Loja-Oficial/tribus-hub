@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, TrendingUp, RefreshCw, Activity, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { OkrKeyResult, OkrKeyResultUpdate, OkrObjective } from "@/lib/types/domain";
+import { invalidateAfterKeyResultMutation } from "@/lib/query/invalidate-hub-cache";
 import { OkrStatusBadge } from "./okr-status-badge";
 import { OkrProgressBar, MiniProgressRing } from "./okr-progress-bar";
 import { UpdateKeyResultDialog } from "./update-key-result-dialog";
@@ -67,11 +68,15 @@ export function KeyResultDetailView({ keyResultId, embedded }: KeyResultDetailVi
       if (!res.ok) throw new Error("Falha ao atualizar KR");
       return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["okr-key-result", keyResultId] });
-      queryClient.invalidateQueries({ queryKey: ["okr-key-results"] });
-      queryClient.invalidateQueries({ queryKey: ["okr-objectives"] });
-      queryClient.invalidateQueries({ queryKey: ["okr-dashboard"] });
+    onSuccess: (json: { data?: OkrKeyResult }) => {
+      const k = json?.data;
+      if (k) {
+        invalidateAfterKeyResultMutation(queryClient, {
+          keyResultId: k.id,
+          objectiveId: k.objectiveId,
+          cycleId: k.cycleId,
+        });
+      }
       setEditingStatus(false);
     },
   });

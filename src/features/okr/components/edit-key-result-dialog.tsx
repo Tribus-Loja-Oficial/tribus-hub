@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils/cn";
 import type { OkrCycle, OkrKeyResult, OkrObjective } from "@/lib/types/domain";
+import { invalidateAfterKeyResultMutation } from "@/lib/query/invalidate-hub-cache";
 
 type ObjectiveWithKRs = OkrObjective & { keyResults: unknown[] };
 
@@ -94,10 +95,11 @@ export function EditKeyResultDialog({ open, onOpenChange, keyResult }: EditKeyRe
     },
     onSuccess: () => {
       if (!keyResult) return;
-      queryClient.invalidateQueries({ queryKey: ["okr-key-result", keyResult.id] });
-      queryClient.invalidateQueries({ queryKey: ["okr-key-results"] });
-      queryClient.invalidateQueries({ queryKey: ["okr-objectives"] });
-      queryClient.invalidateQueries({ queryKey: ["okr-dashboard"] });
+      invalidateAfterKeyResultMutation(queryClient, {
+        keyResultId: keyResult.id,
+        objectiveId: keyResult.objectiveId,
+        cycleId: keyResult.cycleId,
+      });
       emitOpenChange(false);
     },
   });
