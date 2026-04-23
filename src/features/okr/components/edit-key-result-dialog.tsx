@@ -288,7 +288,7 @@ export function EditKeyResultDialog({ open, onOpenChange, keyResult }: EditKeyRe
               autoFocus
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ex.: Atingir 200 clientes ativos mensais"
+              placeholder="Ex.: Atingir 200 clientes ativos"
             />
             <p className="text-xs leading-relaxed text-muted-foreground">
               Key result mensurável e verificável.
