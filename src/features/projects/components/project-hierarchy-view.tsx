@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import {
+  useState,
+  useMemo,
+  useEffect,
+  type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
+  type ReactNode,
+} from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -40,8 +47,40 @@ import type {
   HierarchyTask,
 } from "@/lib/types/pm-hierarchy";
 import { projectMatchesSearch } from "@/features/projects/lib/project-hierarchy-search";
+import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resizable-grid-columns";
 
 type MemberRow = { id: string; name: string; email: string };
+
+/** 9 colunas: chevron | pasta | título | status | health | prioridade | prazo | progresso | ações */
+const HIERARCHY_GRID_ROW_CLASS = "hidden w-full min-w-0 items-center gap-x-2 md:grid";
+
+function hierarchyGridColumnsStyle(gridTpl: string): CSSProperties {
+  return { gridTemplateColumns: gridTpl };
+}
+
+const HIERARCHY_COL_DEFAULTS = [20, 36, 280, 90, 64, 72, 72, 96, 120] as const;
+const HIERARCHY_COL_STORAGE_KEY = "hub:project-hierarchy-cols";
+
+function HierarchyHeaderCell({
+  children,
+  className,
+  resizeIndex,
+  startResize,
+}: {
+  children?: ReactNode;
+  className?: string;
+  resizeIndex: number;
+  startResize: (leftIndex: number, e: ReactMouseEvent) => void;
+}) {
+  return (
+    <div className={cn("relative flex min-w-0 items-center justify-center", className)}>
+      {children}
+      <div className="absolute right-0 top-1/2 z-10 -translate-y-1/2 translate-x-1/2">
+        <GridColResizeHandle onMouseDown={(e) => startResize(resizeIndex, e)} />
+      </div>
+    </div>
+  );
+}
 
 function projectPath(project: { id: string; slug: string }) {
   return `/projects/${encodeURIComponent(project.slug || project.id)}`;
@@ -167,6 +206,8 @@ function MilestoneRow({
   members,
   onTaskCreated,
   onCreateTask,
+  hierarchyGridTpl,
+  columnWidths,
 }: {
   milestone: HierarchyMilestone;
   projectId: string;
@@ -174,6 +215,8 @@ function MilestoneRow({
   members: Map<string, MemberRow>;
   onTaskCreated: () => void;
   onCreateTask: (projectId: string, milestoneId: string) => void;
+  hierarchyGridTpl: string;
+  columnWidths: number[];
 }) {
   const [expanded, setExpanded] = useState(false);
   const overdue = isOverdue(milestone.dueDate, milestone.completedAt);
@@ -181,68 +224,142 @@ function MilestoneRow({
 
   const projectForPath = { id: projectId, slug: projectSlug };
 
+  const w = columnWidths;
+
   return (
     <div>
       {/* Milestone header */}
       <div
-        className="group flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 transition-colors hover:bg-muted/20"
+        className="group cursor-pointer rounded-lg px-3 py-2 transition-colors hover:bg-muted/20"
         onClick={(e) => {
           if ((e.target as HTMLElement).closest("a, button")) return;
           setExpanded((v) => !v);
         }}
       >
-        {/* tree indent */}
-        <div className="ml-1 h-5 w-4 shrink-0 border-l border-border/40" />
-        <ChevronRight
-          className={cn(
-            "h-3.5 w-3.5 shrink-0 text-muted-foreground/60 transition-transform",
-            expanded && "rotate-90",
+        <div className="flex items-center gap-2.5 md:hidden">
+          <div className="ml-1 h-5 w-4 shrink-0 border-l border-border/40" />
+          <ChevronRight
+            className={cn(
+              "h-3.5 w-3.5 shrink-0 text-muted-foreground/60 transition-transform",
+              expanded && "rotate-90",
+            )}
+          />
+          <Flag className="h-3.5 w-3.5 shrink-0 text-blue-500/70" />
+          <EntityQuickViewEyeButton
+            entity={{
+              kind: "milestone",
+              projectId: projectSlug || projectId,
+              milestoneId: milestone.id,
+            }}
+            className="h-6 w-6 shrink-0"
+          />
+          <Link
+            href={milestonePath(projectForPath, milestone.id)}
+            onClick={(e) => e.stopPropagation()}
+            className="min-w-0 truncate text-sm font-medium text-foreground transition-colors hover:text-primary"
+          >
+            {milestone.title}
+          </Link>
+          {milestone.externalRef && (
+            <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+              Ref: {milestone.externalRef}
+            </span>
           )}
-        />
-        <Flag className="h-3.5 w-3.5 shrink-0 text-blue-500/70" />
-        <EntityQuickViewEyeButton
-          entity={{
-            kind: "milestone",
-            projectId: projectSlug || projectId,
-            milestoneId: milestone.id,
-          }}
-          className="h-6 w-6 shrink-0"
-        />
-        <Link
-          href={milestonePath(projectForPath, milestone.id)}
-          onClick={(e) => e.stopPropagation()}
-          className="min-w-0 truncate text-sm font-medium text-foreground transition-colors hover:text-primary"
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onCreateTask(projectId, milestone.id);
+            }}
+            className="ml-2 flex shrink-0 items-center gap-0.5 text-[11px] text-primary opacity-0 transition-opacity hover:underline group-hover:opacity-100"
+          >
+            <Plus className="h-3 w-3" /> task
+          </button>
+          <div className="flex-1" />
+          <div className="flex shrink-0 items-center gap-2 opacity-75 transition-opacity group-hover:opacity-100">
+            <div className="flex justify-center" style={{ width: w[3] }}>
+              <MilestoneStatusBadge status={milestone.status} />
+            </div>
+            <div className="flex justify-center" style={{ width: w[5] }}>
+              <PriorityBadge priority={milestone.priority} />
+            </div>
+            <div className="flex justify-center" style={{ width: w[6] }}>
+              {milestone.dueDate ? (
+                <span
+                  className={cn(
+                    "text-[10px] tabular-nums",
+                    overdue ? "font-medium text-red-500" : "text-muted-foreground",
+                  )}
+                >
+                  {overdue && <AlertTriangle className="mr-0.5 inline h-2.5 w-2.5" />}
+                  {format(new Date(milestone.dueDate), "dd MMM", { locale: ptBR })}
+                </span>
+              ) : (
+                <span className="text-[10px] text-muted-foreground/25">—</span>
+              )}
+            </div>
+            <div className="flex items-center justify-center" style={{ width: w[7] }}>
+              <ProgressBar
+                done={milestone.taskStats.done}
+                total={milestone.taskStats.total}
+                className="w-full"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div
+          className={HIERARCHY_GRID_ROW_CLASS}
+          style={hierarchyGridColumnsStyle(hierarchyGridTpl)}
         >
-          {milestone.title}
-        </Link>
-        {milestone.externalRef && (
-          <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
-            Ref: {milestone.externalRef}
-          </span>
-        )}
-
-        {/* Criar task — always reachable, visible on hover */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onCreateTask(projectId, milestone.id);
-          }}
-          className="ml-2 flex shrink-0 items-center gap-0.5 text-[11px] text-primary opacity-0 transition-opacity hover:underline group-hover:opacity-100"
-        >
-          <Plus className="h-3 w-3" /> task
-        </button>
-
-        <div className="flex-1" />
-
-        {/* Right metadata - fixed-width columns */}
-        <div className="flex shrink-0 items-center gap-2 opacity-75 transition-opacity group-hover:opacity-100">
-          <div className="flex w-[90px] justify-center">
+          <div className="min-w-0" style={{ gridColumn: "1 / 4" }}>
+            <div className="flex min-w-0 items-center gap-2.5">
+              <div className="ml-1 h-5 w-4 shrink-0 border-l border-border/40" />
+              <ChevronRight
+                className={cn(
+                  "h-3.5 w-3.5 shrink-0 text-muted-foreground/60 transition-transform",
+                  expanded && "rotate-90",
+                )}
+              />
+              <Flag className="h-3.5 w-3.5 shrink-0 text-blue-500/70" />
+              <EntityQuickViewEyeButton
+                entity={{
+                  kind: "milestone",
+                  projectId: projectSlug || projectId,
+                  milestoneId: milestone.id,
+                }}
+                className="h-6 w-6 shrink-0"
+              />
+              <Link
+                href={milestonePath(projectForPath, milestone.id)}
+                onClick={(e) => e.stopPropagation()}
+                className="min-w-0 truncate text-sm font-medium text-foreground transition-colors hover:text-primary"
+              >
+                {milestone.title}
+              </Link>
+              {milestone.externalRef && (
+                <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                  Ref: {milestone.externalRef}
+                </span>
+              )}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCreateTask(projectId, milestone.id);
+                }}
+                className="ml-1 flex shrink-0 items-center gap-0.5 text-[11px] text-primary opacity-0 transition-opacity hover:underline group-hover:opacity-100"
+              >
+                <Plus className="h-3 w-3" /> task
+              </button>
+            </div>
+          </div>
+          <div className="flex min-w-0 justify-center opacity-75 transition-opacity group-hover:opacity-100">
             <MilestoneStatusBadge status={milestone.status} />
           </div>
-          <div className="flex w-[72px] justify-center">
+          <div className="min-w-0" aria-hidden />
+          <div className="flex min-w-0 justify-center opacity-75 transition-opacity group-hover:opacity-100">
             <PriorityBadge priority={milestone.priority} />
           </div>
-          <div className="flex w-[72px] justify-center">
+          <div className="flex min-w-0 justify-center opacity-75 transition-opacity group-hover:opacity-100">
             {milestone.dueDate ? (
               <span
                 className={cn(
@@ -257,13 +374,14 @@ function MilestoneRow({
               <span className="text-[10px] text-muted-foreground/25">—</span>
             )}
           </div>
-          <div className="flex w-24 items-center justify-center">
+          <div className="flex min-w-0 items-center justify-center opacity-75 transition-opacity group-hover:opacity-100">
             <ProgressBar
               done={milestone.taskStats.done}
               total={milestone.taskStats.total}
-              className="w-full"
+              className="w-full min-w-0"
             />
           </div>
+          <div className="min-w-0" aria-hidden />
         </div>
       </div>
 
@@ -329,6 +447,8 @@ function ProjectRow({
   onCreateTask,
   onEditProject,
   expandSignal,
+  hierarchyGridTpl,
+  columnWidths,
 }: {
   project: ProjectHierarchyItem;
   members: Map<string, MemberRow>;
@@ -336,6 +456,8 @@ function ProjectRow({
   onCreateTask: (projectId: string, milestoneId: string) => void;
   onEditProject?: (p: ProjectHierarchyItem) => void;
   expandSignal: boolean;
+  hierarchyGridTpl: string;
+  columnWidths: number[];
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -370,73 +492,120 @@ function ProjectRow({
   const [msTitle, setMsTitle] = useState("");
   const [msDueDate, setMsDueDate] = useState("");
 
+  const cw = columnWidths;
+
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card">
       {/* Project header */}
       <div
-        className="flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/10"
+        className="group cursor-pointer px-4 py-3 transition-colors hover:bg-muted/10"
         onClick={() => setExpanded((v) => !v)}
       >
-        <ChevronRight
-          className={cn(
-            "h-4 w-4 shrink-0 text-muted-foreground/60 transition-transform",
-            expanded && "rotate-90",
-          )}
-        />
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-          <FolderKanban className="h-4 w-4 text-primary" />
-        </div>
-
-        {/* Title + summary */}
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 md:hidden">
+          <ChevronRight
+            className={cn(
+              "h-4 w-4 shrink-0 text-muted-foreground/60 transition-transform",
+              expanded && "rotate-90",
+            )}
+          />
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+            <FolderKanban className="h-4 w-4 text-primary" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <Link
+                href={projectPath(project)}
+                onClick={(e) => e.stopPropagation()}
+                className="truncate text-sm font-semibold text-foreground transition-colors hover:text-primary"
+              >
+                {project.title}
+              </Link>
+              {project.externalRef && (
+                <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                  Ref: {project.externalRef}
+                </span>
+              )}
+            </div>
+            {project.summary && (
+              <p className="mt-0.5 truncate text-xs text-muted-foreground">{project.summary}</p>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <ProjectStatusBadge status={project.status} />
+            <PriorityBadge priority={project.priority} />
+            <EntityQuickViewEyeButton
+              entity={{ kind: "project", id: project.slug || project.id }}
+              className="h-7 w-7"
+            />
             <Link
               href={projectPath(project)}
               onClick={(e) => e.stopPropagation()}
-              className="truncate text-sm font-semibold text-foreground transition-colors hover:text-primary"
+              className="rounded p-1 text-muted-foreground opacity-60 transition-all hover:bg-muted hover:opacity-100"
             >
-              {project.title}
+              <ExternalLink className="h-3.5 w-3.5" />
             </Link>
-            {project.externalRef && (
-              <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
-                Ref: {project.externalRef}
-              </span>
-            )}
-            {project.projectStats.overdueMilestones > 0 && (
-              <span className="flex shrink-0 items-center gap-0.5 text-[10px] font-medium text-red-500">
-                <AlertTriangle className="h-3 w-3" />
-                {project.projectStats.overdueMilestones} atrasado
-                {project.projectStats.overdueMilestones > 1 ? "s" : ""}
-              </span>
-            )}
           </div>
-          {project.summary && (
-            <p className="mt-0.5 hidden truncate text-xs text-muted-foreground sm:block">
-              {project.summary}
-            </p>
-          )}
         </div>
 
-        {/* Right metadata — fixed-width columns mirror the legend header */}
-        <div className="hidden shrink-0 items-center gap-2 md:flex">
-          {/* Status */}
-          <div className="flex w-[90px] justify-center">
+        <div
+          className={HIERARCHY_GRID_ROW_CLASS}
+          style={hierarchyGridColumnsStyle(hierarchyGridTpl)}
+        >
+          <div className="flex justify-center">
+            <ChevronRight
+              className={cn(
+                "h-4 w-4 shrink-0 text-muted-foreground/60 transition-transform",
+                expanded && "rotate-90",
+              )}
+            />
+          </div>
+          <div className="flex justify-center">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <FolderKanban className="h-4 w-4 text-primary" />
+            </div>
+          </div>
+          <div className="min-w-0">
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+              <Link
+                href={projectPath(project)}
+                onClick={(e) => e.stopPropagation()}
+                className="min-w-0 truncate text-sm font-semibold text-foreground transition-colors hover:text-primary"
+              >
+                {project.title}
+              </Link>
+              {project.externalRef && (
+                <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                  Ref: {project.externalRef}
+                </span>
+              )}
+              {project.projectStats.overdueMilestones > 0 && (
+                <span className="flex shrink-0 items-center gap-0.5 text-[10px] font-medium text-red-500">
+                  <AlertTriangle className="h-3 w-3" />
+                  {project.projectStats.overdueMilestones} atrasado
+                  {project.projectStats.overdueMilestones > 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+            {project.summary && (
+              <p className="mt-0.5 hidden truncate text-xs text-muted-foreground sm:block">
+                {project.summary}
+              </p>
+            )}
+          </div>
+          <div className="flex min-w-0 justify-center">
             <ProjectStatusBadge status={project.status} />
           </div>
-          {/* Health */}
-          <div className="flex w-[64px] justify-center">
+          <div className="flex min-w-0 justify-center">
             {project.healthStatus ? (
               <ProjectHealthBadge health={project.healthStatus} />
             ) : (
               <span className="text-[10px] text-muted-foreground/25">—</span>
             )}
           </div>
-          {/* Priority */}
-          <div className="flex w-[72px] justify-center">
+          <div className="flex min-w-0 justify-center">
             <PriorityBadge priority={project.priority} />
           </div>
-          {/* Prazo */}
-          <div className="flex w-[72px] justify-center">
+          <div className="flex min-w-0 justify-center">
             {project.targetDate ? (
               <span
                 className={cn(
@@ -444,43 +613,44 @@ function ProjectRow({
                   projectOverdue ? "font-medium text-red-500" : "text-muted-foreground",
                 )}
               >
-                <Calendar className="h-3 w-3" />
-                {format(new Date(project.targetDate), "dd MMM yy", { locale: ptBR })}
+                <Calendar className="h-3 w-3 shrink-0" />
+                <span className="truncate">
+                  {format(new Date(project.targetDate), "dd MMM yy", { locale: ptBR })}
+                </span>
               </span>
             ) : (
               <span className="text-[10px] text-muted-foreground/25">—</span>
             )}
           </div>
-          {/* Progresso */}
-          <div className="flex w-24 items-center">
+          <div className="flex min-w-0 items-center">
             <ProgressBar
               done={project.projectStats.doneTasks}
               total={project.projectStats.totalTasks}
-              className="w-full"
+              className="w-full min-w-0"
             />
           </div>
-          {/* Counts + actions */}
-          <div className="flex w-[110px] items-center justify-end gap-1">
+          <div className="flex min-w-0 items-center justify-end gap-0.5">
             {owner && (
-              <span className="mr-1 flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                <User className="h-3 w-3" />
-                {owner.name.split(" ")[0]}
+              <span className="mr-0.5 flex min-w-0 items-center gap-0.5 text-[10px] text-muted-foreground">
+                <User className="h-3 w-3 shrink-0" />
+                <span className="truncate">{owner.name.split(" ")[0]}</span>
               </span>
             )}
-            <span className="text-[10px] tabular-nums text-muted-foreground">
+            <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
               {project.projectStats.totalMilestones}m · {project.projectStats.totalTasks}t
             </span>
             <EntityQuickViewEyeButton
               entity={{ kind: "project", id: project.slug || project.id }}
-              className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
+              className="h-6 w-6 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
             />
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setCreateMilestoneOpen(true);
               }}
-              className="rounded p-1 text-muted-foreground opacity-0 transition-all hover:bg-muted hover:text-foreground group-hover:opacity-100"
+              className="shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-all hover:bg-muted hover:text-foreground group-hover:opacity-100"
               title="Novo milestone"
+              type="button"
             >
               <Plus className="h-3.5 w-3.5" />
             </button>
@@ -491,7 +661,7 @@ function ProjectRow({
                   e.stopPropagation();
                   onEditProject(project);
                 }}
-                className="rounded p-1 text-muted-foreground opacity-0 transition-all hover:bg-muted hover:text-foreground group-hover:opacity-100"
+                className="shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-all hover:bg-muted hover:text-foreground group-hover:opacity-100"
                 title="Editar projeto"
               >
                 <Pencil className="h-3.5 w-3.5" />
@@ -500,28 +670,12 @@ function ProjectRow({
             <Link
               href={projectPath(project)}
               onClick={(e) => e.stopPropagation()}
-              className="rounded p-1 text-muted-foreground opacity-60 transition-all hover:bg-muted hover:opacity-100"
+              className="shrink-0 rounded p-1 text-muted-foreground opacity-60 transition-all hover:bg-muted hover:opacity-100"
               title="Abrir projeto"
             >
               <ExternalLink className="h-3.5 w-3.5" />
             </Link>
           </div>
-        </div>
-        {/* Mobile fallback */}
-        <div className="flex shrink-0 items-center gap-2 md:hidden">
-          <ProjectStatusBadge status={project.status} />
-          <PriorityBadge priority={project.priority} />
-          <EntityQuickViewEyeButton
-            entity={{ kind: "project", id: project.slug || project.id }}
-            className="h-7 w-7"
-          />
-          <Link
-            href={projectPath(project)}
-            onClick={(e) => e.stopPropagation()}
-            className="rounded p-1 text-muted-foreground opacity-60 transition-all hover:bg-muted hover:opacity-100"
-          >
-            <ExternalLink className="h-3.5 w-3.5" />
-          </Link>
         </div>
       </div>
 
@@ -545,11 +699,20 @@ function ProjectRow({
             <>
               {/* Milestone column sub-header */}
               <div className="ml-6 flex select-none items-center gap-2 px-3 pb-0.5 pt-1 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/30">
-                <span className="flex-1">Milestones</span>
-                <div className="w-[90px] text-center">Status</div>
-                <div className="w-[72px] text-center">Prioridade</div>
-                <div className="w-[72px] text-center">Prazo</div>
-                <div className="w-24 text-center">Progresso</div>
+                <span className="min-w-0 flex-1">Milestones</span>
+                <div className="shrink-0 text-center" style={{ width: cw[3] }}>
+                  Status
+                </div>
+                <div className="shrink-0" style={{ width: cw[4] }} aria-hidden />
+                <div className="shrink-0 text-center" style={{ width: cw[5] }}>
+                  Prioridade
+                </div>
+                <div className="shrink-0 text-center" style={{ width: cw[6] }}>
+                  Prazo
+                </div>
+                <div className="shrink-0 text-center" style={{ width: cw[7] }}>
+                  Progresso
+                </div>
               </div>
               {project.milestones.map((milestone) => (
                 <MilestoneRow
@@ -562,6 +725,8 @@ function ProjectRow({
                     queryClient.invalidateQueries({ queryKey: ["project-hierarchy"] })
                   }
                   onCreateTask={onCreateTask}
+                  hierarchyGridTpl={hierarchyGridTpl}
+                  columnWidths={columnWidths}
                 />
               ))}
               <div className="ml-6 flex items-center gap-2 px-3 py-1.5">
@@ -652,6 +817,12 @@ export function ProjectHierarchyView({
   onEditProject,
 }: ProjectHierarchyViewProps) {
   const queryClient = useQueryClient();
+  const { widths, startResize } = useResizableGridColumns(
+    HIERARCHY_COL_STORAGE_KEY,
+    [...HIERARCHY_COL_DEFAULTS],
+  );
+  const hierarchyGridTpl = widths.map((w) => `${w}px`).join(" ");
+
   const [createTaskOpen, setCreateTaskOpen] = useState(false);
   const [createTaskProjectId, setCreateTaskProjectId] = useState("");
   const [createTaskMilestoneId, setCreateTaskMilestoneId] = useState("");
@@ -722,32 +893,58 @@ export function ProjectHierarchyView({
 
   return (
     <>
-      <div className="space-y-2">
-        {/* Legend */}
-        <div className="flex select-none items-center gap-2 px-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/40">
-          <span className="flex-1">Projeto / Milestone / Task</span>
-          <div className="hidden shrink-0 items-center gap-2 md:flex">
-            <div className="flex w-[90px] justify-center">Status</div>
-            <div className="flex w-[64px] justify-center">Health</div>
-            <div className="flex w-[72px] justify-center">Prioridade</div>
-            <div className="flex w-[72px] justify-center">Prazo</div>
-            <div className="flex w-24 justify-center">Progresso</div>
-            <div className="w-[110px]" />
+      <div className="overflow-x-auto">
+        <div className="min-w-0 space-y-2">
+          {/* Legend */}
+          <div className="flex select-none items-center gap-2 px-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/40">
+            <span className="min-w-0 flex-1 truncate md:hidden">Projeto / Milestone / Task</span>
+            <div
+              className="hidden min-w-0 items-center gap-x-2 md:grid md:flex-1"
+              style={hierarchyGridColumnsStyle(hierarchyGridTpl)}
+            >
+              <HierarchyHeaderCell resizeIndex={0} startResize={startResize} />
+              <HierarchyHeaderCell resizeIndex={1} startResize={startResize} />
+              <HierarchyHeaderCell
+                resizeIndex={2}
+                startResize={startResize}
+                className="justify-start"
+              >
+                <span className="min-w-0 truncate">Projeto / Milestone / Task</span>
+              </HierarchyHeaderCell>
+              <HierarchyHeaderCell resizeIndex={3} startResize={startResize}>
+                <span>Status</span>
+              </HierarchyHeaderCell>
+              <HierarchyHeaderCell resizeIndex={4} startResize={startResize}>
+                <span>Health</span>
+              </HierarchyHeaderCell>
+              <HierarchyHeaderCell resizeIndex={5} startResize={startResize}>
+                <span>Prioridade</span>
+              </HierarchyHeaderCell>
+              <HierarchyHeaderCell resizeIndex={6} startResize={startResize}>
+                <span>Prazo</span>
+              </HierarchyHeaderCell>
+              <HierarchyHeaderCell resizeIndex={7} startResize={startResize}>
+                <span>Progresso</span>
+              </HierarchyHeaderCell>
+              <div className="min-w-0" aria-hidden />
+            </div>
           </div>
+          {filtered.map((project) => (
+            <ProjectRow
+              key={project.id}
+              project={project}
+              members={membersMap}
+              onMilestoneCreated={() =>
+                queryClient.invalidateQueries({ queryKey: ["project-hierarchy"] })
+              }
+              onCreateTask={handleCreateTask}
+              onEditProject={onEditProject}
+              expandSignal={allExpanded}
+              hierarchyGridTpl={hierarchyGridTpl}
+              columnWidths={widths}
+            />
+          ))}
         </div>
-        {filtered.map((project) => (
-          <ProjectRow
-            key={project.id}
-            project={project}
-            members={membersMap}
-            onMilestoneCreated={() =>
-              queryClient.invalidateQueries({ queryKey: ["project-hierarchy"] })
-            }
-            onCreateTask={handleCreateTask}
-            onEditProject={onEditProject}
-            expandSignal={allExpanded}
-          />
-        ))}
       </div>
 
       <TaskFormDialog

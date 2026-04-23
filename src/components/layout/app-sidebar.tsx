@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -194,15 +195,24 @@ export function AppSidebar() {
         style={{ width: sidebarWidth }}
       >
         {/* Logo */}
-        <div className="flex h-[3.25rem] items-center gap-3 border-b border-sidebar-border/90 bg-sidebar/80 px-4 shadow-inset">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/90 text-primary-foreground shadow-sm ring-1 ring-black/[0.06] dark:ring-white/10">
-            <span className="text-xs font-bold tracking-tight">T</span>
-          </div>
-          <div className="min-w-0">
+        <div className="flex min-h-[3.25rem] items-center gap-3 border-b border-sidebar-border/90 bg-sidebar/80 px-4 py-2 shadow-inset">
+          <Image
+            src="/tribus-hub-icon.png"
+            alt=""
+            width={32}
+            height={32}
+            priority
+            aria-hidden
+            className="h-8 w-8 shrink-0 self-center rounded-lg object-contain shadow-sm ring-1 ring-black/[0.06] dark:ring-white/10"
+          />
+          <div className="min-w-0 flex-1">
             <span className="block truncate text-sm font-semibold tracking-tight text-sidebar-foreground">
               Tribus Hub
             </span>
-            <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/80">
+            <span
+              className="mt-0.5 block truncate text-[10px] font-medium leading-tight tracking-wide text-muted-foreground/85"
+              title="Plataforma Estratégica"
+            >
               Plataforma Estratégica
             </span>
           </div>

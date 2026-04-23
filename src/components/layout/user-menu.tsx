@@ -1,11 +1,12 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ChevronDown, LogOut, User } from "lucide-react";
 
 export function UserMenu() {
+  const router = useRouter();
   const { data: session } = useSession();
   const user = session?.user;
 
@@ -33,14 +34,14 @@ export function UserMenu() {
           </DropdownMenu.Label>
           <DropdownMenu.Separator className="my-1 h-px bg-border" />
 
-          <DropdownMenu.Item asChild>
-            <Link
-              href="/settings"
-              className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
-            >
-              <User className="h-3.5 w-3.5" />
-              Meu perfil
-            </Link>
+          <DropdownMenu.Item
+            className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
+            onSelect={() => {
+              router.push("/settings");
+            }}
+          >
+            <User className="h-3.5 w-3.5" />
+            Meu perfil
           </DropdownMenu.Item>
 
           <DropdownMenu.Separator className="my-1 h-px bg-border" />
