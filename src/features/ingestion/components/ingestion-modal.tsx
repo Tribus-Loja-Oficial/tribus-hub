@@ -362,11 +362,11 @@ export function IngestionModal({ open, onOpenChange }: IngestionModalProps) {
   return (
     <DialogPrimitive.Root open={open} onOpenChange={(v) => !v && handleClose()}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-sm data-[state=open]:animate-fade-in" />
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/[0.33] backdrop-blur-[3px] data-[state=open]:animate-fade-in" />
         <DialogPrimitive.Content
           className={cn(
             "fixed left-[50%] top-[50%] z-50 flex w-[min(92vw,1080px)] translate-x-[-50%] translate-y-[-50%] flex-col",
-            "overflow-hidden rounded-xl border border-border bg-background shadow-2xl",
+            "overflow-hidden rounded-xl border border-border bg-card shadow-dialog",
             "data-[state=open]:animate-fade-in",
             "h-[min(90vh,720px)]",
           )}

@@ -24,6 +24,7 @@ import { UpdateKeyResultDialog } from "./update-key-result-dialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resizable-grid-columns";
+import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
 
 type ObjectiveWithKRs = OkrObjective & { keyResults: OkrKeyResult[] };
 
@@ -402,7 +403,8 @@ function ObjectiveRow({
         </div>
 
         {/* Menu */}
-        <div className="relative flex justify-end">
+        <div className="relative flex justify-end gap-0.5">
+          <EntityQuickViewEyeButton entity={{ kind: "objective", id: objective.id }} />
           <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={onMenuToggle}>
             <MoreHorizontal className="h-4 w-4" />
           </Button>
@@ -503,7 +505,8 @@ function KrSubRow({
       </div>
 
       {/* Update button */}
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-0.5">
+        <EntityQuickViewEyeButton entity={{ kind: "keyResult", id: kr.id }} />
         <Button
           size="sm"
           variant="ghost"

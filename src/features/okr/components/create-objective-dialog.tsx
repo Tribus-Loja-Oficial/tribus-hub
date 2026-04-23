@@ -7,9 +7,12 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DateField } from "@/components/ui/date-field";
+import {
+  nativeSelectClassName,
+  nativeTextareaClassName,
+} from "@/components/ui/form-control-classes";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils/cn";
 import type { OkrCycle } from "@/lib/types/domain";
 
 interface MemberRow {
@@ -183,11 +186,7 @@ export function CreateObjectiveDialog({
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
               placeholder="Explique contexto, motivação, impacto esperado e restrições."
-              className={cn(
-                "w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors",
-                "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-                "min-h-[5.5rem] disabled:cursor-not-allowed disabled:opacity-50",
-              )}
+              className={nativeTextareaClassName}
             />
           </div>
 
@@ -195,7 +194,7 @@ export function CreateObjectiveDialog({
             <div className="space-y-1.5">
               <Label>Ciclo</Label>
               <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                className={nativeSelectClassName}
                 value={cycleId}
                 onChange={(e) => {
                   setCycleId(e.target.value);
@@ -214,7 +213,7 @@ export function CreateObjectiveDialog({
             <div className="space-y-1.5">
               <Label>Responsável</Label>
               <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                className={nativeSelectClassName}
                 value={ownerUserId}
                 onChange={(e) => setOwnerUserId(e.target.value)}
               >
@@ -237,12 +236,12 @@ export function CreateObjectiveDialog({
               {showAdvanced ? "Ocultar opções avançadas" : "Mostrar opções avançadas"}
             </button>
             {showAdvanced && (
-              <div className="mt-3 space-y-4 rounded-md border border-border/60 bg-muted/30 p-3">
+              <div className="mt-3 space-y-4 rounded-lg border border-border/70 bg-muted/25 p-3 shadow-inset">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label>Status</Label>
                     <select
-                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                      className={nativeSelectClassName}
                       value={status}
                       onChange={(e) => setStatus(e.target.value)}
                     >
@@ -257,7 +256,7 @@ export function CreateObjectiveDialog({
                   <div className="space-y-1.5">
                     <Label>Prioridade</Label>
                     <select
-                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                      className={nativeSelectClassName}
                       value={priority}
                       onChange={(e) => setPriority(e.target.value)}
                     >

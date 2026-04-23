@@ -245,11 +245,15 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
                     </span>
                   </div>
                 </div>
-                <div className="flex min-w-48 items-center gap-4">
-                  <div className="flex-1">
-                    <div className="mb-1.5 flex justify-between text-xs">
-                      <span className="text-muted-foreground">Tempo decorrido do ciclo</span>
-                      <span className="font-semibold tabular-nums">{cycleTimeProgress}%</span>
+                <div className="flex min-w-0 flex-1 items-center gap-4">
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1.5 flex items-center justify-between gap-2 text-xs">
+                      <span className="min-w-0 truncate text-muted-foreground">
+                        Tempo decorrido do ciclo
+                      </span>
+                      <span className="shrink-0 font-semibold tabular-nums">
+                        {cycleTimeProgress}%
+                      </span>
                     </div>
                     <OkrProgressBar percent={cycleTimeProgress ?? 0} size="sm" />
                   </div>

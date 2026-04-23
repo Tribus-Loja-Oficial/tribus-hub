@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DateField } from "@/components/ui/date-field";
+import { nativeSelectClassName } from "@/components/ui/form-control-classes";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Project } from "@/lib/types/domain";
@@ -105,7 +106,7 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
             <div className="space-y-1.5">
               <Label>Status</Label>
               <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                className={nativeSelectClassName}
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
               >
@@ -119,7 +120,7 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
             <div className="space-y-1.5">
               <Label>Health</Label>
               <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                className={nativeSelectClassName}
                 value={healthStatus}
                 onChange={(e) => setHealthStatus(e.target.value)}
               >
@@ -135,7 +136,7 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
             <div className="space-y-1.5">
               <Label>Prioridade</Label>
               <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                className={nativeSelectClassName}
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
               >
@@ -148,7 +149,7 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
             <div className="space-y-1.5">
               <Label>Responsável</Label>
               <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                className={nativeSelectClassName}
                 value={ownerUserId}
                 onChange={(e) => setOwnerUserId(e.target.value)}
               >

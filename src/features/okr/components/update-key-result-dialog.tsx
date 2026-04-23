@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { nativeSelectClassName } from "@/components/ui/form-control-classes";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { OkrKeyResult } from "@/lib/types/domain";
@@ -112,7 +113,7 @@ export function UpdateKeyResultDialog({
             <div className="space-y-1.5">
               <Label>Novo valor</Label>
               <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                className={nativeSelectClassName}
                 value={newValue}
                 onChange={(e) => setNewValue(e.target.value)}
               >

@@ -32,6 +32,7 @@ import {
   MilestoneStatusBadge,
 } from "./project-badges";
 import { TaskFormDialog } from "@/features/tasks/components/task-form-dialog";
+import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
 import type { TaskColumn } from "@/lib/types/domain";
 import type {
   ProjectHierarchyItem,
@@ -103,6 +104,7 @@ function TaskRow({ task, members }: { task: HierarchyTask; members: Map<string, 
       ) : (
         <Square className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40" />
       )}
+      <EntityQuickViewEyeButton entity={{ kind: "task", id: task.id }} className="h-6 w-6" />
       <Link
         href={`/tasks/${encodeURIComponent(task.id)}`}
         className={cn(
@@ -198,6 +200,14 @@ function MilestoneRow({
           )}
         />
         <Flag className="h-3.5 w-3.5 shrink-0 text-blue-500/70" />
+        <EntityQuickViewEyeButton
+          entity={{
+            kind: "milestone",
+            projectId: projectSlug || projectId,
+            milestoneId: milestone.id,
+          }}
+          className="h-6 w-6 shrink-0"
+        />
         <Link
           href={milestonePath(projectForPath, milestone.id)}
           onClick={(e) => e.stopPropagation()}
@@ -460,6 +470,10 @@ function ProjectRow({
             <span className="text-[10px] tabular-nums text-muted-foreground">
               {project.projectStats.totalMilestones}m · {project.projectStats.totalTasks}t
             </span>
+            <EntityQuickViewEyeButton
+              entity={{ kind: "project", id: project.slug || project.id }}
+              className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
+            />
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -497,6 +511,10 @@ function ProjectRow({
         <div className="flex shrink-0 items-center gap-2 md:hidden">
           <ProjectStatusBadge status={project.status} />
           <PriorityBadge priority={project.priority} />
+          <EntityQuickViewEyeButton
+            entity={{ kind: "project", id: project.slug || project.id }}
+            className="h-7 w-7"
+          />
           <Link
             href={projectPath(project)}
             onClick={(e) => e.stopPropagation()}

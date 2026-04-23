@@ -19,6 +19,7 @@ import { OkrStatusBadge } from "./okr-status-badge";
 import { OkrProgressBar } from "./okr-progress-bar";
 import { CreateKeyResultDialog } from "./create-key-result-dialog";
 import { UpdateKeyResultDialog } from "./update-key-result-dialog";
+import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -251,6 +252,9 @@ export function OkrKeyResultsPage() {
                         {Math.round(avgProgress)}%
                       </span>
                     </div>
+                    {objective ? (
+                      <EntityQuickViewEyeButton entity={{ kind: "objective", id: objective.id }} />
+                    ) : null}
                     <ChevronRight
                       className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? "rotate-90" : ""}`}
                     />
@@ -394,6 +398,7 @@ function KrRow({
 
       {/* Actions */}
       <div className="relative flex shrink-0 items-center gap-1">
+        <EntityQuickViewEyeButton entity={{ kind: "keyResult", id: kr.id }} />
         <Button
           size="sm"
           variant="ghost"

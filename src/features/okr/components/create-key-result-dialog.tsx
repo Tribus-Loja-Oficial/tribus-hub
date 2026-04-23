@@ -6,6 +6,10 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DateField } from "@/components/ui/date-field";
+import {
+  nativeSelectClassName,
+  nativeTextareaClassName,
+} from "@/components/ui/form-control-classes";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils/cn";
@@ -302,10 +306,7 @@ export function CreateKeyResultDialog({
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               placeholder="Descreva a regra de medição, fonte do dado e critério de sucesso."
-              className={cn(
-                "w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors",
-                "min-h-[4.5rem] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-              )}
+              className={cn(nativeTextareaClassName, "min-h-[4.5rem]")}
             />
           </div>
 
@@ -315,7 +316,7 @@ export function CreateKeyResultDialog({
                 Objetivo <span className="text-destructive">*</span>
               </Label>
               <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                className={nativeSelectClassName}
                 value={objectiveId}
                 onChange={(e) => {
                   setObjectiveId(e.target.value);
@@ -346,7 +347,7 @@ export function CreateKeyResultDialog({
             <div className="space-y-1.5">
               <Label>Responsável</Label>
               <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                className={nativeSelectClassName}
                 value={ownerUserId}
                 onChange={(e) => setOwnerUserId(e.target.value)}
               >
@@ -364,7 +365,7 @@ export function CreateKeyResultDialog({
             <div className="space-y-1.5">
               <Label>Tipo de métrica</Label>
               <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                className={nativeSelectClassName}
                 value={metricType}
                 onChange={(e) => setMetricType(e.target.value)}
               >
@@ -395,10 +396,10 @@ export function CreateKeyResultDialog({
           </div>
 
           {isBoolean ? (
-            <div className="space-y-1.5 rounded-md border border-border/60 bg-muted/20 p-3">
+            <div className="space-y-1.5 rounded-lg border border-border/70 bg-muted/25 p-3 shadow-inset">
               <Label>Situação atual</Label>
               <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                className={nativeSelectClassName}
                 value={currentValue}
                 onChange={(e) => setCurrentValue(e.target.value)}
               >
@@ -476,11 +477,11 @@ export function CreateKeyResultDialog({
               {showAdvanced ? "Ocultar opções avançadas" : "Mostrar opções avançadas"}
             </button>
             {showAdvanced && (
-              <div className="mt-3 space-y-4 rounded-md border border-border/60 bg-muted/30 p-3">
+              <div className="mt-3 space-y-4 rounded-lg border border-border/70 bg-muted/25 p-3 shadow-inset">
                 <div className="space-y-1.5">
                   <Label>Status</Label>
                   <select
-                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    className={nativeSelectClassName}
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
                   >
@@ -528,7 +529,7 @@ export function CreateKeyResultDialog({
                     <span className="text-xs text-muted-foreground">(opcional, 0–100)</span>
                   </Label>
                   <select
-                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    className={nativeSelectClassName}
                     value={confidence}
                     onChange={(e) => setConfidence(e.target.value)}
                   >

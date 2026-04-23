@@ -64,6 +64,9 @@ const config: Config = {
         "card-hover":
           "0 2px 8px -2px rgb(15 23 42 / 0.07), 0 1px 2px 0 rgb(15 23 42 / 0.04)",
         popover: "0 4px 24px -6px rgb(15 23 42 / 0.12), 0 2px 8px -4px rgb(15 23 42 / 0.06)",
+        /** Modais: elevação suave (menos “halo” / contraste duro que shadow-popover) */
+        dialog:
+          "0 10px 40px -12px rgb(15 23 42 / 0.09), 0 4px 14px -6px rgb(15 23 42 / 0.05)",
         inset: "inset 0 1px 1px 0 rgb(15 23 42 / 0.04)",
       },
       fontFamily: {

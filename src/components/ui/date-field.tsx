@@ -5,6 +5,7 @@ import { format, isValid, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { dateTriggerControlClassName } from "@/components/ui/form-control-classes";
 
 export interface DateFieldProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
@@ -71,8 +72,7 @@ const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
             }
           }}
           className={cn(
-            "flex h-9 w-full items-center gap-2 rounded-md border border-input/90 bg-card/40 px-3 text-left text-sm shadow-inset transition-all duration-150",
-            "hover:border-border focus-visible:border-primary/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35 focus-visible:ring-offset-0",
+            dateTriggerControlClassName,
             disabled && "pointer-events-none cursor-not-allowed opacity-50",
           )}
         >

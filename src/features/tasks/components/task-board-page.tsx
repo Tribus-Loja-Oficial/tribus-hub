@@ -12,6 +12,7 @@ import type { BoardTask } from "@/lib/services/task-board.service";
 import { KanbanBoard } from "@/components/board/kanban-board";
 import { Button } from "@/components/ui/button";
 import { TaskFormDialog } from "./task-form-dialog";
+import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
 
 interface BoardPayload {
   columns: Array<TaskColumn & { tasks: BoardTask[] }>;
@@ -433,12 +434,13 @@ export function TaskBoardPage() {
                 <th className="hidden px-4 py-3 font-medium sm:table-cell">Responsável</th>
                 <th className="hidden px-4 py-3 font-medium sm:table-cell">Etiquetas</th>
                 <th className="px-4 py-3 font-medium">Prazo</th>
+                <th className="w-12 px-2 py-3 text-center font-medium">Ver</th>
               </tr>
             </thead>
             <tbody>
               {flatRows.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-sm text-muted-foreground">
+                  <td colSpan={9} className="px-4 py-12 text-center text-sm text-muted-foreground">
                     Nenhuma tarefa com estes filtros.
                   </td>
                 </tr>
@@ -559,6 +561,9 @@ export function TaskBoardPage() {
                       {task.dueDate
                         ? format(new Date(task.dueDate), "dd MMM yy", { locale: ptBR })
                         : "—"}
+                    </td>
+                    <td className="px-2 py-2.5 text-center" onClick={(e) => e.stopPropagation()}>
+                      <EntityQuickViewEyeButton entity={{ kind: "task", id: task.id }} />
                     </td>
                   </tr>
                 );

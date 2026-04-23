@@ -764,44 +764,57 @@ export async function handleV1ExtraRoutes(
       if (!proj.success || !proj.results?.[0])
         return json({ error: { message: "Not found" } }, 404);
       const project = mapProjectRowCamel(proj.results[0]);
-      const [ms, objs, taskCount] = await Promise.all([
+      const [ms, linkRows, taskCount] = await Promise.all([
         db
           .prepare(`SELECT * FROM milestones WHERE project_id = ? ORDER BY sort_order ASC`)
           .bind(projectId)
           .all<Record<string, unknown>>(),
         db
-          .prepare(`SELECT * FROM project_objectives WHERE project_id = ? ORDER BY created_at ASC`)
+          .prepare(
+            `SELECT okr_objective_id FROM pm_project_okr_objective_links WHERE project_id = ? ORDER BY created_at ASC`,
+          )
           .bind(projectId)
-          .all<Record<string, unknown>>(),
+          .all<{ okr_objective_id: string }>(),
         db
           .prepare(`SELECT COUNT(*) as c FROM tasks WHERE project_id = ? AND deleted_at IS NULL`)
           .bind(projectId)
           .all<{ c: number }>(),
       ]);
-      const objList = objs.results ?? [];
-      const objIds = objList.map((o) => o.id as string);
-      let krs: Record<string, unknown>[] = [];
-      if (objIds.length) {
-        const ph = objIds.map(() => "?").join(", ");
+      const objIdsOrdered = (linkRows.results ?? [])
+        .map((r) => r.okr_objective_id)
+        .filter((id): id is string => typeof id === "string" && id.length > 0);
+      let objectivesWithKr: Array<Record<string, unknown>> = [];
+      if (objIdsOrdered.length > 0) {
+        const ph = objIdsOrdered.map(() => "?").join(", ");
+        const objsRes = await db
+          .prepare(
+            `SELECT * FROM okr_objectives WHERE id IN (${ph}) AND workspace_id = ? AND deleted_at IS NULL`,
+          )
+          .bind(...objIdsOrdered, workspaceId)
+          .all<Record<string, unknown>>();
+        const byId = new Map((objsRes.results ?? []).map((o) => [String(o.id), o]));
+        const objList = objIdsOrdered
+          .map((id) => byId.get(id))
+          .filter((o): o is Record<string, unknown> => o != null);
         const krRes = await db
           .prepare(
-            `SELECT * FROM project_key_results WHERE objective_id IN (${ph}) ORDER BY created_at ASC`,
+            `SELECT * FROM okr_key_results WHERE objective_id IN (${ph}) AND workspace_id = ? AND deleted_at IS NULL ORDER BY sort_order ASC, created_at ASC`,
           )
-          .bind(...objIds)
+          .bind(...objIdsOrdered, workspaceId)
           .all<Record<string, unknown>>();
-        krs = krRes.results ?? [];
+        const krs = krRes.results ?? [];
+        const krByObj = new Map<string, Record<string, unknown>[]>();
+        for (const kr of krs) {
+          const oid = kr.objective_id as string;
+          const list = krByObj.get(oid) ?? [];
+          list.push(kr);
+          krByObj.set(oid, list);
+        }
+        objectivesWithKr = objList.map((o) => ({
+          ...mapOkrObjectiveLinkedToProjectHub(o, projectId),
+          keyResults: (krByObj.get(String(o.id)) ?? []).map(mapProjectKrCamel),
+        }));
       }
-      const krByObj = new Map<string, Record<string, unknown>[]>();
-      for (const kr of krs) {
-        const oid = kr.objective_id as string;
-        const list = krByObj.get(oid) ?? [];
-        list.push(kr);
-        krByObj.set(oid, list);
-      }
-      const objectivesWithKr = objList.map((o) => ({
-        ...mapProjectObjectiveCamel(o),
-        keyResults: (krByObj.get(o.id as string) ?? []).map(mapProjectKrCamel),
-      }));
       const tasksRes = await db
         .prepare(
           `SELECT * FROM tasks WHERE workspace_id = ? AND project_id = ? AND deleted_at IS NULL ORDER BY updated_at DESC LIMIT 12`,
@@ -1238,6 +1251,25 @@ function mapProjectRowCamel(raw: Record<string, unknown>) {
   };
 }
 
+/**
+ * Project hub lists OKRs linked via `pm_project_okr_objective_links` (legacy
+ * `project_objectives` / `project_key_results` were removed in migration 0007).
+ */
+function mapOkrObjectiveLinkedToProjectHub(o: Record<string, unknown>, projectId: string) {
+  return {
+    id: o.id,
+    workspaceId: o.workspace_id,
+    projectId,
+    title: o.title,
+    description: (o.description_text as string | null | undefined) ?? null,
+    ownerUserId: o.owner_user_id ?? null,
+    status: o.status,
+    createdBy: o.created_by,
+    createdAt: o.created_at,
+    updatedAt: o.updated_at,
+  };
+}
+
 function mapMilestoneCamel(m: Record<string, unknown>) {
   return {
     id: m.id,
@@ -1252,21 +1284,6 @@ function mapMilestoneCamel(m: Record<string, unknown>) {
     sortOrder: m.sort_order,
     createdAt: m.created_at,
     updatedAt: m.updated_at,
-  };
-}
-
-function mapProjectObjectiveCamel(o: Record<string, unknown>) {
-  return {
-    id: o.id,
-    workspaceId: o.workspace_id,
-    projectId: o.project_id,
-    title: o.title,
-    description: o.description,
-    ownerUserId: o.owner_user_id,
-    status: o.status,
-    createdBy: o.created_by,
-    createdAt: o.created_at,
-    updatedAt: o.updated_at,
   };
 }
 

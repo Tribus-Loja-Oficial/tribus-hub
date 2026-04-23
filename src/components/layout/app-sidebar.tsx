@@ -203,7 +203,7 @@ export function AppSidebar() {
               Tribus Hub
             </span>
             <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/80">
-              Workspace
+              Plataforma Estratégica
             </span>
           </div>
         </div>

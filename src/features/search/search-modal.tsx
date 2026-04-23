@@ -158,8 +158,8 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
   return (
     <DialogPrimitive.Root open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 animate-fade-in bg-black/40 backdrop-blur-sm" />
-        <DialogPrimitive.Content className="fixed left-[50%] top-[10%] z-50 w-[min(100vw-1rem,26rem)] translate-x-[-50%] animate-fade-in overflow-hidden rounded-xl border border-border bg-background shadow-xl">
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 animate-fade-in bg-black/[0.33] backdrop-blur-[3px]" />
+        <DialogPrimitive.Content className="fixed left-[50%] top-[10%] z-50 w-[min(100vw-1rem,26rem)] translate-x-[-50%] animate-fade-in overflow-hidden rounded-xl border border-border bg-card shadow-dialog">
           <DialogPrimitive.Title className="sr-only">Busca no workspace</DialogPrimitive.Title>
 
           <div className="border-b border-border/70 px-3 py-2">

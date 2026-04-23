@@ -6,6 +6,10 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DateField } from "@/components/ui/date-field";
+import {
+  nativeSelectClassName,
+  nativeTextareaClassName,
+} from "@/components/ui/form-control-classes";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils/cn";
@@ -293,7 +297,7 @@ export function UpdateCycleDialog({ open, onOpenChange, cycle }: UpdateCycleDial
           <div className="space-y-1.5">
             <Label>Status</Label>
             <select
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+              className={nativeSelectClassName}
               value={status}
               onChange={(e) => {
                 setStatus(e.target.value as CycleStatus);
@@ -336,10 +340,7 @@ export function UpdateCycleDialog({ open, onOpenChange, cycle }: UpdateCycleDial
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               placeholder="Contexto do ciclo, foco estratégico e observações…"
-              className={cn(
-                "w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors",
-                "min-h-[4.5rem] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-              )}
+              className={cn(nativeTextareaClassName, "min-h-[4.5rem]")}
             />
           </div>
 

@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  type MouseEvent as ReactMouseEvent,
+  type ReactNode,
+} from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import Link from "next/link";
@@ -44,6 +51,29 @@ import {
   type OkrListSortField,
 } from "@/features/okr/lib/okr-okrs-list-sort";
 import { cn } from "@/lib/utils/cn";
+import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resizable-grid-columns";
+import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
+
+function OkrListHeaderCell({
+  children,
+  className,
+  resizeIndex,
+  startResize,
+}: {
+  children: ReactNode;
+  className?: string;
+  resizeIndex: number;
+  startResize: (leftIndex: number, e: ReactMouseEvent) => void;
+}) {
+  return (
+    <div className={cn("relative flex min-w-0 items-center", className)}>
+      {children}
+      <div className="absolute right-0 top-1/2 z-10 -translate-y-1/2 translate-x-1/2">
+        <GridColResizeHandle onMouseDown={(e) => startResize(resizeIndex, e)} />
+      </div>
+    </div>
+  );
+}
 
 // Left accent colors by status (inline style — safe for dynamic values)
 const STATUS_ACCENT: Record<string, string> = {
@@ -68,17 +98,8 @@ function fmtMetric(kr: OkrKeyResult): string {
   return `${pre}${kr.currentValue}${suf} / ${pre}${kr.targetValue}${suf}`;
 }
 
-// ─── Colunas fixas: cabeçalho e linhas usam o mesmo grid (px + gap-x-3 = 12px) ─
-const COL_CYCLE = "min-w-[92px] w-[92px]";
-const COL_STATUS = "min-w-[108px] w-[108px]";
-const COL_METRIC = "w-[110px]";
-const COL_PROGRESS = "w-[168px]";
-const COL_DATE = "w-[58px]";
-const COL_ACTIONS = "w-[64px]";
-
-/** Chevron 20px | título | ciclo | status | métrica | progresso | meta | ações */
-const OKR_OBJECTIVE_GRID_CLASS =
-  "grid w-full grid-cols-[20px_minmax(0,1fr)_92px_108px_110px_168px_58px_64px] gap-x-3 items-center";
+/** Chevron | título | ciclo | status | métrica | progresso | meta | ações — larguras via `gridTpl` */
+const OKR_LIST_GRID_BASE = "grid w-full gap-x-3 items-center";
 
 const STATUS_FILTER_OPTIONS = [
   { value: "draft", label: "Rascunho" },
@@ -112,6 +133,12 @@ export function OkrPage() {
   const [selectedKr, setSelectedKr] = useState<OkrKeyResult | null>(null);
   const [objMenu, setObjMenu] = useState<string | null>(null);
   const [krMenu, setKrMenu] = useState<string | null>(null);
+
+  const { widths, startResize } = useResizableGridColumns(
+    "hub:okr-page-list-cols",
+    [20, 320, 92, 108, 110, 168, 58, 64],
+  );
+  const okrListGridTpl = widths.map((w) => `${w}px`).join(" ");
 
   useEffect(() => {
     function closeMenus(e: MouseEvent) {
@@ -396,263 +423,304 @@ export function OkrPage() {
 
       {/* ── Lista: cabeçalhos sempre que filtros/ordem/dados existirem; vazio encaixado abaixo ─ */}
       {!isLoading && showColumnHeaders && (
-        <div className="overflow-hidden rounded-xl border border-border bg-card/50 shadow-sm">
+        <div className="overflow-x-auto rounded-xl border border-border bg-card/50 shadow-sm">
           <div
             className="border-b border-primary/15 bg-gradient-to-b from-muted/55 via-muted/25 to-background shadow-[inset_0_1px_0_0_hsl(var(--border)/0.45)]"
             role="row"
           >
-            <div className={cn(OKR_OBJECTIVE_GRID_CLASS, "min-h-[44px] px-4 py-2")}>
-              <div className="border-r border-border/60 pr-2" aria-hidden />
-              <div className="flex min-w-0 items-center border-r border-border/60 px-1">
-                <button
-                  type="button"
-                  onClick={() => handleSortClick("title")}
-                  className={cn(
-                    "flex min-w-0 flex-1 items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-background/80",
-                    sort.field === "title" && "bg-background/90 shadow-sm ring-1 ring-border/60",
-                  )}
-                >
-                  <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/75">
-                    Objetivo / KR
-                  </span>
-                  {sort.field === "title" ? (
-                    sort.dir === "asc" ? (
-                      <ArrowUp className="h-3 w-3 shrink-0 text-primary" aria-hidden />
-                    ) : (
-                      <ArrowDown className="h-3 w-3 shrink-0 text-primary" aria-hidden />
-                    )
-                  ) : (
-                    <ArrowUpDown
-                      className="h-3 w-3 shrink-0 text-muted-foreground/40"
-                      aria-hidden
-                    />
-                  )}
-                </button>
-              </div>
-              <div
-                className={`flex items-center justify-between gap-1 border-r border-border/60 px-1 ${COL_CYCLE}`}
+            <div
+              className={cn(OKR_LIST_GRID_BASE, "min-h-[44px] px-4 py-2")}
+              style={{ gridTemplateColumns: okrListGridTpl }}
+            >
+              <OkrListHeaderCell
+                resizeIndex={0}
+                startResize={startResize}
+                className="border-r border-border/60 pr-2"
               >
-                <span className="truncate pl-0.5 text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/60">
-                  Ciclo
+                <span className="sr-only">Coluna expandir</span>
+              </OkrListHeaderCell>
+              <OkrListHeaderCell
+                resizeIndex={1}
+                startResize={startResize}
+                className="border-r border-border/60 px-1"
+              >
+                <div className="flex min-w-0 flex-1 items-center">
+                  <button
+                    type="button"
+                    onClick={() => handleSortClick("title")}
+                    className={cn(
+                      "flex min-w-0 flex-1 items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-background/80",
+                      sort.field === "title" && "bg-background/90 shadow-sm ring-1 ring-border/60",
+                    )}
+                  >
+                    <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/75">
+                      Objetivo / KR
+                    </span>
+                    {sort.field === "title" ? (
+                      sort.dir === "asc" ? (
+                        <ArrowUp className="h-3 w-3 shrink-0 text-primary" aria-hidden />
+                      ) : (
+                        <ArrowDown className="h-3 w-3 shrink-0 text-primary" aria-hidden />
+                      )
+                    ) : (
+                      <ArrowUpDown
+                        className="h-3 w-3 shrink-0 text-muted-foreground/40"
+                        aria-hidden
+                      />
+                    )}
+                  </button>
+                </div>
+              </OkrListHeaderCell>
+              <OkrListHeaderCell
+                resizeIndex={2}
+                startResize={startResize}
+                className="min-w-0 border-r border-border/60 px-1"
+              >
+                <div className="flex w-full min-w-0 items-center justify-between gap-1">
+                  <span className="truncate pl-0.5 text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/60">
+                    Ciclo
+                  </span>
+                  <DropdownMenu.Root>
+                    <div className="relative shrink-0">
+                      <DropdownMenu.Trigger asChild>
+                        <button
+                          type="button"
+                          className={cn(
+                            "relative inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-background/90 hover:text-foreground",
+                            filterCycleIds.size > 0
+                              ? "border-primary/40 bg-primary/10 text-primary shadow-sm"
+                              : "border-border/60 bg-background/40",
+                          )}
+                          aria-label="Filtrar por ciclo"
+                        >
+                          <ChevronDown className="h-3.5 w-3.5" />
+                          {filterCycleIds.size > 0 ? (
+                            <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-0.5 text-[9px] font-bold leading-none text-primary-foreground shadow-sm">
+                              {filterCycleIds.size}
+                            </span>
+                          ) : null}
+                        </button>
+                      </DropdownMenu.Trigger>
+                    </div>
+                    <DropdownMenu.Portal>
+                      <DropdownMenu.Content
+                        className="z-[200] min-w-[13rem] rounded-lg border border-border bg-popover p-1 shadow-lg"
+                        sideOffset={4}
+                        align="end"
+                        data-menu
+                      >
+                        <DropdownMenu.Item
+                          className="cursor-pointer rounded px-2 py-1.5 text-xs outline-none hover:bg-accent"
+                          onSelect={() => setFilterCycleIds(new Set())}
+                        >
+                          Limpar seleção
+                        </DropdownMenu.Item>
+                        <DropdownMenu.Separator className="my-1 h-px bg-border" />
+                        {cycles.map((c) => (
+                          <DropdownMenu.CheckboxItem
+                            key={c.id}
+                            className={cn(
+                              "relative flex items-center gap-2 rounded-sm py-1.5 pl-8 pr-2 text-xs",
+                              filterCycleIds.has(c.id) &&
+                                "bg-primary/12 font-medium text-foreground",
+                            )}
+                            checked={filterCycleIds.has(c.id)}
+                            onCheckedChange={(checked) => {
+                              setFilterCycleIds((prev) => {
+                                const n = new Set(prev);
+                                if (checked) n.add(c.id);
+                                else n.delete(c.id);
+                                return n;
+                              });
+                            }}
+                            onSelect={(e) => e.preventDefault()}
+                          >
+                            <span className="absolute left-2 flex h-4 w-4 items-center justify-center text-primary">
+                              <DropdownMenu.ItemIndicator>
+                                <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
+                              </DropdownMenu.ItemIndicator>
+                            </span>
+                            <span className="truncate">{c.title}</span>
+                          </DropdownMenu.CheckboxItem>
+                        ))}
+                      </DropdownMenu.Content>
+                    </DropdownMenu.Portal>
+                  </DropdownMenu.Root>
+                </div>
+              </OkrListHeaderCell>
+              <OkrListHeaderCell
+                resizeIndex={3}
+                startResize={startResize}
+                className="min-w-0 border-r border-border/60 px-1"
+              >
+                <div className="flex w-full min-w-0 items-center justify-between gap-1">
+                  <button
+                    type="button"
+                    onClick={() => handleSortClick("status")}
+                    className={cn(
+                      "flex min-w-0 flex-1 items-center gap-1 rounded-md px-1 py-1 transition-colors hover:bg-background/80",
+                      sort.field === "status" && "bg-background/90 shadow-sm ring-1 ring-border/60",
+                    )}
+                  >
+                    <span className="truncate text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/75">
+                      Status
+                    </span>
+                    {sort.field === "status" ? (
+                      sort.dir === "asc" ? (
+                        <ArrowUp className="h-3 w-3 shrink-0 text-primary" aria-hidden />
+                      ) : (
+                        <ArrowDown className="h-3 w-3 shrink-0 text-primary" aria-hidden />
+                      )
+                    ) : (
+                      <ArrowUpDown
+                        className="h-3 w-3 shrink-0 text-muted-foreground/40"
+                        aria-hidden
+                      />
+                    )}
+                  </button>
+                  <DropdownMenu.Root>
+                    <div className="relative shrink-0">
+                      <DropdownMenu.Trigger asChild>
+                        <button
+                          type="button"
+                          className={cn(
+                            "relative inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-background/90 hover:text-foreground",
+                            filterStatuses.size > 0
+                              ? "border-primary/40 bg-primary/10 text-primary shadow-sm"
+                              : "border-border/60 bg-background/40",
+                          )}
+                          aria-label="Filtrar por status"
+                        >
+                          <ChevronDown className="h-3.5 w-3.5" />
+                          {filterStatuses.size > 0 ? (
+                            <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-0.5 text-[9px] font-bold leading-none text-primary-foreground shadow-sm">
+                              {filterStatuses.size}
+                            </span>
+                          ) : null}
+                        </button>
+                      </DropdownMenu.Trigger>
+                    </div>
+                    <DropdownMenu.Portal>
+                      <DropdownMenu.Content
+                        className="z-[200] min-w-[12rem] rounded-lg border border-border bg-popover p-1 shadow-lg"
+                        sideOffset={4}
+                        align="end"
+                        data-menu
+                      >
+                        <DropdownMenu.Item
+                          className="cursor-pointer rounded px-2 py-1.5 text-xs outline-none hover:bg-accent"
+                          onSelect={() => setFilterStatuses(new Set())}
+                        >
+                          Limpar seleção
+                        </DropdownMenu.Item>
+                        <DropdownMenu.Separator className="my-1 h-px bg-border" />
+                        {STATUS_FILTER_OPTIONS.map((opt) => (
+                          <DropdownMenu.CheckboxItem
+                            key={opt.value}
+                            className={cn(
+                              "relative flex items-center rounded-sm py-1.5 pl-8 pr-2 text-xs",
+                              filterStatuses.has(opt.value) &&
+                                "bg-primary/12 font-medium text-foreground",
+                            )}
+                            checked={filterStatuses.has(opt.value)}
+                            onCheckedChange={(checked) => {
+                              setFilterStatuses((prev) => {
+                                const n = new Set(prev);
+                                if (checked) n.add(opt.value);
+                                else n.delete(opt.value);
+                                return n;
+                              });
+                            }}
+                            onSelect={(e) => e.preventDefault()}
+                          >
+                            <span className="absolute left-2 flex h-4 w-4 items-center justify-center text-primary">
+                              <DropdownMenu.ItemIndicator>
+                                <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
+                              </DropdownMenu.ItemIndicator>
+                            </span>
+                            {opt.label}
+                          </DropdownMenu.CheckboxItem>
+                        ))}
+                      </DropdownMenu.Content>
+                    </DropdownMenu.Portal>
+                  </DropdownMenu.Root>
+                </div>
+              </OkrListHeaderCell>
+              <OkrListHeaderCell
+                resizeIndex={4}
+                startResize={startResize}
+                className="min-w-0 border-r border-border/60 px-2"
+              >
+                <span className="truncate text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/55">
+                  Métrica
                 </span>
-                <DropdownMenu.Root>
-                  <div className="relative shrink-0">
-                    <DropdownMenu.Trigger asChild>
-                      <button
-                        type="button"
-                        className={cn(
-                          "relative inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-background/90 hover:text-foreground",
-                          filterCycleIds.size > 0
-                            ? "border-primary/40 bg-primary/10 text-primary shadow-sm"
-                            : "border-border/60 bg-background/40",
-                        )}
-                        aria-label="Filtrar por ciclo"
-                      >
-                        <ChevronDown className="h-3.5 w-3.5" />
-                        {filterCycleIds.size > 0 ? (
-                          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-0.5 text-[9px] font-bold leading-none text-primary-foreground shadow-sm">
-                            {filterCycleIds.size}
-                          </span>
-                        ) : null}
-                      </button>
-                    </DropdownMenu.Trigger>
-                  </div>
-                  <DropdownMenu.Portal>
-                    <DropdownMenu.Content
-                      className="z-[200] min-w-[13rem] rounded-lg border border-border bg-popover p-1 shadow-lg"
-                      sideOffset={4}
-                      align="end"
-                      data-menu
-                    >
-                      <DropdownMenu.Item
-                        className="cursor-pointer rounded px-2 py-1.5 text-xs outline-none hover:bg-accent"
-                        onSelect={() => setFilterCycleIds(new Set())}
-                      >
-                        Limpar seleção
-                      </DropdownMenu.Item>
-                      <DropdownMenu.Separator className="my-1 h-px bg-border" />
-                      {cycles.map((c) => (
-                        <DropdownMenu.CheckboxItem
-                          key={c.id}
-                          className={cn(
-                            "relative flex items-center gap-2 rounded-sm py-1.5 pl-8 pr-2 text-xs",
-                            filterCycleIds.has(c.id) && "bg-primary/12 font-medium text-foreground",
-                          )}
-                          checked={filterCycleIds.has(c.id)}
-                          onCheckedChange={(checked) => {
-                            setFilterCycleIds((prev) => {
-                              const n = new Set(prev);
-                              if (checked) n.add(c.id);
-                              else n.delete(c.id);
-                              return n;
-                            });
-                          }}
-                          onSelect={(e) => e.preventDefault()}
-                        >
-                          <span className="absolute left-2 flex h-4 w-4 items-center justify-center text-primary">
-                            <DropdownMenu.ItemIndicator>
-                              <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
-                            </DropdownMenu.ItemIndicator>
-                          </span>
-                          <span className="truncate">{c.title}</span>
-                        </DropdownMenu.CheckboxItem>
-                      ))}
-                    </DropdownMenu.Content>
-                  </DropdownMenu.Portal>
-                </DropdownMenu.Root>
-              </div>
-              <div
-                className={`flex items-center justify-between gap-1 border-r border-border/60 px-1 ${COL_STATUS}`}
+              </OkrListHeaderCell>
+              <OkrListHeaderCell
+                resizeIndex={5}
+                startResize={startResize}
+                className="min-w-0 border-r border-border/60 px-1"
               >
-                <button
-                  type="button"
-                  onClick={() => handleSortClick("status")}
-                  className={cn(
-                    "flex min-w-0 flex-1 items-center gap-1 rounded-md px-1 py-1 transition-colors hover:bg-background/80",
-                    sort.field === "status" && "bg-background/90 shadow-sm ring-1 ring-border/60",
-                  )}
-                >
-                  <span className="truncate text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/75">
-                    Status
-                  </span>
-                  {sort.field === "status" ? (
-                    sort.dir === "asc" ? (
-                      <ArrowUp className="h-3 w-3 shrink-0 text-primary" aria-hidden />
+                <div className="flex w-full min-w-0 items-center">
+                  <button
+                    type="button"
+                    onClick={() => handleSortClick("progress")}
+                    className={cn(
+                      "flex w-full items-center gap-1 rounded-md px-1.5 py-1 transition-colors hover:bg-background/80",
+                      sort.field === "progress" &&
+                        "bg-background/90 shadow-sm ring-1 ring-border/60",
+                    )}
+                  >
+                    <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/75">
+                      Progresso
+                    </span>
+                    {sort.field === "progress" ? (
+                      sort.dir === "asc" ? (
+                        <ArrowUp className="h-3 w-3 shrink-0 text-primary" aria-hidden />
+                      ) : (
+                        <ArrowDown className="h-3 w-3 shrink-0 text-primary" aria-hidden />
+                      )
                     ) : (
-                      <ArrowDown className="h-3 w-3 shrink-0 text-primary" aria-hidden />
-                    )
-                  ) : (
-                    <ArrowUpDown
-                      className="h-3 w-3 shrink-0 text-muted-foreground/40"
-                      aria-hidden
-                    />
-                  )}
-                </button>
-                <DropdownMenu.Root>
-                  <div className="relative shrink-0">
-                    <DropdownMenu.Trigger asChild>
-                      <button
-                        type="button"
-                        className={cn(
-                          "relative inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-background/90 hover:text-foreground",
-                          filterStatuses.size > 0
-                            ? "border-primary/40 bg-primary/10 text-primary shadow-sm"
-                            : "border-border/60 bg-background/40",
-                        )}
-                        aria-label="Filtrar por status"
-                      >
-                        <ChevronDown className="h-3.5 w-3.5" />
-                        {filterStatuses.size > 0 ? (
-                          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-0.5 text-[9px] font-bold leading-none text-primary-foreground shadow-sm">
-                            {filterStatuses.size}
-                          </span>
-                        ) : null}
-                      </button>
-                    </DropdownMenu.Trigger>
-                  </div>
-                  <DropdownMenu.Portal>
-                    <DropdownMenu.Content
-                      className="z-[200] min-w-[12rem] rounded-lg border border-border bg-popover p-1 shadow-lg"
-                      sideOffset={4}
-                      align="end"
-                      data-menu
-                    >
-                      <DropdownMenu.Item
-                        className="cursor-pointer rounded px-2 py-1.5 text-xs outline-none hover:bg-accent"
-                        onSelect={() => setFilterStatuses(new Set())}
-                      >
-                        Limpar seleção
-                      </DropdownMenu.Item>
-                      <DropdownMenu.Separator className="my-1 h-px bg-border" />
-                      {STATUS_FILTER_OPTIONS.map((opt) => (
-                        <DropdownMenu.CheckboxItem
-                          key={opt.value}
-                          className={cn(
-                            "relative flex items-center rounded-sm py-1.5 pl-8 pr-2 text-xs",
-                            filterStatuses.has(opt.value) &&
-                              "bg-primary/12 font-medium text-foreground",
-                          )}
-                          checked={filterStatuses.has(opt.value)}
-                          onCheckedChange={(checked) => {
-                            setFilterStatuses((prev) => {
-                              const n = new Set(prev);
-                              if (checked) n.add(opt.value);
-                              else n.delete(opt.value);
-                              return n;
-                            });
-                          }}
-                          onSelect={(e) => e.preventDefault()}
-                        >
-                          <span className="absolute left-2 flex h-4 w-4 items-center justify-center text-primary">
-                            <DropdownMenu.ItemIndicator>
-                              <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
-                            </DropdownMenu.ItemIndicator>
-                          </span>
-                          {opt.label}
-                        </DropdownMenu.CheckboxItem>
-                      ))}
-                    </DropdownMenu.Content>
-                  </DropdownMenu.Portal>
-                </DropdownMenu.Root>
-              </div>
-              <div
-                className={`flex items-center border-r border-border/60 px-2 ${COL_METRIC} text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/55`}
+                      <ArrowUpDown
+                        className="h-3 w-3 shrink-0 text-muted-foreground/40"
+                        aria-hidden
+                      />
+                    )}
+                  </button>
+                </div>
+              </OkrListHeaderCell>
+              <OkrListHeaderCell
+                resizeIndex={6}
+                startResize={startResize}
+                className="min-w-0 border-r border-border/60 px-1"
               >
-                Métrica
-              </div>
-              <div className={`flex items-center border-r border-border/60 px-1 ${COL_PROGRESS}`}>
-                <button
-                  type="button"
-                  onClick={() => handleSortClick("progress")}
-                  className={cn(
-                    "flex w-full items-center gap-1 rounded-md px-1.5 py-1 transition-colors hover:bg-background/80",
-                    sort.field === "progress" && "bg-background/90 shadow-sm ring-1 ring-border/60",
-                  )}
-                >
-                  <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/75">
-                    Progresso
-                  </span>
-                  {sort.field === "progress" ? (
-                    sort.dir === "asc" ? (
-                      <ArrowUp className="h-3 w-3 shrink-0 text-primary" aria-hidden />
+                <div className="flex w-full min-w-0 items-center">
+                  <button
+                    type="button"
+                    onClick={() => handleSortClick("meta")}
+                    className={cn(
+                      "flex w-full items-center gap-1 rounded-md px-1.5 py-1 transition-colors hover:bg-background/80",
+                      sort.field === "meta" && "bg-background/90 shadow-sm ring-1 ring-border/60",
+                    )}
+                  >
+                    <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/75">
+                      Meta
+                    </span>
+                    {sort.field === "meta" ? (
+                      sort.dir === "asc" ? (
+                        <ArrowUp className="h-3 w-3 shrink-0 text-primary" aria-hidden />
+                      ) : (
+                        <ArrowDown className="h-3 w-3 shrink-0 text-primary" aria-hidden />
+                      )
                     ) : (
-                      <ArrowDown className="h-3 w-3 shrink-0 text-primary" aria-hidden />
-                    )
-                  ) : (
-                    <ArrowUpDown
-                      className="h-3 w-3 shrink-0 text-muted-foreground/40"
-                      aria-hidden
-                    />
-                  )}
-                </button>
-              </div>
-              <div className={`flex items-center border-r border-border/60 px-1 ${COL_DATE}`}>
-                <button
-                  type="button"
-                  onClick={() => handleSortClick("meta")}
-                  className={cn(
-                    "flex w-full items-center gap-1 rounded-md px-1.5 py-1 transition-colors hover:bg-background/80",
-                    sort.field === "meta" && "bg-background/90 shadow-sm ring-1 ring-border/60",
-                  )}
-                >
-                  <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/75">
-                    Meta
-                  </span>
-                  {sort.field === "meta" ? (
-                    sort.dir === "asc" ? (
-                      <ArrowUp className="h-3 w-3 shrink-0 text-primary" aria-hidden />
-                    ) : (
-                      <ArrowDown className="h-3 w-3 shrink-0 text-primary" aria-hidden />
-                    )
-                  ) : (
-                    <ArrowUpDown
-                      className="h-3 w-3 shrink-0 text-muted-foreground/40"
-                      aria-hidden
-                    />
-                  )}
-                </button>
-              </div>
-              <div className={`flex items-center justify-end ${COL_ACTIONS}`} aria-hidden />
+                      <ArrowUpDown
+                        className="h-3 w-3 shrink-0 text-muted-foreground/40"
+                        aria-hidden
+                      />
+                    )}
+                  </button>
+                </div>
+              </OkrListHeaderCell>
+              <div className="relative flex min-w-0 items-center justify-end" aria-hidden />
             </div>
           </div>
 
@@ -679,6 +747,7 @@ export function OkrPage() {
               {sortedFiltered.map((obj) => (
                 <ObjectiveBlock
                   key={obj.id}
+                  gridTpl={okrListGridTpl}
                   objective={obj}
                   cycle={obj.cycleId ? cycleMap.get(obj.cycleId) : undefined}
                   isExpanded={expanded.has(obj.id)}
@@ -746,6 +815,7 @@ export function OkrPage() {
 // ─── Objective block ──────────────────────────────────────────────────────────
 
 interface ObjectiveBlockProps {
+  gridTpl: string;
   objective: ObjectiveWithKRs;
   cycle?: OkrCycle;
   isExpanded: boolean;
@@ -761,6 +831,7 @@ interface ObjectiveBlockProps {
 }
 
 function ObjectiveBlock({
+  gridTpl,
   objective,
   cycle,
   isExpanded,
@@ -789,11 +860,14 @@ function ObjectiveBlock({
       {/* Objective header row — mesmo grid do cabeçalho da tabela */}
       <div
         className={cn(
-          OKR_OBJECTIVE_GRID_CLASS,
+          OKR_LIST_GRID_BASE,
           "cursor-pointer select-none rounded-xl px-4 py-3 transition-colors",
           isExpanded ? "rounded-b-none bg-muted/30" : "bg-card hover:bg-muted/20",
         )}
-        style={{ borderLeft: `3px solid ${accentColor}` }}
+        style={{
+          borderLeft: `3px solid ${accentColor}`,
+          gridTemplateColumns: gridTpl,
+        }}
         onClick={(e) => {
           const el = e.target as HTMLElement;
           if (el.closest("a, button, [data-menu]")) return;
@@ -828,25 +902,23 @@ function ObjectiveBlock({
           )}
         </div>
 
-        <div className={`flex items-center border-r border-border/60 px-1 ${COL_CYCLE} min-w-0`}>
+        <div className="flex min-w-0 items-center border-r border-border/60 px-1">
           <span className="w-full truncate text-xs text-muted-foreground">
             {cycle?.title ?? "—"}
           </span>
         </div>
 
-        <div className={`flex items-center border-r border-border/60 px-1 ${COL_STATUS}`}>
+        <div className="flex items-center border-r border-border/60 px-1">
           <OkrStatusBadge status={objective.status} />
         </div>
 
-        <div className={`flex items-center border-r border-border/60 px-2 ${COL_METRIC} min-w-0`}>
+        <div className="flex min-w-0 items-center border-r border-border/60 px-2">
           <span className="truncate text-xs tabular-nums text-muted-foreground">
             {completedKrs}/{krCount} KR{krCount !== 1 ? "s" : ""}
           </span>
         </div>
 
-        <div
-          className={`flex min-w-0 items-center gap-2 border-r border-border/60 px-1 ${COL_PROGRESS}`}
-        >
+        <div className="flex min-w-0 items-center gap-2 border-r border-border/60 px-1">
           <OkrProgressBar
             percent={objective.progressPercent}
             status={objective.status}
@@ -858,15 +930,16 @@ function ObjectiveBlock({
           </span>
         </div>
 
-        <div className={`flex items-center border-r border-border/60 px-1 ${COL_DATE}`}>
+        <div className="flex items-center border-r border-border/60 px-1">
           <span className="text-xs text-muted-foreground">{targetDate ?? "—"}</span>
         </div>
 
         <div
           data-menu
-          className={`${COL_ACTIONS} relative flex items-center justify-end gap-0.5`}
+          className="relative flex min-w-0 items-center justify-end gap-0.5"
           onClick={(e) => e.stopPropagation()}
         >
+          <EntityQuickViewEyeButton entity={{ kind: "objective", id: objective.id }} />
           <Button
             size="sm"
             variant="ghost"
@@ -929,6 +1002,7 @@ function ObjectiveBlock({
               {krs.map((kr, idx) => (
                 <KrRow
                   key={kr.id}
+                  gridTpl={gridTpl}
                   kr={kr}
                   isLast={idx === krs.length - 1}
                   menuOpen={krMenuOpen === kr.id}
@@ -958,6 +1032,7 @@ function ObjectiveBlock({
 // ─── KR row ──────────────────────────────────────────────────────────────────
 
 interface KrRowProps {
+  gridTpl: string;
   kr: OkrKeyResult;
   isLast: boolean;
   menuOpen: boolean;
@@ -966,17 +1041,18 @@ interface KrRowProps {
   onDelete: () => void;
 }
 
-function KrRow({ kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete }: KrRowProps) {
+function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete }: KrRowProps) {
   const metric = fmtMetric(kr);
   const targetDate = fmtDate(kr.targetDate);
 
   return (
     <div
       className={cn(
-        OKR_OBJECTIVE_GRID_CLASS,
+        OKR_LIST_GRID_BASE,
         "bg-muted/5 px-4 py-2.5 transition-colors hover:bg-muted/15",
         !isLast ? "border-b border-border/30" : "",
       )}
+      style={{ gridTemplateColumns: gridTpl }}
     >
       <div className="flex items-center justify-center border-r border-border/60 pr-2 text-muted-foreground/40">
         <TrendingUp className="h-3 w-3" />
@@ -995,24 +1071,19 @@ function KrRow({ kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete }: KrRow
         )}
       </div>
 
-      <div
-        className={`flex items-center border-r border-border/60 px-1 ${COL_CYCLE}`}
-        aria-hidden
-      />
+      <div className="flex items-center border-r border-border/60 px-1" aria-hidden />
 
-      <div className={`flex items-center border-r border-border/60 px-1 ${COL_STATUS}`}>
+      <div className="flex items-center border-r border-border/60 px-1">
         <OkrStatusBadge status={kr.status} />
       </div>
 
-      <div className={`flex items-center border-r border-border/60 px-2 ${COL_METRIC} min-w-0`}>
+      <div className="flex min-w-0 items-center border-r border-border/60 px-2">
         <span className="block truncate text-xs tabular-nums text-muted-foreground" title={metric}>
           {metric}
         </span>
       </div>
 
-      <div
-        className={`flex min-w-0 items-center gap-2 border-r border-border/60 px-1 ${COL_PROGRESS}`}
-      >
+      <div className="flex min-w-0 items-center gap-2 border-r border-border/60 px-1">
         <OkrProgressBar
           percent={kr.progressPercent}
           status={kr.status}
@@ -1024,11 +1095,12 @@ function KrRow({ kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete }: KrRow
         </span>
       </div>
 
-      <div className={`flex items-center border-r border-border/60 px-1 ${COL_DATE}`}>
+      <div className="flex items-center border-r border-border/60 px-1">
         <span className="text-xs text-muted-foreground">{targetDate ?? "—"}</span>
       </div>
 
-      <div data-menu className={`${COL_ACTIONS} relative flex items-center justify-end gap-0.5`}>
+      <div data-menu className="relative flex min-w-0 items-center justify-end gap-0.5">
+        <EntityQuickViewEyeButton entity={{ kind: "keyResult", id: kr.id }} />
         <Button
           size="sm"
           variant="ghost"

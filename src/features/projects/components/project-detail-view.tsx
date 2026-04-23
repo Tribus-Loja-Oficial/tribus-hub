@@ -43,6 +43,7 @@ import {
 } from "./project-badges";
 import type { OkrObjective, OkrKeyResult } from "@/lib/types/domain";
 import { EditProjectDialog } from "./edit-project-dialog";
+import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -955,14 +956,14 @@ export function ProjectDetailView({ paramsPromise }: ProjectDetailViewProps) {
             </div>
           ) : (
             <div className="overflow-hidden rounded-xl border border-border">
-              <div className="grid hidden grid-cols-[1fr_90px_80px_80px_90px_80px_44px] gap-0 border-b border-border bg-muted/30 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 sm:grid">
+              <div className="grid hidden grid-cols-[1fr_90px_80px_80px_90px_80px_72px] gap-0 border-b border-border bg-muted/30 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 sm:grid">
                 <span>Milestone</span>
                 <span>Status</span>
                 <span>Prioridade</span>
                 <span>Prazo</span>
                 <span>Tasks</span>
                 <span>Owner</span>
-                <span />
+                <span className="text-center">Ver</span>
               </div>
               {(milestones as MilestoneWithStats[]).map((m) => {
                 const msOverdue = isOverdue(m.dueDate, m.completedAt ?? undefined);
@@ -971,7 +972,7 @@ export function ProjectDetailView({ paramsPromise }: ProjectDetailViewProps) {
                   <div
                     key={m.id}
                     className={cn(
-                      "flex flex-col border-b border-border/60 px-4 py-3 last:border-b-0 sm:grid sm:grid-cols-[1fr_90px_80px_80px_90px_80px_44px] sm:gap-0",
+                      "flex flex-col border-b border-border/60 px-4 py-3 last:border-b-0 sm:grid sm:grid-cols-[1fr_90px_80px_80px_90px_80px_72px] sm:gap-0",
                       msOverdue && m.status !== "completed"
                         ? "bg-orange-50/30"
                         : "hover:bg-accent/10",
@@ -1040,7 +1041,11 @@ export function ProjectDetailView({ paramsPromise }: ProjectDetailViewProps) {
                     <div className="hidden items-center truncate text-xs text-muted-foreground sm:flex">
                       {owner ? owner.name.split(" ")[0] : "—"}
                     </div>
-                    <div className="hidden items-center justify-end sm:flex">
+                    <div className="hidden items-center justify-center gap-1 sm:flex">
+                      <EntityQuickViewEyeButton
+                        entity={{ kind: "milestone", projectId, milestoneId: m.id }}
+                        className="h-7 w-7"
+                      />
                       <button
                         onClick={() => {
                           if (confirm("Remover este milestone?"))
@@ -1094,12 +1099,13 @@ export function ProjectDetailView({ paramsPromise }: ProjectDetailViewProps) {
             </div>
           ) : (
             <div className="overflow-hidden rounded-xl border border-border">
-              <div className="hidden grid-cols-[1fr_80px_80px_90px_90px] border-b border-border bg-muted/30 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 sm:grid">
+              <div className="hidden grid-cols-[1fr_80px_80px_90px_90px_56px] border-b border-border bg-muted/30 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 sm:grid">
                 <span>Título</span>
                 <span>Prioridade</span>
                 <span>Status</span>
                 <span>Responsável</span>
                 <span>Prazo</span>
+                <span className="text-center">Ver</span>
               </div>
               {recentTasks.map((t) => {
                 const taskOverdue = isOverdue(t.dueDate, t.completedAt ?? undefined);
@@ -1108,7 +1114,7 @@ export function ProjectDetailView({ paramsPromise }: ProjectDetailViewProps) {
                   <div
                     key={t.id}
                     className={cn(
-                      "flex items-center gap-3 border-b border-border/60 px-4 py-2.5 last:border-b-0 sm:grid sm:grid-cols-[1fr_80px_80px_90px_90px]",
+                      "flex items-center gap-3 border-b border-border/60 px-4 py-2.5 last:border-b-0 sm:grid sm:grid-cols-[1fr_80px_80px_90px_90px_56px]",
                       "transition-colors hover:bg-accent/10",
                     )}
                   >
@@ -1155,6 +1161,9 @@ export function ProjectDetailView({ paramsPromise }: ProjectDetailViewProps) {
                       )}
                     >
                       {t.dueDate ? format(new Date(t.dueDate), "dd MMM yy", { locale: ptBR }) : "—"}
+                    </div>
+                    <div className="hidden items-center justify-center sm:flex">
+                      <EntityQuickViewEyeButton entity={{ kind: "task", id: t.id }} className="h-7 w-7" />
                     </div>
                   </div>
                 );

@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils/cn";
 import { CalendarDays, GripVertical } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
 
 const priorityColors: Record<string, string> = {
   low: "bg-slate-100 text-slate-600",
@@ -41,17 +42,23 @@ export function TaskCard({ task, isDragging, onOpen }: TaskCardProps) {
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
       className={cn(
-        "group cursor-grab touch-none rounded-md border border-border bg-card p-2.5 shadow-sm transition-all hover:border-border/80 hover:shadow-md active:cursor-grabbing",
+        "group rounded-md border border-border bg-card p-2.5 shadow-sm transition-all hover:border-border/80 hover:shadow-md",
         (isDragging || isSortableDragging) && "opacity-50 shadow-lg ring-2 ring-primary/20",
       )}
     >
-      <div className="flex items-start gap-2">
-        <GripVertical className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/30 opacity-0 transition-opacity group-hover:opacity-100" />
+      <div className="flex items-start gap-1.5">
         <button
           type="button"
-          className="min-w-0 flex-1 cursor-grab rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing"
+          className="mt-0.5 shrink-0 cursor-grab touch-none rounded-sm p-0.5 text-muted-foreground/40 outline-none ring-offset-background transition-colors hover:bg-muted/60 hover:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing"
+          aria-label="Arrastar task"
+          {...listeners}
+        >
+          <GripVertical className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          className="min-w-0 flex-1 rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
           onClick={() => onOpen?.(task)}
         >
           <p className="line-clamp-2 text-sm font-medium leading-snug text-foreground">
@@ -100,6 +107,10 @@ export function TaskCard({ task, isDragging, onOpen }: TaskCardProps) {
             )}
           </div>
         </button>
+        <EntityQuickViewEyeButton
+          entity={{ kind: "task", id: task.id }}
+          className="h-7 w-7 shrink-0"
+        />
       </div>
     </div>
   );

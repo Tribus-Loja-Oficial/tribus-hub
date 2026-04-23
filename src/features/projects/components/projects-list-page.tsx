@@ -31,6 +31,7 @@ import { ptBR } from "date-fns/locale";
 import { ProjectHealthBadge, ProjectStatusBadge, PriorityBadge } from "./project-badges";
 import { ProjectHierarchyView } from "./project-hierarchy-view";
 import { EditProjectDialog } from "./edit-project-dialog";
+import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
 import { cn } from "@/lib/utils/cn";
 import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resizable-grid-columns";
 
@@ -361,7 +362,11 @@ function ListView({
               ? format(new Date(project.targetDate), "dd MMM yy", { locale: ptBR })
               : "—"}
           </div>
-          <div className="flex justify-center">
+          <div className="flex justify-center gap-0.5">
+            <EntityQuickViewEyeButton
+              entity={{ kind: "project", id: project.slug || project.id }}
+              className="h-8 w-8"
+            />
             <Button
               type="button"
               variant="ghost"
@@ -420,15 +425,21 @@ function BoardView({
                 key={project.id}
                 className="relative rounded-lg border border-border bg-card transition-all hover:border-primary/30 hover:shadow-sm"
               >
-                <button
-                  type="button"
-                  className="absolute right-2 top-2 z-[1] flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                  title="Editar projeto"
-                  onClick={() => onEditProject(project)}
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </button>
-                <Link href={projectHref(project)} className="block p-3 pr-10">
+                <div className="absolute right-2 top-2 z-[1] flex items-center gap-0.5">
+                  <EntityQuickViewEyeButton
+                    entity={{ kind: "project", id: project.slug || project.id }}
+                    className="h-7 w-7"
+                  />
+                  <button
+                    type="button"
+                    className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    title="Editar projeto"
+                    onClick={() => onEditProject(project)}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <Link href={projectHref(project)} className="block p-3 pr-[4.5rem]">
                   <p className="text-sm font-semibold leading-snug text-foreground">
                     {project.title}
                   </p>
