@@ -103,7 +103,9 @@ export function AppBreadcrumbs() {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Home className="h-3.5 w-3.5 shrink-0 opacity-70" />
-        <span className="font-semibold tracking-tight text-foreground/85">Plataforma Estratégica</span>
+        <span className="font-semibold tracking-tight text-foreground/85">
+          Plataforma Estratégica
+        </span>
       </div>
     );
   }

@@ -1163,7 +1163,10 @@ export function ProjectDetailView({ paramsPromise }: ProjectDetailViewProps) {
                       {t.dueDate ? format(new Date(t.dueDate), "dd MMM yy", { locale: ptBR }) : "—"}
                     </div>
                     <div className="hidden items-center justify-center sm:flex">
-                      <EntityQuickViewEyeButton entity={{ kind: "task", id: t.id }} className="h-7 w-7" />
+                      <EntityQuickViewEyeButton
+                        entity={{ kind: "task", id: t.id }}
+                        className="h-7 w-7"
+                      />
                     </div>
                   </div>
                 );
