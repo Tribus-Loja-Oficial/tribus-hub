@@ -1180,10 +1180,20 @@ export function ProjectDetailView({ paramsPromise, embedded }: ProjectDetailView
                       {t.dueDate ? format(new Date(t.dueDate), "dd MMM yy", { locale: ptBR }) : "—"}
                     </div>
                     <div className="hidden items-center justify-center sm:flex">
-                      <EntityQuickViewEyeButton
-                        entity={{ kind: "task", id: t.id }}
-                        className="h-7 w-7"
-                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                        title="Editar tarefa"
+                        aria-label="Editar tarefa"
+                        onClick={() => {
+                          setTaskEditingId(t.id);
+                          setTaskEditOpen(true);
+                        }}
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   </div>
                 );
@@ -1265,6 +1275,20 @@ export function ProjectDetailView({ paramsPromise, embedded }: ProjectDetailView
         open={editProjectOpen}
         onOpenChange={setEditProjectOpen}
         project={project}
+      />
+      <TaskFormDialog
+        open={taskEditOpen}
+        onOpenChange={(v) => {
+          setTaskEditOpen(v);
+          if (!v) {
+            setTaskEditingId(null);
+            queryClient.invalidateQueries({ queryKey: ["project-hub", projectId] });
+            queryClient.invalidateQueries({ queryKey: ["board"] });
+          }
+        }}
+        mode="edit"
+        taskId={taskEditingId}
+        columns={boardColumns}
       />
     </div>
   );
