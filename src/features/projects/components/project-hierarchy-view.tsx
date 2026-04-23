@@ -817,10 +817,9 @@ export function ProjectHierarchyView({
   onEditProject,
 }: ProjectHierarchyViewProps) {
   const queryClient = useQueryClient();
-  const { widths, startResize } = useResizableGridColumns(
-    HIERARCHY_COL_STORAGE_KEY,
-    [...HIERARCHY_COL_DEFAULTS],
-  );
+  const { widths, startResize } = useResizableGridColumns(HIERARCHY_COL_STORAGE_KEY, [
+    ...HIERARCHY_COL_DEFAULTS,
+  ]);
   const hierarchyGridTpl = widths.map((w) => `${w}px`).join(" ");
 
   const [createTaskOpen, setCreateTaskOpen] = useState(false);

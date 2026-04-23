@@ -3,3 +3,4 @@
 
 npx lint-staged
 node scripts/vitest-staged.js
+npm run format:check
