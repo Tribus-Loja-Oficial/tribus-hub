@@ -79,7 +79,8 @@ function hierarchyGridColumnsStyle(gridTpl: string): CSSProperties {
   return { gridTemplateColumns: gridTpl };
 }
 
-const HIERARCHY_COL_DEFAULTS = [20, 36, 280, 90, 64, 72, 72, 96, 120] as const;
+/** Larguras alinhadas ao cabeçalho: status/saúde com espaço para badge + dica. */
+const HIERARCHY_COL_DEFAULTS = [20, 36, 260, 108, 96, 72, 72, 96, 120] as const;
 const HIERARCHY_COL_STORAGE_KEY = "hub:project-hierarchy-cols";
 
 function HierarchyHeaderCell({
@@ -325,8 +326,10 @@ function MilestoneRow({
           </button>
           <div className="flex-1" />
           <div className="flex shrink-0 items-center gap-2 opacity-75 transition-opacity group-hover:opacity-100">
-            <div className="flex flex-wrap justify-center gap-0.5" style={{ width: w[3] }}>
+            <div className="flex justify-center" style={{ width: w[3] }}>
               {milestoneStatusCell(milestone)}
+            </div>
+            <div className="flex justify-center" style={{ width: w[4] }}>
               <MilestoneHealthRow insight={milestone.healthInsight} />
             </div>
             <div className="flex justify-center" style={{ width: w[5] }}>
@@ -406,11 +409,12 @@ function MilestoneRow({
               </button>
             </div>
           </div>
-          <div className="flex min-w-0 flex-wrap justify-center gap-0.5 opacity-75 transition-opacity group-hover:opacity-100">
+          <div className="flex min-w-0 justify-center opacity-75 transition-opacity group-hover:opacity-100">
             {milestoneStatusCell(milestone)}
+          </div>
+          <div className="flex min-w-0 justify-center opacity-75 transition-opacity group-hover:opacity-100">
             <MilestoneHealthRow insight={milestone.healthInsight} />
           </div>
-          <div className="min-w-0" aria-hidden />
           <div className="flex min-w-0 justify-center opacity-75 transition-opacity group-hover:opacity-100">
             <PriorityBadge priority={milestone.priority} />
           </div>
@@ -970,13 +974,13 @@ export function ProjectHierarchyView({
     <>
       <div className="overflow-x-auto">
         <div className="min-w-0 space-y-2">
-          {/* Legend */}
-          <div className="flex select-none items-center gap-2 border-b border-border bg-muted/30 px-4 py-2.5 md:px-5">
-            <span className="min-w-0 flex-1 truncate text-xs font-semibold uppercase tracking-wide text-muted-foreground md:hidden">
+          {/* Legend — mesmo grid e padding horizontal que cada cartão de projeto (md+). */}
+          <div className="select-none border-b border-border bg-muted/30 px-4 py-2.5">
+            <span className="mb-1.5 block truncate text-xs font-semibold uppercase tracking-wide text-muted-foreground md:hidden">
               Projeto / Milestone / Task
             </span>
             <div
-              className="hidden min-w-0 items-center gap-x-2 md:grid md:flex-1"
+              className={HIERARCHY_GRID_ROW_CLASS}
               style={hierarchyGridColumnsStyle(hierarchyGridTpl)}
             >
               <HierarchyHeaderCell resizeIndex={0} startResize={startResize} />

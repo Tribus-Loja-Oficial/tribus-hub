@@ -151,15 +151,44 @@ export function OkrPage() {
     return () => document.removeEventListener("mousedown", closeMenus);
   }, []);
 
-  const { data, isLoading } = useQuery<{ data: ObjectiveWithKRs[] }>({
+  const {
+    data,
+    isLoading,
+    isError: objectivesLoadError,
+    error: objectivesLoadErrorDetail,
+    refetch: refetchObjectives,
+  } = useQuery<{ data: ObjectiveWithKRs[] }>({
     queryKey: ["okr-objectives"],
-    queryFn: () => fetch("/api/okr/objectives").then((r) => r.json()),
+    queryFn: async () => {
+      const res = await fetch("/api/okr/objectives");
+      const json = (await res.json()) as {
+        data?: ObjectiveWithKRs[];
+        error?: { message?: string };
+      };
+      if (!res.ok) {
+        throw new Error(json.error?.message ?? `Falha ao carregar objetivos (${res.status})`);
+      }
+      return { data: json.data ?? [] };
+    },
     placeholderData: keepPreviousData,
   });
 
-  const { data: cyclesRes } = useQuery<{ data: OkrCycle[] }>({
+  const {
+    data: cyclesRes,
+    isError: cyclesLoadError,
+    error: cyclesLoadErrorDetail,
+  } = useQuery<{
+    data: OkrCycle[];
+  }>({
     queryKey: ["okr-cycles"],
-    queryFn: () => fetch("/api/okr/cycles").then((r) => r.json()),
+    queryFn: async () => {
+      const res = await fetch("/api/okr/cycles");
+      const json = (await res.json()) as { data?: OkrCycle[]; error?: { message?: string } };
+      if (!res.ok) {
+        throw new Error(json.error?.message ?? `Falha ao carregar ciclos (${res.status})`);
+      }
+      return { data: json.data ?? [] };
+    },
   });
 
   const deleteObjMutation = useMutation({
@@ -292,11 +321,14 @@ export function OkrPage() {
           </div>
           <div>
             <h1 className="text-lg font-semibold leading-tight text-foreground">OKRs</h1>
-            {!isLoading && (
+            {!isLoading && !objectivesLoadError && (
               <p className="mt-0.5 text-xs text-muted-foreground">
                 {sortedFiltered.length} objetivo{sortedFiltered.length !== 1 ? "s" : ""} ·{" "}
                 {totalKrs} key result{totalKrs !== 1 ? "s" : ""}
               </p>
+            )}
+            {!isLoading && objectivesLoadError && (
+              <p className="mt-0.5 text-xs text-destructive">Erro ao carregar dados</p>
             )}
           </div>
         </div>
@@ -368,6 +400,52 @@ export function OkrPage() {
           </div>
         </GuideExamples>
       </PageGuide>
+
+      {objectivesLoadError && (
+        <div
+          className="rounded-xl border border-destructive/35 bg-destructive/5 px-4 py-3 text-sm"
+          role="alert"
+        >
+          <p className="font-medium text-destructive">Não foi possível carregar os objetivos</p>
+          <p className="mt-1 text-muted-foreground">
+            {objectivesLoadErrorDetail instanceof Error
+              ? objectivesLoadErrorDetail.message
+              : "Erro desconhecido"}
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Confirme se o hub-api está acessível, as variáveis de ambiente (ex.:{" "}
+            <code className="rounded bg-muted px-1">HUB_API_URL</code>) e se as migrações D1 foram
+            aplicadas (ex.: coluna{" "}
+            <code className="rounded bg-muted px-1">health_snapshot_json</code>
+            ).
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-3"
+            onClick={() => void refetchObjectives()}
+          >
+            Tentar novamente
+          </Button>
+        </div>
+      )}
+
+      {cyclesLoadError && !objectivesLoadError && (
+        <div
+          className="rounded-xl border border-amber-500/35 bg-amber-500/5 px-4 py-3 text-sm"
+          role="status"
+        >
+          <p className="font-medium text-amber-900 dark:text-amber-100">Ciclos não carregaram</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {cyclesLoadErrorDetail instanceof Error
+              ? cyclesLoadErrorDetail.message
+              : "Erro desconhecido"}
+            {" — "}
+            Os objetivos podem aparecer sem título de ciclo.
+          </p>
+        </div>
+      )}
 
       {/* ── Filters ─────────────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-2">
@@ -778,7 +856,7 @@ export function OkrPage() {
       )}
 
       {/* ── Empty (workspace sem objetivos e sem filtros) ───────────────── */}
-      {!isLoading && !showColumnHeaders && sortedFiltered.length === 0 && (
+      {!isLoading && !objectivesLoadError && !showColumnHeaders && sortedFiltered.length === 0 && (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-muted">
             <Target className="h-6 w-6 text-muted-foreground/60" />
