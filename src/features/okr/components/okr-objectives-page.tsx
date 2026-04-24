@@ -18,7 +18,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { OkrCycle, OkrObjective, OkrKeyResult } from "@/lib/types/domain";
-import { HealthInsightHint, PaceHealthBadge, healthRowAccentClass } from "@/components/pace-health-badge";
+import {
+  HealthInsightHint,
+  PaceHealthBadge,
+  healthRowAccentClass,
+} from "@/components/pace-health-badge";
 import { WorkflowStatusRow } from "@/components/workflow-status-badge";
 import { OkrProgressBar } from "./okr-progress-bar";
 import { CreateObjectiveDialog } from "./create-objective-dialog";
@@ -484,7 +488,7 @@ function KrSubRow({
   return (
     <div
       className={cn(
-        "grid items-center gap-3 border-b border-border/40 border-l-[3px] py-2.5 pl-4 pr-5 transition-colors last:border-b-0 hover:bg-muted/20",
+        "grid items-center gap-3 border-b border-l-[3px] border-border/40 py-2.5 pl-4 pr-5 transition-colors last:border-b-0 hover:bg-muted/20",
         healthRowAccentClass(kr.healthInsight?.slug),
       )}
       style={{ gridTemplateColumns: gridTpl }}

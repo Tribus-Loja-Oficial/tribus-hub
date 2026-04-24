@@ -179,10 +179,10 @@ export function ObjectiveDetailView({ objectiveId, embedded }: ObjectiveDetailVi
               ) : (
                 <button onClick={() => setEditingStatus(true)}>
                   <OkrEntityStatusRow
-                  status={objective.status}
-                  workflowStatusInsight={objective.workflowStatusInsight}
-                  healthInsight={objective.healthInsight}
-                />
+                    status={objective.status}
+                    workflowStatusInsight={objective.workflowStatusInsight}
+                    healthInsight={objective.healthInsight}
+                  />
                 </button>
               )}
               <OkrPriorityBadge priority={objective.priority} />
@@ -264,10 +264,10 @@ export function ObjectiveDetailView({ objectiveId, embedded }: ObjectiveDetailVi
                   </Link>
                   <div className="mt-1.5 flex items-center gap-3">
                     <OkrEntityStatusRow
-                    status={kr.status}
-                    workflowStatusInsight={kr.workflowStatusInsight}
-                    healthInsight={kr.healthInsight}
-                  />
+                      status={kr.status}
+                      workflowStatusInsight={kr.workflowStatusInsight}
+                      healthInsight={kr.healthInsight}
+                    />
                     {kr.metricType !== "boolean" && (
                       <span className="text-xs tabular-nums text-muted-foreground">
                         {kr.currentValue} / {kr.targetValue}

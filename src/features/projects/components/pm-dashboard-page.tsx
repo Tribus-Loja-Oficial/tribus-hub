@@ -10,7 +10,6 @@ import {
   CheckCircle2,
   Plus,
   ChevronRight,
-  LayoutGrid,
   List,
   TrendingUp,
   Flag,
@@ -296,7 +295,10 @@ export function PmDashboardPage() {
                       )}
                     </div>
                     <div className="flex shrink-0 items-center gap-1.5">
-                      <ProjectHealthRow insight={project.healthInsight} healthStatus={project.healthStatus} />
+                      <ProjectHealthRow
+                        insight={project.healthInsight}
+                        healthStatus={project.healthStatus}
+                      />
                       <PriorityBadge priority={project.priority} />
                       {project.targetDate && (
                         <span className="hidden text-[11px] text-muted-foreground md:block">
@@ -383,7 +385,10 @@ export function PmDashboardPage() {
                       </p>
                     </div>
                     <div className="shrink-0">
-                      <ProjectHealthRow insight={project.healthInsight} healthStatus={project.healthStatus} />
+                      <ProjectHealthRow
+                        insight={project.healthInsight}
+                        healthStatus={project.healthStatus}
+                      />
                     </div>
                   </Link>
                 ))}

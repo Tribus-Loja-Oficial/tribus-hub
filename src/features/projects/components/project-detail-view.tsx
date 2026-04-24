@@ -618,7 +618,10 @@ export function ProjectDetailView({ paramsPromise, embedded }: ProjectDetailView
               ) : (
                 <ProjectStatusBadge status={project.status} />
               )}
-              <ProjectHealthRow insight={project.healthInsight} healthStatus={project.healthStatus} />
+              <ProjectHealthRow
+                insight={project.healthInsight}
+                healthStatus={project.healthStatus}
+              />
               <PriorityBadge priority={project.priority} />
               {owner && (
                 <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">

@@ -20,7 +20,11 @@ function getTrackColorFromHealth(slug: PaceHealthSlug, percent: number): string 
   return "bg-zinc-400";
 }
 
-function getTrackColor(status?: string, percent?: number, healthSlug?: PaceHealthSlug | null): string {
+function getTrackColor(
+  status?: string,
+  percent?: number,
+  healthSlug?: PaceHealthSlug | null,
+): string {
   if (healthSlug) return getTrackColorFromHealth(healthSlug, percent ?? 0);
   if (status === "completed" || (percent ?? 0) >= 100) return "bg-blue-500";
   if (status === "on_track") return "bg-emerald-500";

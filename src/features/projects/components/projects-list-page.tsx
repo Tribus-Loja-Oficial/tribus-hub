@@ -326,7 +326,7 @@ function ListView({
         <div
           key={project.id}
           className={cn(
-            "grid items-center gap-3 border-b border-border/60 border-l-[3px] py-3.5 pl-4 pr-5 transition-colors last:border-b-0 hover:bg-muted/20",
+            "grid items-center gap-3 border-b border-l-[3px] border-border/60 py-3.5 pl-4 pr-5 transition-colors last:border-b-0 hover:bg-muted/20",
             healthRowAccentClass(project.healthInsight?.slug),
           )}
           style={{ gridTemplateColumns: gridTpl }}
@@ -356,7 +356,10 @@ function ListView({
           </div>
           <div>
             {project.healthInsight || project.healthStatus ? (
-              <ProjectHealthRow insight={project.healthInsight} healthStatus={project.healthStatus} />
+              <ProjectHealthRow
+                insight={project.healthInsight}
+                healthStatus={project.healthStatus}
+              />
             ) : (
               <span className="text-xs text-muted-foreground/40">—</span>
             )}
@@ -468,7 +471,9 @@ function BoardView({
                   </button>
                 </div>
                 <Link href={projectHref(project)} className="block p-3 pr-[4.5rem]">
-                  <p className="text-sm font-medium leading-snug text-foreground">{project.title}</p>
+                  <p className="text-sm font-medium leading-snug text-foreground">
+                    {project.title}
+                  </p>
                   {project.summary && (
                     <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
                       {project.summary}
@@ -482,7 +487,10 @@ function BoardView({
                     )}
                     <PriorityBadge priority={project.priority} />
                     {(project.healthInsight || project.healthStatus) && (
-                      <ProjectHealthRow insight={project.healthInsight} healthStatus={project.healthStatus} />
+                      <ProjectHealthRow
+                        insight={project.healthInsight}
+                        healthStatus={project.healthStatus}
+                      />
                     )}
                   </div>
                   {project.targetDate && (

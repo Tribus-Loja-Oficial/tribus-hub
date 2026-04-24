@@ -910,10 +910,10 @@ function ObjectiveBlock({
 
         <div className="flex items-center border-r border-border/60 px-1">
           <OkrEntityStatusRow
-          status={objective.status}
-          workflowStatusInsight={objective.workflowStatusInsight}
-          healthInsight={objective.healthInsight}
-        />
+            status={objective.status}
+            workflowStatusInsight={objective.workflowStatusInsight}
+            healthInsight={objective.healthInsight}
+          />
         </div>
 
         <div className="flex min-w-0 items-center border-r border-border/60 px-2">
@@ -1079,10 +1079,10 @@ function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete
 
       <div className="flex items-center border-r border-border/60 px-1">
         <OkrEntityStatusRow
-        status={kr.status}
-        workflowStatusInsight={kr.workflowStatusInsight}
-        healthInsight={kr.healthInsight}
-      />
+          status={kr.status}
+          workflowStatusInsight={kr.workflowStatusInsight}
+          healthInsight={kr.healthInsight}
+        />
       </div>
 
       <div className="flex min-w-0 items-center border-r border-border/60 px-2">

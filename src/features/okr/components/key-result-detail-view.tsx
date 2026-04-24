@@ -161,10 +161,10 @@ export function KeyResultDetailView({ keyResultId, embedded }: KeyResultDetailVi
               ) : (
                 <button onClick={() => setEditingStatus(true)}>
                   <OkrEntityStatusRow
-                  status={kr.status}
-                  workflowStatusInsight={kr.workflowStatusInsight}
-                  healthInsight={kr.healthInsight}
-                />
+                    status={kr.status}
+                    workflowStatusInsight={kr.workflowStatusInsight}
+                    healthInsight={kr.healthInsight}
+                  />
                 </button>
               )}
               <span className="text-xs text-muted-foreground">{METRIC_LABELS[kr.metricType]}</span>

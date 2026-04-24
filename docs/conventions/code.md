@@ -23,13 +23,13 @@ import { Project } from "@/lib/db/schema";
 
 ## File & folder naming
 
-| Thing | Convention | Example |
-|---|---|---|
-| React component | `kebab-case.tsx` | `task-card.tsx` |
-| Hook | `use-kebab-case.ts` | `use-tasks.ts` |
-| Zod schema file | `<domain>.schemas.ts` | `tasks.schemas.ts` |
+| Thing           | Convention               | Example                  |
+| --------------- | ------------------------ | ------------------------ |
+| React component | `kebab-case.tsx`         | `task-card.tsx`          |
+| Hook            | `use-kebab-case.ts`      | `use-tasks.ts`           |
+| Zod schema file | `<domain>.schemas.ts`    | `tasks.schemas.ts`       |
 | Repository file | `<domain>.repository.ts` | `projects.repository.ts` |
-| Test file | `<name>.test.ts(x)` | `errors.test.ts` |
+| Test file       | `<name>.test.ts(x)`      | `errors.test.ts`         |
 
 ---
 
@@ -152,13 +152,13 @@ useMutation({
 
 Use the typed error classes from `@/lib/errors`:
 
-| Class | Status | Code |
-|---|---|---|
-| `NotFoundError` | 404 | `NOT_FOUND` |
-| `UnauthorizedError` | 401 | `UNAUTHORIZED` |
-| `ForbiddenError` | 403 | `FORBIDDEN` |
-| `ValidationError` | 400 | `VALIDATION_ERROR` |
-| `ConflictError` | 409 | `CONFLICT` |
+| Class               | Status | Code               |
+| ------------------- | ------ | ------------------ |
+| `NotFoundError`     | 404    | `NOT_FOUND`        |
+| `UnauthorizedError` | 401    | `UNAUTHORIZED`     |
+| `ForbiddenError`    | 403    | `FORBIDDEN`        |
+| `ValidationError`   | 400    | `VALIDATION_ERROR` |
+| `ConflictError`     | 409    | `CONFLICT`         |
 
 `toApiError(err)` safely converts any thrown value to `{ message, code, status }`.
 
@@ -175,6 +175,7 @@ Use the typed error classes from `@/lib/errors`:
 See [vitest.config.ts](../../vitest.config.ts) for full configuration.
 
 ### Coverage thresholds (enforced in CI)
+
 - Statements: 80%
 - Lines: 80%
 - Branches: 75%
@@ -194,6 +195,7 @@ tests/
 ```
 
 ### Conventions
+
 - `describe` + `it` blocks (not bare `test`)
 - Factory helpers (`makeProject()`, `makeTask()`) instead of repeated inline objects
 - Test pure logic — no DB, no network, no Next.js internals
@@ -211,17 +213,27 @@ npm run test:staged       # only files staged for commit (used by pre-commit hoo
 
 ## Git hooks (Husky)
 
-**pre-commit** (`.husky/pre-commit`):
-1. `lint-staged` — runs ESLint + Prettier on staged files
-2. `node scripts/vitest-staged.js` — runs Vitest only for tests related to staged `src/` files
+Hooks live in `.husky/` at the **tribus-hub** repo root. They run after `npm install` (the `prepare` script installs Husky). Skipping installs with `--ignore-scripts`, or using `git commit --no-verify`, bypasses them.
 
-**pre-push**: not configured — CI handles full validation.
+**pre-commit** (`.husky/pre-commit`):
+
+1. `lint-staged` — ESLint `--fix` + Prettier `--write` on **staged** `*.{ts,tsx}` (and Prettier on staged `json` / `md` / `css`), per `package.json` → `lint-staged`.
+2. `node scripts/vitest-staged.js` — Vitest only for tests tied to staged `src/` files (no-op if none).
+3. `npm run format:check` — Prettier check on **all** `src/**/*.{ts,tsx}` (catches unstaged drift and matches CI).
+4. `npm run typecheck` — full TypeScript `--noEmit`.
+
+**pre-push** (`.husky/pre-push`):
+
+1. `npm run ci:quality` — `typecheck` + `format:check` + `lint` (same quality gate as the “Hub Web” CI job before `build`/`test` there).
+
+CI on pull requests still runs tests, coverage, and production `build`; hooks reduce broken pushes but do not replace CI.
 
 ---
 
 ## What CI checks (`ci-hub-web.yml`)
 
 On push/PR to `main` or `develop` (when paths match the Hub Web app):
+
 1. TypeScript (`npm run typecheck`)
 2. Prettier format check (`npm run format:check`)
 3. ESLint (`npm run lint`)

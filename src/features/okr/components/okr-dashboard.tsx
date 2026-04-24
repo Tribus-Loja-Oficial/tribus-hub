@@ -712,10 +712,10 @@ function KrPerfList({
             </span>
           )}
           <OkrEntityStatusRow
-          status={kr.status}
-          workflowStatusInsight={kr.workflowStatusInsight}
-          healthInsight={kr.healthInsight}
-        />
+            status={kr.status}
+            workflowStatusInsight={kr.workflowStatusInsight}
+            healthInsight={kr.healthInsight}
+          />
           <span className="w-10 text-right text-xs tabular-nums text-muted-foreground">
             {Math.round(kr.progressPercent)}%
           </span>
@@ -741,10 +741,10 @@ function ObjectiveRow({ objective }: { objective: ObjectiveWithKRsForDashboard }
           <p className="truncate text-sm font-medium text-foreground">{objective.title}</p>
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
             <OkrEntityStatusRow
-            status={objective.status}
-            workflowStatusInsight={objective.workflowStatusInsight}
-            healthInsight={objective.healthInsight}
-          />
+              status={objective.status}
+              workflowStatusInsight={objective.workflowStatusInsight}
+              healthInsight={objective.healthInsight}
+            />
             <span className="text-xs text-muted-foreground">
               {completedKrs}/{krCount} KRs concluídos
             </span>

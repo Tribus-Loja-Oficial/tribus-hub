@@ -47,7 +47,7 @@ export function WorkflowStatusBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-md border font-medium whitespace-nowrap",
+        "inline-flex items-center whitespace-nowrap rounded-md border font-medium",
         size === "sm" ? "px-2 py-0.5 text-[11px]" : "px-2.5 py-1 text-xs",
         SLUG_CLASS[insight.slug] ?? SLUG_CLASS.planned,
         className,

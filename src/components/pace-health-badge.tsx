@@ -34,7 +34,13 @@ const SLUG_CLASS: Record<PaceHealthSlug, string> = {
   completed_legacy: `border-primary/20 bg-primary/[0.08] text-primary dark:border-primary/25 dark:bg-primary/15 dark:text-blue-100 ${ring}`,
 };
 
-export function HealthInsightHint({ insight, className }: { insight: HealthInsight; className?: string }) {
+export function HealthInsightHint({
+  insight,
+  className,
+}: {
+  insight: HealthInsight;
+  className?: string;
+}) {
   const title = `${insight.explanationPt}\n\n${insight.dateSourcePt}`.trim();
   return (
     <button
@@ -51,11 +57,17 @@ export function HealthInsightHint({ insight, className }: { insight: HealthInsig
   );
 }
 
-export function PaceHealthBadge({ insight, className }: { insight: HealthInsight; className?: string }) {
+export function PaceHealthBadge({
+  insight,
+  className,
+}: {
+  insight: HealthInsight;
+  className?: string;
+}) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-medium whitespace-nowrap",
+        "inline-flex items-center whitespace-nowrap rounded-md border px-2 py-0.5 text-[11px] font-medium",
         SLUG_CLASS[insight.slug] ?? SLUG_CLASS.no_dates,
         className,
       )}

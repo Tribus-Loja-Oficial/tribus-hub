@@ -555,7 +555,7 @@ function ProjectRow({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-xl border border-border border-l-[3px] bg-card",
+        "overflow-hidden rounded-xl border border-l-[3px] border-border bg-card",
         healthRowAccentClass(project.healthInsight?.slug),
       )}
     >
@@ -655,12 +655,13 @@ function ProjectRow({
               </p>
             )}
           </div>
-          <div className="flex min-w-0 justify-center">
-            {projectStatusCell(project)}
-          </div>
+          <div className="flex min-w-0 justify-center">{projectStatusCell(project)}</div>
           <div className="flex min-w-0 justify-center">
             {project.healthInsight || project.healthStatus ? (
-              <ProjectHealthRow insight={project.healthInsight} healthStatus={project.healthStatus} />
+              <ProjectHealthRow
+                insight={project.healthInsight}
+                healthStatus={project.healthStatus}
+              />
             ) : (
               <span className="text-[10px] text-muted-foreground/25">—</span>
             )}
