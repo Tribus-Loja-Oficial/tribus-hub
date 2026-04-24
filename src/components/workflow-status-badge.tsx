@@ -28,7 +28,7 @@ export function WorkflowStatusHint({
         className,
       )}
       title={title}
-      aria-label="Como o status foi calculado"
+      aria-label="Como calculamos o status de andamento"
     >
       <Info className="h-3.5 w-3.5" />
     </button>

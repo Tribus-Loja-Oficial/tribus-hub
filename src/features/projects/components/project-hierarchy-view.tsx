@@ -74,7 +74,7 @@ function milestoneStatusCell(milestone: HierarchyMilestone) {
 
 /** 9 colunas: chevron | pasta | título | status | health | prioridade | prazo | progresso | ações */
 const HIERARCHY_GRID_ROW_CLASS =
-  "hidden w-full min-w-0 items-center gap-x-0 md:grid [&>div]:flex [&>div]:min-w-0 [&>div]:items-center [&>div]:border-r [&>div]:border-border/70 [&>div]:px-2.5 [&>div]:py-1 [&>div:last-child]:border-r-0";
+  "hidden w-full min-w-0 items-center gap-x-0 overflow-hidden md:grid [&>div]:flex [&>div]:min-w-0 [&>div]:min-h-0 [&>div]:items-center [&>div]:border-r [&>div]:border-border/70 [&>div]:px-2.5 [&>div]:py-1 [&>div:last-child]:border-r-0 [&>div:nth-child(3)]:!items-stretch [&>div:nth-child(3)]:overflow-hidden";
 
 function hierarchyGridColumnsStyle(gridTpl: string): CSSProperties {
   return { gridTemplateColumns: gridTpl };
@@ -369,8 +369,11 @@ function MilestoneRow({
           className={HIERARCHY_GRID_ROW_CLASS}
           style={hierarchyGridColumnsStyle(hierarchyGridTpl)}
         >
-          <div className="min-w-0" style={{ gridColumn: "1 / 4" }}>
-            <div className="flex min-w-0 items-center gap-2.5">
+          <div
+            className="min-h-0 min-w-0 !items-stretch overflow-hidden"
+            style={{ gridColumn: "1 / 4" }}
+          >
+            <div className="flex min-h-0 min-w-0 items-center gap-2.5 overflow-hidden">
               <div className="ml-1 h-5 w-4 shrink-0 border-l border-border/40" />
               <ChevronRight
                 className={cn(
@@ -387,13 +390,15 @@ function MilestoneRow({
                 }}
                 className="h-6 w-6 shrink-0"
               />
-              <Link
-                href={milestonePath(projectForPath, milestone.id)}
-                onClick={(e) => e.stopPropagation()}
-                className="min-w-0 truncate text-sm font-medium text-foreground transition-colors hover:text-primary"
-              >
-                {milestone.title}
-              </Link>
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <Link
+                  href={milestonePath(projectForPath, milestone.id)}
+                  onClick={(e) => e.stopPropagation()}
+                  className="block truncate text-sm font-medium text-foreground transition-colors hover:text-primary"
+                >
+                  {milestone.title}
+                </Link>
+              </div>
               {milestone.externalRef && (
                 <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
                   Ref: {milestone.externalRef}
@@ -632,15 +637,17 @@ function ProjectRow({
               <FolderKanban className="h-4 w-4 text-primary" />
             </div>
           </div>
-          <div className="flex min-w-0 flex-col gap-1">
-            <div className="flex min-w-0 items-center gap-2">
-              <Link
-                href={projectPath(project)}
-                onClick={(e) => e.stopPropagation()}
-                className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground transition-colors hover:text-primary"
-              >
-                {project.title}
-              </Link>
+          <div className="flex min-h-0 w-full min-w-0 max-w-full flex-col !items-stretch gap-1 overflow-hidden">
+            <div className="flex min-w-0 items-center gap-2 overflow-hidden">
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <Link
+                  href={projectPath(project)}
+                  onClick={(e) => e.stopPropagation()}
+                  className="block truncate text-sm font-semibold text-foreground transition-colors hover:text-primary"
+                >
+                  {project.title}
+                </Link>
+              </div>
               {project.projectStats.overdueMilestones > 0 && (
                 <span className="flex shrink-0 items-center gap-0.5 whitespace-nowrap text-[10px] font-medium text-red-500">
                   <AlertTriangle className="h-3 w-3 shrink-0" />
@@ -650,12 +657,12 @@ function ProjectRow({
               )}
             </div>
             {project.externalRef && (
-              <span className="block truncate font-mono text-[10px] text-muted-foreground">
+              <span className="block min-w-0 max-w-full truncate font-mono text-[10px] text-muted-foreground">
                 Ref: {project.externalRef}
               </span>
             )}
             {project.summary && (
-              <p className="hidden truncate text-xs text-muted-foreground sm:block">
+              <p className="line-clamp-2 hidden min-h-0 min-w-0 max-w-full break-words text-xs leading-snug text-muted-foreground sm:block">
                 {project.summary}
               </p>
             )}

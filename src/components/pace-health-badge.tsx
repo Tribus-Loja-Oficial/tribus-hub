@@ -50,7 +50,7 @@ export function HealthInsightHint({
         className,
       )}
       title={title}
-      aria-label="Como a saúde foi calculada"
+      aria-label="Como calculamos a saúde em relação ao prazo"
     >
       <Info className="h-3.5 w-3.5" />
     </button>

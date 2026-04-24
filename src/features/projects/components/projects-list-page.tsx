@@ -64,7 +64,7 @@ const HEALTH_OPTIONS = [
 ];
 
 const PROJECTS_LIST_TABLE_GRID =
-  "grid min-w-0 items-center gap-x-0 [&>*]:min-w-0 [&>*]:border-r [&>*]:border-border/70 [&>*]:px-2.5 [&>*:last-child]:border-r-0";
+  "grid min-w-0 items-center gap-x-0 overflow-hidden [&>*]:min-h-0 [&>*]:min-w-0 [&>*]:border-r [&>*]:border-border/70 [&>*]:px-2.5 [&>*:last-child]:border-r-0 [&>*:first-child]:overflow-hidden";
 
 const PRIORITY_OPTIONS = [
   { value: "", label: "Todas as prioridades" },
@@ -335,20 +335,22 @@ function ListView({
           )}
           style={{ gridTemplateColumns: gridTpl }}
         >
-          <div className="min-w-0">
+          <div className="min-h-0 min-w-0 max-w-full overflow-hidden">
             <Link
               href={projectHref(project)}
-              className="truncate text-sm font-medium text-foreground transition-colors hover:text-primary"
+              className="block truncate text-sm font-medium text-foreground transition-colors hover:text-primary"
             >
               {project.title}
             </Link>
             {project.externalRef && (
-              <p className="mt-0.5 font-mono text-[10px] text-muted-foreground">
+              <p className="mt-0.5 truncate font-mono text-[10px] text-muted-foreground">
                 Ref: {project.externalRef}
               </p>
             )}
             {project.summary && (
-              <p className="mt-0.5 truncate text-xs text-muted-foreground">{project.summary}</p>
+              <p className="mt-0.5 line-clamp-2 break-words text-xs leading-snug text-muted-foreground">
+                {project.summary}
+              </p>
             )}
           </div>
           <div className="flex min-w-0 items-center justify-center overflow-hidden">

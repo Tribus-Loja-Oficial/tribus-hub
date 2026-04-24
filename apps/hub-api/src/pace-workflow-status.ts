@@ -69,7 +69,7 @@ export function computeWorkflowStatus(input: {
       windowEnd: input.windowEnd,
       locked: true,
       explanationPt:
-        "Status «Concluído»: o item está marcado como encerrado no cadastro. Não é recalculado automaticamente pelo calendário.",
+        'Status "Concluído": o item já está marcado como concluído no sistema. O calendário não muda isso sozinho.',
     };
   }
 
@@ -82,7 +82,7 @@ export function computeWorkflowStatus(input: {
       windowEnd: input.windowEnd,
       locked: false,
       explanationPt:
-        "Status «Planejado»: ainda em rascunho. Ao publicar, o calendário (início/fim efetivos) passa a controlar Em progresso.",
+        'Status "Planejado" porque ainda está em rascunho. Quando você publicar, as datas de início e fim passam a definir quando aparece como "Em progresso".',
     };
   }
 
@@ -96,7 +96,7 @@ export function computeWorkflowStatus(input: {
         windowEnd: input.windowEnd,
         locked: false,
         explanationPt:
-          "Projeto cancelado no registro. Na vista unificada aparece como «Planejado»; detalhe administrativo permanece no cadastro.",
+          'O projeto está cancelado no sistema. Nesta tela ele aparece como "Planejado"; os detalhes de cancelamento continuam no cadastro.',
       };
     }
     if (dbStatus === "on_hold") {
@@ -108,7 +108,7 @@ export function computeWorkflowStatus(input: {
         windowEnd: input.windowEnd,
         locked: false,
         explanationPt:
-          "Projeto «Em espera» no cadastro: na vista unificada tratado como «Planejado» até voltar a ativo.",
+          'O projeto está em pausa no cadastro. Aqui mostramos como "Planejado" até ele voltar para ativo.',
       };
     }
   }
@@ -122,7 +122,7 @@ export function computeWorkflowStatus(input: {
       windowEnd: input.windowEnd,
       locked: false,
       explanationPt:
-        "Marco marcado como perdido/atrasado no cadastro; na vista unificada segue «Em progresso» até conclusão explícita.",
+        'O marco está marcado como atrasado ou perdido no cadastro. Nesta visão ele segue como "Em progresso" até ser concluído de fato.',
     };
   }
 
@@ -134,8 +134,7 @@ export function computeWorkflowStatus(input: {
       windowStart: input.windowStart,
       windowEnd: input.windowEnd,
       locked: false,
-      explanationPt:
-        `${input.dateSourcePt} Sem data de início e fim efetivas no calendário: permanece «Planejado» até haver janela.`,
+      explanationPt: `${input.dateSourcePt} Não há início e fim claros no calendário, então continua como \"Planejado\" até existir um período com datas.`,
     };
   }
 
@@ -147,8 +146,7 @@ export function computeWorkflowStatus(input: {
       windowStart: input.windowStart,
       windowEnd: input.windowEnd,
       locked: false,
-      explanationPt:
-        `${input.dateSourcePt} Hoje (UTC) ainda é antes do início (${input.windowStart}); a janela oficial ainda não começou.`,
+      explanationPt: `${input.dateSourcePt} Contando por dia em UTC, hoje ainda é antes de ${input.windowStart} — o prazo oficial ainda não começou.`,
     };
   }
 
@@ -161,8 +159,8 @@ export function computeWorkflowStatus(input: {
     windowEnd: input.windowEnd,
     locked: false,
     explanationPt: afterEnd
-      ? `${input.dateSourcePt} O fim da janela (${input.windowEnd}) já passou em calendário (UTC), mas o item não está concluído no cadastro; permanece «Em progresso».`
-      : `${input.dateSourcePt} Dentro da janela oficial (${input.windowStart} → ${input.windowEnd}, dias em UTC).`,
+      ? `${input.dateSourcePt} Em calendário (por dia em UTC), o fim do prazo (${input.windowEnd}) já passou, mas o item ainda não está concluído no sistema — por isso segue como \"Em progresso\".`
+      : `${input.dateSourcePt} Estamos dentro do período oficial, de ${input.windowStart} até ${input.windowEnd} (contagem por dia em UTC).`,
   };
 }
 

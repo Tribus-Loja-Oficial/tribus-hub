@@ -138,8 +138,9 @@ export function OkrPage() {
   const [krMenu, setKrMenu] = useState<string | null>(null);
 
   const { widths, startResize } = useResizableGridColumns(
-    "hub:okr-page-list-cols-v2",
-    [24, 220, 128, 128, 128, 132, 184, 56, 56],
+    "hub:okr-page-list-cols-v3",
+    /** Últimas colunas: data da meta precisa ~72px+; ações precisam ~100px+ (olho + 2 ícones). */
+    [24, 220, 128, 128, 128, 132, 184, 96, 112],
   );
   const okrListGridTpl = widths.map((w) => `${w}px`).join(" ");
 
@@ -1003,15 +1004,18 @@ function ObjectiveBlock({
           </span>
         </div>
 
-        <div className="flex items-center justify-center px-1">
-          <span className="whitespace-nowrap text-xs text-muted-foreground">
+        <div className="flex min-w-0 items-center justify-center overflow-hidden px-1">
+          <span
+            className="min-w-0 max-w-full truncate whitespace-nowrap text-xs tabular-nums text-muted-foreground"
+            title={targetDate ?? undefined}
+          >
             {targetDate ?? "—"}
           </span>
         </div>
 
         <div
           data-menu
-          className="relative flex min-w-0 items-center justify-end gap-1.5"
+          className="relative flex min-w-0 shrink-0 items-center justify-end gap-1.5 overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           <EntityQuickViewEyeButton entity={{ kind: "objective", id: objective.id }} />
@@ -1185,11 +1189,19 @@ function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete
         </span>
       </div>
 
-      <div className="flex items-center justify-center px-1">
-        <span className="whitespace-nowrap text-xs text-muted-foreground">{targetDate ?? "—"}</span>
+      <div className="flex min-w-0 items-center justify-center overflow-hidden px-1">
+        <span
+          className="min-w-0 max-w-full truncate whitespace-nowrap text-xs tabular-nums text-muted-foreground"
+          title={targetDate ?? undefined}
+        >
+          {targetDate ?? "—"}
+        </span>
       </div>
 
-      <div data-menu className="relative flex min-w-0 items-center justify-end gap-1.5">
+      <div
+        data-menu
+        className="relative flex min-w-0 shrink-0 items-center justify-end gap-1.5 overflow-hidden"
+      >
         <EntityQuickViewEyeButton entity={{ kind: "keyResult", id: kr.id }} />
         <Button
           size="sm"

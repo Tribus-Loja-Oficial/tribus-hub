@@ -48,7 +48,11 @@ type SnapshotV1 = {
 };
 
 /** Calendar-day based, aligned with hub web `calcCycleTimeProgress` / OKR cycle pace. */
-export function calcElapsedPercent(startDateStr: string, endDateStr: string, now = new Date()): number {
+export function calcElapsedPercent(
+  startDateStr: string,
+  endDateStr: string,
+  now = new Date(),
+): number {
   const start = new Date(startDateStr);
   const end = new Date(endDateStr);
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0;
@@ -117,25 +121,35 @@ function buildExplanationPt(params: {
   dateSourcePt: string;
   locked: boolean;
 }): string {
-  const { slug, progressPercent, elapsedPercent, diff, band, offTrack, windowStart, windowEnd, dateSourcePt, locked } =
-    params;
+  const {
+    slug,
+    progressPercent,
+    elapsedPercent,
+    diff,
+    band,
+    offTrack,
+    windowStart,
+    windowEnd,
+    dateSourcePt,
+    locked,
+  } = params;
   const base =
-    `${dateSourcePt} Janela: ${windowStart} → ${windowEnd}. ` +
-    `Progresso ${progressPercent}% vs tempo decorrido no prazo ${elapsedPercent}% ` +
-    `(Δ = ${diff} pontos percentuais: progresso menos % do tempo). ` +
-    `Faixas: acima de +${band} pp = Adiantado; entre -${band} e +${band} pp = No rumo; ` +
-    `abaixo de -${band} pp até -${offTrack} pp (exclusive) = Em risco; ` +
-    `-${offTrack} pp ou menos = Fora do rumo.`;
-  if (locked) return `${base} Saúde congelada no encerramento.`;
+    `${dateSourcePt} Período considerado: de ${windowStart} até ${windowEnd}. ` +
+    `Seu progresso está em ${progressPercent}% e o tempo já \"corrido\" dentro do prazo está em ${elapsedPercent}% ` +
+    `(diferença de ${diff} pontos percentuais: progresso menos a parte do tempo que já passou). ` +
+    `Como lemos isso: acima de +${band} p.p. = adiantado; entre -${band} e +${band} p.p. = no rumo; ` +
+    `entre -${offTrack} e -${band} p.p. = em risco; ` +
+    `-${offTrack} p.p. ou pior = fora do rumo.`;
+  if (locked) return `${base} Saúde travada no momento em que foi concluído.`;
   const verdict =
     slug === "ahead"
-      ? "Resultado: adiantado em relação ao calendário."
+      ? "No fim das contas: você está à frente do que o calendário sugeriria."
       : slug === "on_track"
-        ? "Resultado: alinhado ao tempo."
+        ? "No fim das contas: está alinhado com o tempo que já passou."
         : slug === "at_risk"
-          ? "Resultado: atraso moderado frente ao tempo."
+          ? "No fim das contas: um pouco atrás do que o calendário sugeriria."
           : slug === "off_track"
-            ? "Resultado: atraso forte frente ao tempo."
+            ? "No fim das contas: bem atrás do que o calendário sugeriria."
             : "";
   return `${base} ${verdict}`.trim();
 }
@@ -158,14 +172,17 @@ export function insightFromSnapshotJson(json: string | null | undefined): Health
       locked: true,
       explanationPt:
         o.explanationPt ??
-        "Saúde registrada no momento em que o item foi concluído; não é recalculada automaticamente.",
+        "Salvamos como estava a saúde quando você marcou como concluído; depois disso não recalculamos sozinhos.",
     };
   } catch {
     return null;
   }
 }
 
-export function serializeHealthSnapshot(insight: Omit<HealthInsightDto, "locked">, computedAt: string): string {
+export function serializeHealthSnapshot(
+  insight: Omit<HealthInsightDto, "locked">,
+  computedAt: string,
+): string {
   const payload: SnapshotV1 = {
     v: 1,
     computedAt,
@@ -196,7 +213,7 @@ function completedLegacyInsight(progressPercent: number): HealthInsightDto {
     dateSourcePt: "—",
     locked: true,
     explanationPt:
-      "Item concluído antes do registro de snapshot de saúde. Não é possível reconstruir o racional exato; o progresso final no registro é usado apenas como referência.",
+      "Este item foi concluído antes de guardarmos o detalhe da saúde. Não dá para refazer a conta com precisão; mostramos só o progresso final do cadastro como referência.",
   };
 }
 
@@ -227,7 +244,10 @@ export function computePaceHealth(input: {
     return completedLegacyInsight(input.progressPercent);
   }
 
-  if ((input.kind === "okr_objective" || input.kind === "okr_key_result") && input.status === "draft") {
+  if (
+    (input.kind === "okr_objective" || input.kind === "okr_key_result") &&
+    input.status === "draft"
+  ) {
     return {
       slug: "draft",
       labelPt: "Rascunho",
@@ -240,7 +260,7 @@ export function computePaceHealth(input: {
       dateSourcePt: input.dateSourcePt,
       locked: false,
       explanationPt:
-        "Em rascunho: a saúde por ritmo só é calculada após sair do rascunho (datas e progresso passam a contar no ciclo publicado).",
+        "Enquanto estiver em rascunho, não calculamos saúde por ritmo. Depois de publicar, passamos a usar as datas e o progresso no ciclo.",
     };
   }
 
@@ -256,8 +276,7 @@ export function computePaceHealth(input: {
       windowEnd: input.windowEnd,
       dateSourcePt: input.dateSourcePt,
       locked: false,
-      explanationPt:
-        `${input.dateSourcePt} Não há data de início e fim efetivas; sem janela não dá para comparar progresso com o tempo decorrido.`,
+      explanationPt: `${input.dateSourcePt} Falta início e fim claros no calendário, então não dá para comparar progresso com o tempo que já passou.`,
     };
   }
 
@@ -273,8 +292,7 @@ export function computePaceHealth(input: {
       windowEnd: input.windowEnd,
       dateSourcePt: input.dateSourcePt,
       locked: false,
-      explanationPt:
-        `${input.dateSourcePt} A data de início da janela ainda não chegou (comparando por dia em UTC); o prazo oficial ainda não começou.`,
+      explanationPt: `${input.dateSourcePt} Contando por dia em UTC, a data de início ainda não chegou — o prazo oficial nem começou.`,
     };
   }
 
@@ -319,18 +337,25 @@ export function resolveOkrObjectiveWindow(
   },
   cycle: { start_date?: string | null; end_date?: string | null; title?: string | null } | null,
 ): { start: string | null; end: string | null; dateSourcePt: string } {
-  const start = (objective.start_date as string | null | undefined) ?? (cycle?.start_date as string | null) ?? null;
+  const start =
+    (objective.start_date as string | null | undefined) ??
+    (cycle?.start_date as string | null) ??
+    null;
   const end =
-    (objective.target_date as string | null | undefined) ?? (cycle?.end_date as string | null) ?? null;
+    (objective.target_date as string | null | undefined) ??
+    (cycle?.end_date as string | null) ??
+    null;
   const parts: string[] = [];
-  if (objective.start_date) parts.push("início próprio do objetivo");
-  else if (cycle?.start_date) parts.push(`início do ciclo${cycle.title ? ` «${cycle.title}»` : ""}`);
-  if (objective.target_date) parts.push("fim próprio do objetivo");
-  else if (cycle?.end_date) parts.push(`fim do ciclo${cycle.title ? ` «${cycle.title}»` : ""}`);
+  if (objective.start_date) parts.push("início vem da data do próprio objetivo");
+  else if (cycle?.start_date)
+    parts.push(`início vem do ciclo${cycle.title ? ` \"${cycle.title}\"` : ""}`);
+  if (objective.target_date) parts.push("fim (meta) vem da data do próprio objetivo");
+  else if (cycle?.end_date)
+    parts.push(`fim vem do ciclo${cycle.title ? ` \"${cycle.title}\"` : ""}`);
   const dateSourcePt =
     parts.length > 0
-      ? `Datas efetivas: ${parts.join("; ")}.`
-      : "Datas efetivas: nenhuma definida no objetivo nem no ciclo.";
+      ? `Datas usadas no cálculo: ${parts.join(" · ")}.`
+      : "Datas usadas no cálculo: não há datas no objetivo nem no ciclo.";
   return { start, end, dateSourcePt };
 }
 
@@ -350,16 +375,18 @@ export function resolveOkrKrWindow(
     (cycle?.end_date as string | null) ??
     null;
   const parts: string[] = [];
-  if (kr.start_date) parts.push("início próprio do KR");
-  else if (objective.start_date) parts.push("início do objetivo");
-  else if (cycle?.start_date) parts.push(`início do ciclo${cycle.title ? ` «${cycle.title}»` : ""}`);
-  if (kr.target_date) parts.push("fim próprio do KR");
-  else if (objective.target_date) parts.push("fim do objetivo");
-  else if (cycle?.end_date) parts.push(`fim do ciclo${cycle.title ? ` «${cycle.title}»` : ""}`);
+  if (kr.start_date) parts.push("início vem da data do próprio KR");
+  else if (objective.start_date) parts.push("início vem do objetivo");
+  else if (cycle?.start_date)
+    parts.push(`início vem do ciclo${cycle.title ? ` \"${cycle.title}\"` : ""}`);
+  if (kr.target_date) parts.push("fim (meta) vem da data do próprio KR");
+  else if (objective.target_date) parts.push("fim vem do objetivo");
+  else if (cycle?.end_date)
+    parts.push(`fim vem do ciclo${cycle.title ? ` \"${cycle.title}\"` : ""}`);
   const dateSourcePt =
     parts.length > 0
-      ? `Datas efetivas: ${parts.join("; ")}.`
-      : "Datas efetivas: nenhuma no KR, objetivo ou ciclo.";
+      ? `Datas usadas no cálculo: ${parts.join(" · ")}.`
+      : "Datas usadas no cálculo: não há datas no KR, no objetivo nem no ciclo.";
   return { start, end, dateSourcePt };
 }
 
@@ -372,7 +399,8 @@ export function resolveProjectWindow(project: {
   return {
     start,
     end,
-    dateSourcePt: "Datas efetivas: datas de início e fim do projeto (sem elemento pai no modelo atual).",
+    dateSourcePt:
+      "Datas usadas no cálculo: início e fim cadastrados no projeto (não há item pai acima no modelo atual).",
   };
 }
 
@@ -382,11 +410,15 @@ export function resolveMilestoneWindow(
 ): { start: string | null; end: string | null; dateSourcePt: string } {
   const start = (project.start_date as string | null | undefined) ?? null;
   const end =
-    (milestone.due_date as string | null | undefined) ?? (project.target_date as string | null | undefined) ?? null;
-  const ptitle = project.title ? ` «${project.title}»` : "";
+    (milestone.due_date as string | null | undefined) ??
+    (project.target_date as string | null | undefined) ??
+    null;
+  const ptitle = project.title ? ` \"${project.title}\"` : "";
   const dateSourcePt =
-    `Datas efetivas: início herdado do projeto${ptitle}; ` +
-    (milestone.due_date ? "fim = data do marco." : "fim herdado do projeto (sem due_date no marco).");
+    `Datas usadas no cálculo: início vem do projeto${ptitle}; ` +
+    (milestone.due_date
+      ? "fim é a data do marco."
+      : "fim vem do projeto quando o marco não tem data própria.");
   return { start, end, dateSourcePt };
 }
 
@@ -429,7 +461,7 @@ export function buildCompletionSnapshotFromPreCompleteRow(input: {
       windowStart: insight.windowStart,
       windowEnd: insight.windowEnd,
       dateSourcePt: insight.dateSourcePt,
-      explanationPt: `${insight.explanationPt} Valor congelado ao marcar como concluído em ${computedAt}.`,
+      explanationPt: `${insight.explanationPt} Valores fixados quando foi marcado como concluído (${computedAt}).`,
     },
     computedAt,
   );
