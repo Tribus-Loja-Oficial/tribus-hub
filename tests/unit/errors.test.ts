@@ -122,9 +122,19 @@ describe("toApiError", () => {
     });
   });
 
+  it("maps HubApiConfigError to 503 HUB_API_CONFIG", () => {
+    const err = new Error("HUB_API_URL is required");
+    err.name = "HubApiConfigError";
+    expect(toApiError(err)).toEqual({
+      message: "HUB_API_URL is required",
+      code: "HUB_API_CONFIG",
+      status: 503,
+    });
+  });
+
   it("maps unknown errors to 500 INTERNAL_ERROR", () => {
     expect(toApiError(new Error("boom"))).toEqual({
-      message: "Internal server error",
+      message: "boom",
       code: "INTERNAL_ERROR",
       status: 500,
     });

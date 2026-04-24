@@ -52,9 +52,20 @@ export function isAppError(error: unknown): error is AppError {
   return error instanceof AppError;
 }
 
+/** Duck-type match for `HubApiConfigError` without importing hub-api client (pulls `server-only`). */
+function isHubApiConfigError(error: unknown): error is Error {
+  return error instanceof Error && error.name === "HubApiConfigError";
+}
+
 export function toApiError(error: unknown): { message: string; code: string; status: number } {
   if (isAppError(error)) {
     return { message: error.message, code: error.code, status: error.statusCode };
+  }
+  if (isHubApiConfigError(error)) {
+    return { message: error.message, code: "HUB_API_CONFIG", status: 503 };
+  }
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return { message: error.message, code: "INTERNAL_ERROR", status: 500 };
   }
   return { message: "Internal server error", code: "INTERNAL_ERROR", status: 500 };
 }
