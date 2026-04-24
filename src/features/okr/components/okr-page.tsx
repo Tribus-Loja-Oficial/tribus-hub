@@ -35,7 +35,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageGuide, GuideSection, GuideList, GuideExamples } from "@/components/ui/page-guide";
 import type { OkrCycle, OkrKeyResult } from "@/lib/types/domain";
-import { OkrEntityStatusRow } from "./okr-status-badge";
+import { OkrStatusBadge } from "./okr-status-badge";
+import { HealthInsightHint, PaceHealthBadge } from "@/components/pace-health-badge";
+import { WorkflowStatusRow } from "@/components/workflow-status-badge";
 import { OkrProgressBar } from "./okr-progress-bar";
 import { CreateObjectiveDialog } from "./create-objective-dialog";
 import { CreateKeyResultDialog } from "./create-key-result-dialog";
@@ -98,8 +100,9 @@ function fmtMetric(kr: OkrKeyResult): string {
   return `${pre}${kr.currentValue}${suf} / ${pre}${kr.targetValue}${suf}`;
 }
 
-/** Chevron | título | ciclo | status | métrica | progresso | meta | ações — larguras via `gridTpl` */
-const OKR_LIST_GRID_BASE = "grid w-full gap-x-3 items-center";
+/** Chevron | título | ciclo | status | health | métrica | progresso | meta | ações — larguras via `gridTpl` */
+const OKR_LIST_GRID_BASE =
+  "grid w-full items-center gap-x-0 [&>*]:min-w-0 [&>*]:border-r [&>*]:border-border/70 [&>*]:px-2 [&>*:last-child]:border-r-0";
 
 const STATUS_FILTER_OPTIONS = [
   { value: "draft", label: "Rascunho" },
@@ -136,7 +139,7 @@ export function OkrPage() {
 
   const { widths, startResize } = useResizableGridColumns(
     "hub:okr-page-list-cols",
-    [20, 320, 92, 108, 110, 168, 58, 64],
+    [20, 280, 88, 104, 104, 120, 160, 52, 48],
   );
   const okrListGridTpl = widths.map((w) => `${w}px`).join(" ");
 
@@ -510,18 +513,10 @@ export function OkrPage() {
               className={cn(OKR_LIST_GRID_BASE, "min-h-[44px] px-4 py-2")}
               style={{ gridTemplateColumns: okrListGridTpl }}
             >
-              <OkrListHeaderCell
-                resizeIndex={0}
-                startResize={startResize}
-                className="border-r border-border/60 pr-2"
-              >
+              <OkrListHeaderCell resizeIndex={0} startResize={startResize} className="pr-2">
                 <span className="sr-only">Coluna expandir</span>
               </OkrListHeaderCell>
-              <OkrListHeaderCell
-                resizeIndex={1}
-                startResize={startResize}
-                className="border-r border-border/60 px-1"
-              >
+              <OkrListHeaderCell resizeIndex={1} startResize={startResize} className="px-1">
                 <div className="flex min-w-0 flex-1 items-center">
                   <button
                     type="button"
@@ -549,11 +544,7 @@ export function OkrPage() {
                   </button>
                 </div>
               </OkrListHeaderCell>
-              <OkrListHeaderCell
-                resizeIndex={2}
-                startResize={startResize}
-                className="min-w-0 border-r border-border/60 px-1"
-              >
+              <OkrListHeaderCell resizeIndex={2} startResize={startResize} className="min-w-0 px-1">
                 <div className="flex w-full min-w-0 items-center justify-between gap-1">
                   <span className="truncate pl-0.5 text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/60">
                     Ciclo
@@ -626,11 +617,7 @@ export function OkrPage() {
                   </DropdownMenu.Root>
                 </div>
               </OkrListHeaderCell>
-              <OkrListHeaderCell
-                resizeIndex={3}
-                startResize={startResize}
-                className="min-w-0 border-r border-border/60 px-1"
-              >
+              <OkrListHeaderCell resizeIndex={3} startResize={startResize} className="min-w-0 px-1">
                 <div className="flex w-full min-w-0 items-center justify-between gap-1">
                   <button
                     type="button"
@@ -724,20 +711,17 @@ export function OkrPage() {
                   </DropdownMenu.Root>
                 </div>
               </OkrListHeaderCell>
-              <OkrListHeaderCell
-                resizeIndex={4}
-                startResize={startResize}
-                className="min-w-0 border-r border-border/60 px-2"
-              >
+              <OkrListHeaderCell resizeIndex={4} startResize={startResize} className="min-w-0 px-2">
+                <span className="truncate text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/55">
+                  Health
+                </span>
+              </OkrListHeaderCell>
+              <OkrListHeaderCell resizeIndex={5} startResize={startResize} className="min-w-0 px-2">
                 <span className="truncate text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/55">
                   Métrica
                 </span>
               </OkrListHeaderCell>
-              <OkrListHeaderCell
-                resizeIndex={5}
-                startResize={startResize}
-                className="min-w-0 border-r border-border/60 px-1"
-              >
+              <OkrListHeaderCell resizeIndex={6} startResize={startResize} className="min-w-0 px-1">
                 <div className="flex w-full min-w-0 items-center">
                   <button
                     type="button"
@@ -766,11 +750,7 @@ export function OkrPage() {
                   </button>
                 </div>
               </OkrListHeaderCell>
-              <OkrListHeaderCell
-                resizeIndex={6}
-                startResize={startResize}
-                className="min-w-0 border-r border-border/60 px-1"
-              >
+              <OkrListHeaderCell resizeIndex={7} startResize={startResize} className="min-w-0 px-1">
                 <div className="flex w-full min-w-0 items-center">
                   <button
                     type="button"
@@ -952,7 +932,7 @@ function ObjectiveBlock({
           onToggle();
         }}
       >
-        <div className="flex items-center justify-center border-r border-border/60 pr-2">
+        <div className="flex items-center justify-center pr-2">
           <ChevronRight
             className={`h-4 w-4 text-muted-foreground/70 transition-transform duration-150 ${
               isExpanded ? "rotate-90" : ""
@@ -960,7 +940,7 @@ function ObjectiveBlock({
           />
         </div>
 
-        <div className="flex min-w-0 flex-col items-start gap-0.5 border-r border-border/60 px-1">
+        <div className="flex min-w-0 flex-col items-start gap-0.5 px-1">
           <Link
             href={`/okr/objectives/${objective.id}`}
             onClick={(e) => e.stopPropagation()}
@@ -980,27 +960,38 @@ function ObjectiveBlock({
           )}
         </div>
 
-        <div className="flex min-w-0 items-center border-r border-border/60 px-1">
+        <div className="flex min-w-0 items-center px-1">
           <span className="w-full truncate text-xs text-muted-foreground">
             {cycle?.title ?? "—"}
           </span>
         </div>
 
-        <div className="flex items-center border-r border-border/60 px-1">
-          <OkrEntityStatusRow
-            status={objective.status}
-            workflowStatusInsight={objective.workflowStatusInsight}
-            healthInsight={objective.healthInsight}
-          />
+        <div className="flex min-w-0 items-center px-1">
+          {objective.workflowStatusInsight ? (
+            <WorkflowStatusRow insight={objective.workflowStatusInsight} />
+          ) : (
+            <OkrStatusBadge status={objective.status} />
+          )}
         </div>
 
-        <div className="flex min-w-0 items-center border-r border-border/60 px-2">
+        <div className="flex min-w-0 items-center px-1">
+          {objective.healthInsight ? (
+            <span className="flex min-w-0 max-w-full flex-wrap items-center gap-1">
+              <PaceHealthBadge insight={objective.healthInsight} />
+              <HealthInsightHint insight={objective.healthInsight} />
+            </span>
+          ) : (
+            <span className="text-[11px] text-muted-foreground/40">—</span>
+          )}
+        </div>
+
+        <div className="flex min-w-0 items-center px-2">
           <span className="truncate text-xs tabular-nums text-muted-foreground">
             {completedKrs}/{krCount} KR{krCount !== 1 ? "s" : ""}
           </span>
         </div>
 
-        <div className="flex min-w-0 items-center gap-2 border-r border-border/60 px-1">
+        <div className="flex min-w-0 items-center gap-2 px-1">
           <OkrProgressBar
             percent={objective.progressPercent}
             status={objective.status}
@@ -1012,7 +1003,7 @@ function ObjectiveBlock({
           </span>
         </div>
 
-        <div className="flex items-center border-r border-border/60 px-1">
+        <div className="flex items-center px-1">
           <span className="text-xs text-muted-foreground">{targetDate ?? "—"}</span>
         </div>
 
@@ -1136,11 +1127,11 @@ function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete
       )}
       style={{ gridTemplateColumns: gridTpl }}
     >
-      <div className="flex items-center justify-center border-r border-border/60 pr-2 text-muted-foreground/40">
+      <div className="flex items-center justify-center pr-2 text-muted-foreground/40">
         <TrendingUp className="h-3 w-3" />
       </div>
 
-      <div className="min-w-0 border-r border-border/60 px-1 pl-3">
+      <div className="min-w-0 px-1 pl-3">
         <Link
           href={`/okr/key-results/${kr.id}`}
           className="block truncate text-sm leading-snug text-foreground/80 transition-colors hover:text-primary"
@@ -1153,23 +1144,34 @@ function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete
         )}
       </div>
 
-      <div className="flex items-center border-r border-border/60 px-1" aria-hidden />
+      <div className="flex items-center px-1" aria-hidden />
 
-      <div className="flex items-center border-r border-border/60 px-1">
-        <OkrEntityStatusRow
-          status={kr.status}
-          workflowStatusInsight={kr.workflowStatusInsight}
-          healthInsight={kr.healthInsight}
-        />
+      <div className="flex min-w-0 items-center px-1">
+        {kr.workflowStatusInsight ? (
+          <WorkflowStatusRow insight={kr.workflowStatusInsight} />
+        ) : (
+          <OkrStatusBadge status={kr.status} />
+        )}
       </div>
 
-      <div className="flex min-w-0 items-center border-r border-border/60 px-2">
+      <div className="flex min-w-0 items-center px-1">
+        {kr.healthInsight ? (
+          <span className="flex min-w-0 max-w-full flex-wrap items-center gap-1">
+            <PaceHealthBadge insight={kr.healthInsight} />
+            <HealthInsightHint insight={kr.healthInsight} />
+          </span>
+        ) : (
+          <span className="text-[11px] text-muted-foreground/40">—</span>
+        )}
+      </div>
+
+      <div className="flex min-w-0 items-center px-2">
         <span className="block truncate text-xs tabular-nums text-muted-foreground" title={metric}>
           {metric}
         </span>
       </div>
 
-      <div className="flex min-w-0 items-center gap-2 border-r border-border/60 px-1">
+      <div className="flex min-w-0 items-center gap-2 px-1">
         <OkrProgressBar
           percent={kr.progressPercent}
           status={kr.status}
@@ -1181,7 +1183,7 @@ function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete
         </span>
       </div>
 
-      <div className="flex items-center border-r border-border/60 px-1">
+      <div className="flex items-center px-1">
         <span className="text-xs text-muted-foreground">{targetDate ?? "—"}</span>
       </div>
 

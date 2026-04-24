@@ -35,6 +35,9 @@ import { cn } from "@/lib/utils/cn";
 
 type ObjectiveWithKRs = OkrObjective & { keyResults: OkrKeyResult[] };
 
+const OKR_OBJECTIVES_TABLE_GRID =
+  "grid items-center gap-x-0 [&>*]:min-w-0 [&>*]:border-r [&>*]:border-border/70 [&>*]:px-2 [&>*:last-child]:border-r-0";
+
 const OKR_WORKFLOW_STATUS_QUERY = new Set(["planned", "in_progress", "completed"]);
 
 function formatDate(d: string | null | undefined) {
@@ -240,7 +243,10 @@ export function OkrObjectivesPage() {
         <div className="overflow-x-auto rounded-xl border border-border bg-card">
           {/* Table header */}
           <div
-            className="grid gap-3 border-b border-border bg-muted/30 px-5 py-2.5"
+            className={cn(
+              OKR_OBJECTIVES_TABLE_GRID,
+              "border-b border-border bg-muted/30 px-3 py-2.5",
+            )}
             style={{ gridTemplateColumns: okrGridTpl }}
           >
             <OkrTableHeaderCell resizeIndex={0} startResize={startResize}>
@@ -263,7 +269,7 @@ export function OkrObjectivesPage() {
             </OkrTableHeaderCell>
             <OkrTableHeaderCell resizeIndex={4} startResize={startResize}>
               <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Saúde
+                Health
               </span>
             </OkrTableHeaderCell>
             <OkrTableHeaderCell resizeIndex={5} startResize={startResize}>
@@ -346,7 +352,8 @@ function ObjectiveRow({
       {/* Objective row */}
       <div
         className={cn(
-          "grid cursor-pointer items-center gap-3 border-l-[3px] py-3.5 pl-4 pr-5 transition-colors",
+          OKR_OBJECTIVES_TABLE_GRID,
+          "cursor-pointer border-l-[3px] py-3.5 pl-3 pr-3 transition-colors",
           healthRowAccentClass(objective.healthInsight?.slug),
           isExpanded ? "bg-muted/20" : "hover:bg-muted/20",
         )}
@@ -398,12 +405,14 @@ function ObjectiveRow({
         </div>
 
         {/* Cycle */}
-        <span className="truncate text-xs text-muted-foreground">{cycleName}</span>
+        <span className="min-w-0 truncate text-xs text-muted-foreground">{cycleName}</span>
 
         {/* Status (workflow) */}
-        <WorkflowStatusRow insight={objective.workflowStatusInsight} />
-        {/* Saúde */}
-        <span className="inline-flex flex-wrap items-center gap-1">
+        <div className="min-w-0">
+          <WorkflowStatusRow className="min-w-0" insight={objective.workflowStatusInsight} />
+        </div>
+        {/* Health */}
+        <span className="inline-flex min-w-0 max-w-full flex-wrap items-center gap-1">
           {objective.healthInsight ? (
             <>
               <PaceHealthBadge insight={objective.healthInsight} />
@@ -488,7 +497,8 @@ function KrSubRow({
   return (
     <div
       className={cn(
-        "grid items-center gap-3 border-b border-l-[3px] border-border/40 py-2.5 pl-4 pr-5 transition-colors last:border-b-0 hover:bg-muted/20",
+        OKR_OBJECTIVES_TABLE_GRID,
+        "border-b border-l-[3px] border-border/40 py-2.5 pl-3 pr-3 transition-colors last:border-b-0 hover:bg-muted/20",
         healthRowAccentClass(kr.healthInsight?.slug),
       )}
       style={{ gridTemplateColumns: gridTpl }}
@@ -521,8 +531,10 @@ function KrSubRow({
       {/* empty cycle col */}
       <span />
 
-      <WorkflowStatusRow insight={kr.workflowStatusInsight} />
-      <span className="inline-flex flex-wrap items-center gap-1">
+      <div className="min-w-0">
+        <WorkflowStatusRow className="min-w-0" insight={kr.workflowStatusInsight} />
+      </div>
+      <span className="inline-flex min-w-0 max-w-full flex-wrap items-center gap-1">
         {kr.healthInsight ? (
           <>
             <PaceHealthBadge insight={kr.healthInsight} />

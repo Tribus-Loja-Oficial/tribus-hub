@@ -63,6 +63,9 @@ const HEALTH_OPTIONS = [
   { value: "completed_legacy", label: "Concluído (legado)" },
 ];
 
+const PROJECTS_LIST_TABLE_GRID =
+  "grid min-w-0 items-center gap-x-0 [&>*]:min-w-0 [&>*]:border-r [&>*]:border-border/70 [&>*]:px-2 [&>*:last-child]:border-r-0";
+
 const PRIORITY_OPTIONS = [
   { value: "", label: "Todas as prioridades" },
   { value: "urgent", label: "Urgente" },
@@ -264,8 +267,8 @@ function ListView({
   onEditProject: (p: Project) => void;
 }) {
   const { widths, startResize } = useResizableGridColumns(
-    "hub:projects-list-cols",
-    [260, 108, 108, 88, 100, 100, 44, 28],
+    "hub:projects-list-cols-v2",
+    [248, 118, 118, 100, 100, 100, 44, 28],
   );
   const gridTpl = widths.map((w) => `${w}px`).join(" ");
 
@@ -284,7 +287,7 @@ function ListView({
   return (
     <div className="overflow-x-auto rounded-xl border border-border bg-card">
       <div
-        className="grid items-center gap-3 border-b border-border bg-muted/30 px-5 py-2.5"
+        className={cn(PROJECTS_LIST_TABLE_GRID, "border-b border-border bg-muted/30 px-3 py-2.5")}
         style={{ gridTemplateColumns: gridTpl }}
       >
         <ProjectsListHeaderCell resizeIndex={0} startResize={startResize}>
@@ -299,7 +302,7 @@ function ListView({
         </ProjectsListHeaderCell>
         <ProjectsListHeaderCell resizeIndex={2} startResize={startResize}>
           <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Saúde
+            Health
           </span>
         </ProjectsListHeaderCell>
         <ProjectsListHeaderCell resizeIndex={3} startResize={startResize}>
@@ -326,7 +329,8 @@ function ListView({
         <div
           key={project.id}
           className={cn(
-            "grid items-center gap-3 border-b border-l-[3px] border-border/60 py-3.5 pl-4 pr-5 transition-colors last:border-b-0 hover:bg-muted/20",
+            PROJECTS_LIST_TABLE_GRID,
+            "border-b border-l-[3px] border-border/60 py-3.5 pl-3 pr-3 transition-colors last:border-b-0 hover:bg-muted/20",
             healthRowAccentClass(project.healthInsight?.slug),
           )}
           style={{ gridTemplateColumns: gridTpl }}
@@ -347,14 +351,14 @@ function ListView({
               <p className="mt-0.5 truncate text-xs text-muted-foreground">{project.summary}</p>
             )}
           </div>
-          <div className="flex justify-start">
+          <div className="flex min-w-0 justify-start overflow-hidden">
             {project.workflowStatusInsight ? (
               <WorkflowStatusRow insight={project.workflowStatusInsight} />
             ) : (
               <ProjectStatusBadge status={project.status} />
             )}
           </div>
-          <div>
+          <div className="min-w-0 overflow-hidden">
             {project.healthInsight || project.healthStatus ? (
               <ProjectHealthRow
                 insight={project.healthInsight}
@@ -364,10 +368,10 @@ function ListView({
               <span className="text-xs text-muted-foreground/40">—</span>
             )}
           </div>
-          <div>
+          <div className="min-w-0 overflow-hidden">
             <PriorityBadge priority={project.priority} />
           </div>
-          <div>
+          <div className="min-w-0">
             {(project.progressPercent ?? 0) > 0 ? (
               <div className="flex items-center gap-1.5">
                 <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-muted">

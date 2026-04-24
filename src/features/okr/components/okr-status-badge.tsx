@@ -89,7 +89,9 @@ export function OkrEntityStatusRow({
   workflowStatusInsight?: WorkflowStatusInsight | null;
 }) {
   return (
-    <span className={cn("inline-flex flex-wrap items-center gap-1.5", className)}>
+    <span
+      className={cn("inline-flex min-w-0 max-w-full flex-wrap items-center gap-1.5", className)}
+    >
       {workflowStatusInsight ? (
         <>
           <WorkflowStatusBadge insight={workflowStatusInsight} size={size} />

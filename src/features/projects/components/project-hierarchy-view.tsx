@@ -73,13 +73,14 @@ function milestoneStatusCell(milestone: HierarchyMilestone) {
 }
 
 /** 9 colunas: chevron | pasta | título | status | health | prioridade | prazo | progresso | ações */
-const HIERARCHY_GRID_ROW_CLASS = "hidden w-full min-w-0 items-center gap-x-2 md:grid";
+const HIERARCHY_GRID_ROW_CLASS =
+  "hidden w-full min-w-0 items-stretch gap-x-0 md:grid [&>div]:flex [&>div]:min-w-0 [&>div]:items-center [&>div]:border-r [&>div]:border-border/70 [&>div]:px-2 [&>div:last-child]:border-r-0";
 
 function hierarchyGridColumnsStyle(gridTpl: string): CSSProperties {
   return { gridTemplateColumns: gridTpl };
 }
 
-/** Larguras alinhadas ao cabeçalho: status/saúde com espaço para badge + dica. */
+/** Larguras alinhadas ao cabeçalho: status/health com espaço para badge + dica. */
 const HIERARCHY_COL_DEFAULTS = [20, 36, 260, 108, 96, 72, 72, 96, 120] as const;
 const HIERARCHY_COL_STORAGE_KEY = "hub:project-hierarchy-cols";
 
@@ -772,7 +773,9 @@ function ProjectRow({
                 <div className="shrink-0 text-center" style={{ width: cw[3] }}>
                   Status
                 </div>
-                <div className="shrink-0" style={{ width: cw[4] }} aria-hidden />
+                <div className="shrink-0 text-center" style={{ width: cw[4] }}>
+                  Health
+                </div>
                 <div className="shrink-0 text-center" style={{ width: cw[5] }}>
                   Prioridade
                 </div>
@@ -1001,7 +1004,7 @@ export function ProjectHierarchyView({
               </HierarchyHeaderCell>
               <HierarchyHeaderCell resizeIndex={4} startResize={startResize}>
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Saúde
+                  Health
                 </span>
               </HierarchyHeaderCell>
               <HierarchyHeaderCell resizeIndex={5} startResize={startResize}>

@@ -143,7 +143,7 @@ export function ProjectHealthRow({
 }) {
   if (insight) {
     return (
-      <span className="inline-flex items-center gap-1">
+      <span className="inline-flex min-w-0 max-w-full flex-wrap items-center gap-1">
         <PaceHealthBadge insight={insight} />
         <HealthInsightHint insight={insight} />
       </span>
