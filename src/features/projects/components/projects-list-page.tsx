@@ -64,7 +64,7 @@ const HEALTH_OPTIONS = [
 ];
 
 const PROJECTS_LIST_TABLE_GRID =
-  "grid min-w-0 items-center gap-x-0 [&>*]:min-w-0 [&>*]:border-r [&>*]:border-border/70 [&>*]:px-2 [&>*:last-child]:border-r-0";
+  "grid min-w-0 items-center gap-x-0 [&>*]:min-w-0 [&>*]:border-r [&>*]:border-border/70 [&>*]:px-2.5 [&>*:last-child]:border-r-0";
 
 const PRIORITY_OPTIONS = [
   { value: "", label: "Todas as prioridades" },
@@ -267,8 +267,8 @@ function ListView({
   onEditProject: (p: Project) => void;
 }) {
   const { widths, startResize } = useResizableGridColumns(
-    "hub:projects-list-cols-v2",
-    [248, 118, 118, 100, 100, 100, 44, 28],
+    "hub:projects-list-cols-v3",
+    [232, 124, 124, 104, 108, 108, 48, 32],
   );
   const gridTpl = widths.map((w) => `${w}px`).join(" ");
 
@@ -351,14 +351,14 @@ function ListView({
               <p className="mt-0.5 truncate text-xs text-muted-foreground">{project.summary}</p>
             )}
           </div>
-          <div className="flex min-w-0 justify-start overflow-hidden">
+          <div className="flex min-w-0 items-center justify-center overflow-hidden">
             {project.workflowStatusInsight ? (
               <WorkflowStatusRow insight={project.workflowStatusInsight} />
             ) : (
               <ProjectStatusBadge status={project.status} />
             )}
           </div>
-          <div className="min-w-0 overflow-hidden">
+          <div className="flex min-w-0 items-center justify-center overflow-hidden">
             {project.healthInsight || project.healthStatus ? (
               <ProjectHealthRow
                 insight={project.healthInsight}
@@ -368,12 +368,12 @@ function ListView({
               <span className="text-xs text-muted-foreground/40">—</span>
             )}
           </div>
-          <div className="min-w-0 overflow-hidden">
+          <div className="flex min-w-0 items-center justify-center overflow-hidden">
             <PriorityBadge priority={project.priority} />
           </div>
-          <div className="min-w-0">
+          <div className="flex min-w-0 items-center justify-center">
             {(project.progressPercent ?? 0) > 0 ? (
-              <div className="flex items-center gap-1.5">
+              <div className="flex w-full max-w-[140px] items-center gap-2.5">
                 <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-muted">
                   <div
                     className="h-full rounded-full bg-primary/60"
@@ -388,12 +388,12 @@ function ListView({
               <span className="text-xs text-muted-foreground/40">—</span>
             )}
           </div>
-          <div className="text-xs text-muted-foreground">
+          <div className="flex items-center justify-center whitespace-nowrap text-xs text-muted-foreground">
             {project.targetDate
               ? format(new Date(project.targetDate), "dd MMM yy", { locale: ptBR })
               : "—"}
           </div>
-          <div className="flex justify-center gap-0.5">
+          <div className="flex items-center justify-center gap-1.5">
             <EntityQuickViewEyeButton
               entity={{ kind: "project", id: project.slug || project.id }}
               className="h-8 w-8"

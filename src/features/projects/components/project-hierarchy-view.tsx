@@ -74,15 +74,15 @@ function milestoneStatusCell(milestone: HierarchyMilestone) {
 
 /** 9 colunas: chevron | pasta | título | status | health | prioridade | prazo | progresso | ações */
 const HIERARCHY_GRID_ROW_CLASS =
-  "hidden w-full min-w-0 items-stretch gap-x-0 md:grid [&>div]:flex [&>div]:min-w-0 [&>div]:items-center [&>div]:border-r [&>div]:border-border/70 [&>div]:px-2 [&>div:last-child]:border-r-0";
+  "hidden w-full min-w-0 items-center gap-x-0 md:grid [&>div]:flex [&>div]:min-w-0 [&>div]:items-center [&>div]:border-r [&>div]:border-border/70 [&>div]:px-2.5 [&>div]:py-1 [&>div:last-child]:border-r-0";
 
 function hierarchyGridColumnsStyle(gridTpl: string): CSSProperties {
   return { gridTemplateColumns: gridTpl };
 }
 
 /** Larguras alinhadas ao cabeçalho: status/health com espaço para badge + dica. */
-const HIERARCHY_COL_DEFAULTS = [20, 36, 260, 108, 96, 72, 72, 96, 120] as const;
-const HIERARCHY_COL_STORAGE_KEY = "hub:project-hierarchy-cols";
+const HIERARCHY_COL_DEFAULTS = [22, 40, 248, 124, 118, 84, 88, 108, 132] as const;
+const HIERARCHY_COL_STORAGE_KEY = "hub:project-hierarchy-cols-v2";
 
 function HierarchyHeaderCell({
   children,
@@ -136,7 +136,7 @@ function ProgressBar({
 }) {
   const pct = total === 0 ? 0 : Math.round((done / total) * 100);
   return (
-    <div className={cn("flex items-center gap-2", className)}>
+    <div className={cn("flex items-center gap-3", className)}>
       <div className="h-1.5 min-w-[48px] flex-1 overflow-hidden rounded-full bg-muted">
         <div
           className={cn("h-full rounded-full", pct === 100 ? "bg-emerald-500" : "bg-primary/60")}
@@ -632,30 +632,30 @@ function ProjectRow({
               <FolderKanban className="h-4 w-4 text-primary" />
             </div>
           </div>
-          <div className="min-w-0">
-            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+          <div className="flex min-w-0 flex-col gap-1">
+            <div className="flex min-w-0 items-center gap-2">
               <Link
                 href={projectPath(project)}
                 onClick={(e) => e.stopPropagation()}
-                className="min-w-0 truncate text-sm font-semibold text-foreground transition-colors hover:text-primary"
+                className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground transition-colors hover:text-primary"
               >
                 {project.title}
               </Link>
-              {project.externalRef && (
-                <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
-                  Ref: {project.externalRef}
-                </span>
-              )}
               {project.projectStats.overdueMilestones > 0 && (
-                <span className="flex shrink-0 items-center gap-0.5 text-[10px] font-medium text-red-500">
-                  <AlertTriangle className="h-3 w-3" />
+                <span className="flex shrink-0 items-center gap-0.5 whitespace-nowrap text-[10px] font-medium text-red-500">
+                  <AlertTriangle className="h-3 w-3 shrink-0" />
                   {project.projectStats.overdueMilestones} atrasado
                   {project.projectStats.overdueMilestones > 1 ? "s" : ""}
                 </span>
               )}
             </div>
+            {project.externalRef && (
+              <span className="block truncate font-mono text-[10px] text-muted-foreground">
+                Ref: {project.externalRef}
+              </span>
+            )}
             {project.summary && (
-              <p className="mt-0.5 hidden truncate text-xs text-muted-foreground sm:block">
+              <p className="hidden truncate text-xs text-muted-foreground sm:block">
                 {project.summary}
               </p>
             )}
@@ -699,7 +699,7 @@ function ProjectRow({
               showFraction={false}
             />
           </div>
-          <div className="flex min-w-0 items-center justify-end gap-0.5 overflow-hidden">
+          <div className="flex min-w-0 items-center justify-end gap-1.5 overflow-hidden">
             {owner && (
               <span className="mr-0.5 flex min-w-0 items-center gap-0.5 text-[10px] text-muted-foreground">
                 <User className="h-3 w-3 shrink-0" />

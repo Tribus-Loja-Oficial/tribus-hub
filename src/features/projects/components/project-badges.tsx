@@ -36,7 +36,7 @@ const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
 
 const HEALTH_CONFIG: Record<string, { label: string; className: string; dot: string }> = {
   on_track: {
-    label: "No rumo",
+    label: "On track",
     className:
       "border-emerald-600/22 bg-emerald-600/[0.07] text-emerald-900/90 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-100",
     dot: "bg-emerald-600 dark:bg-emerald-400",
@@ -143,7 +143,7 @@ export function ProjectHealthRow({
 }) {
   if (insight) {
     return (
-      <span className="inline-flex min-w-0 max-w-full flex-wrap items-center gap-1">
+      <span className="inline-flex min-w-0 max-w-full flex-nowrap items-center gap-1">
         <PaceHealthBadge insight={insight} />
         <HealthInsightHint insight={insight} />
       </span>
@@ -156,7 +156,7 @@ export function ProjectHealthRow({
 export function MilestoneHealthRow({ insight }: { insight?: HealthInsight | null }) {
   if (!insight) return null;
   return (
-    <span className="inline-flex items-center gap-1">
+    <span className="inline-flex min-w-0 max-w-full flex-nowrap items-center gap-1">
       <PaceHealthBadge insight={insight} />
       <HealthInsightHint insight={insight} />
     </span>

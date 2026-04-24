@@ -36,7 +36,7 @@ import { cn } from "@/lib/utils/cn";
 type ObjectiveWithKRs = OkrObjective & { keyResults: OkrKeyResult[] };
 
 const OKR_OBJECTIVES_TABLE_GRID =
-  "grid items-center gap-x-0 [&>*]:min-w-0 [&>*]:border-r [&>*]:border-border/70 [&>*]:px-2 [&>*:last-child]:border-r-0";
+  "grid items-center gap-x-0 [&>*]:min-w-0 [&>*]:border-r [&>*]:border-border/70 [&>*]:px-2.5 [&>*:last-child]:border-r-0";
 
 const OKR_WORKFLOW_STATUS_QUERY = new Set(["planned", "in_progress", "completed"]);
 
@@ -80,8 +80,8 @@ export function OkrObjectivesPage() {
   const [selectedKr, setSelectedKr] = useState<OkrKeyResult | null>(null);
 
   const { widths, startResize } = useResizableGridColumns(
-    "hub:okr-objectives-cols",
-    [20, 220, 84, 92, 92, 52, 112, 36],
+    "hub:okr-objectives-cols-v2",
+    [22, 208, 92, 108, 108, 56, 116, 40],
   );
   const okrGridTpl = widths.map((w) => `${w}px`).join(" ");
 
@@ -384,7 +384,7 @@ function ObjectiveRow({
         </button>
 
         {/* Title: só o texto do link navega; área vazia à direita expande/recolhe */}
-        <div className="flex min-w-0 flex-col items-start gap-0.5">
+        <div className="flex min-w-0 flex-col items-start gap-0.5 self-start">
           <Link
             href={`/okr/objectives/${objective.id}`}
             onClick={(e) => e.stopPropagation()}
@@ -408,11 +408,11 @@ function ObjectiveRow({
         <span className="min-w-0 truncate text-xs text-muted-foreground">{cycleName}</span>
 
         {/* Status (workflow) */}
-        <div className="min-w-0">
+        <div className="flex min-w-0 justify-center">
           <WorkflowStatusRow className="min-w-0" insight={objective.workflowStatusInsight} />
         </div>
         {/* Health */}
-        <span className="inline-flex min-w-0 max-w-full flex-wrap items-center gap-1">
+        <span className="inline-flex min-w-0 max-w-full flex-nowrap items-center justify-center gap-1">
           {objective.healthInsight ? (
             <>
               <PaceHealthBadge insight={objective.healthInsight} />
@@ -425,13 +425,13 @@ function ObjectiveRow({
 
         {/* KRs count */}
         <span
-          className={`text-sm tabular-nums ${hasKrs ? "text-muted-foreground" : "text-muted-foreground/40"}`}
+          className={`flex items-center justify-center text-sm tabular-nums ${hasKrs ? "text-muted-foreground" : "text-muted-foreground/40"}`}
         >
           {completedKrs}/{krCount}
         </span>
 
         {/* Progress */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-center gap-2.5">
           <OkrProgressBar
             percent={objective.progressPercent}
             status={objective.status}
@@ -531,10 +531,10 @@ function KrSubRow({
       {/* empty cycle col */}
       <span />
 
-      <div className="min-w-0">
+      <div className="flex min-w-0 justify-center">
         <WorkflowStatusRow className="min-w-0" insight={kr.workflowStatusInsight} />
       </div>
-      <span className="inline-flex min-w-0 max-w-full flex-wrap items-center gap-1">
+      <span className="inline-flex min-w-0 max-w-full flex-nowrap items-center justify-center gap-1">
         {kr.healthInsight ? (
           <>
             <PaceHealthBadge insight={kr.healthInsight} />
@@ -549,7 +549,7 @@ function KrSubRow({
       <span />
 
       {/* Progress */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center justify-center gap-2.5">
         <OkrProgressBar
           percent={kr.progressPercent}
           status={kr.status}
@@ -563,7 +563,7 @@ function KrSubRow({
       </div>
 
       {/* Update button */}
-      <div className="flex justify-end gap-0.5">
+      <div className="flex justify-end gap-1">
         <EntityQuickViewEyeButton entity={{ kind: "keyResult", id: kr.id }} />
         <Button
           size="sm"

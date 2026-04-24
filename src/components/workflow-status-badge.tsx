@@ -72,7 +72,9 @@ export function WorkflowStatusRow({
     return <span className="text-[11px] text-muted-foreground/40">—</span>;
   }
   return (
-    <span className={cn("inline-flex min-w-0 max-w-full flex-wrap items-center gap-1", className)}>
+    <span
+      className={cn("inline-flex min-w-0 max-w-full flex-nowrap items-center gap-1", className)}
+    >
       <WorkflowStatusBadge insight={insight} size={size} />
       <WorkflowStatusHint insight={insight} />
     </span>

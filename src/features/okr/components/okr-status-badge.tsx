@@ -90,7 +90,7 @@ export function OkrEntityStatusRow({
 }) {
   return (
     <span
-      className={cn("inline-flex min-w-0 max-w-full flex-wrap items-center gap-1.5", className)}
+      className={cn("inline-flex min-w-0 max-w-full flex-nowrap items-center gap-1.5", className)}
     >
       {workflowStatusInsight ? (
         <>
