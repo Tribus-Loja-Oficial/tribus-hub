@@ -1,5 +1,13 @@
+import { HealthInsightHint, PaceHealthBadge } from "@/components/pace-health-badge";
+import { WorkflowStatusBadge, WorkflowStatusHint } from "@/components/workflow-status-badge";
 import { cn } from "@/lib/utils/cn";
-import type { OkrObjectiveStatus, OkrKeyResultStatus, OkrCycleStatus } from "@/lib/types/domain";
+import type {
+  HealthInsight,
+  OkrObjectiveStatus,
+  OkrKeyResultStatus,
+  OkrCycleStatus,
+  WorkflowStatusInsight,
+} from "@/lib/types/domain";
 
 type AnyStatus = OkrObjectiveStatus | OkrKeyResultStatus | OkrCycleStatus | string;
 
@@ -65,6 +73,37 @@ export function OkrStatusBadge({ status, size = "sm", className }: OkrStatusBadg
       )}
     >
       {config.label}
+    </span>
+  );
+}
+
+/** Status operacional (Planejado / Em progresso / Concluído) + saúde por ritmo quando a API envia insights. */
+export function OkrEntityStatusRow({
+  status,
+  workflowStatusInsight,
+  healthInsight,
+  size = "sm",
+  className,
+}: OkrStatusBadgeProps & {
+  healthInsight?: HealthInsight | null;
+  workflowStatusInsight?: WorkflowStatusInsight | null;
+}) {
+  return (
+    <span className={cn("inline-flex flex-wrap items-center gap-1.5", className)}>
+      {workflowStatusInsight ? (
+        <>
+          <WorkflowStatusBadge insight={workflowStatusInsight} size={size} />
+          <WorkflowStatusHint insight={workflowStatusInsight} />
+        </>
+      ) : (
+        <OkrStatusBadge status={status} size={size} />
+      )}
+      {healthInsight ? (
+        <>
+          <PaceHealthBadge insight={healthInsight} />
+          <HealthInsightHint insight={healthInsight} />
+        </>
+      ) : null}
     </span>
   );
 }

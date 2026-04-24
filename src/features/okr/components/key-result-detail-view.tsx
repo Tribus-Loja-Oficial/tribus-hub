@@ -7,7 +7,7 @@ import { ArrowLeft, TrendingUp, RefreshCw, Activity, Pencil } from "lucide-react
 import { Button } from "@/components/ui/button";
 import type { OkrKeyResult, OkrKeyResultUpdate, OkrObjective } from "@/lib/types/domain";
 import { invalidateAfterKeyResultMutation } from "@/lib/query/invalidate-hub-cache";
-import { OkrStatusBadge } from "./okr-status-badge";
+import { OkrEntityStatusRow } from "./okr-status-badge";
 import { OkrProgressBar, MiniProgressRing } from "./okr-progress-bar";
 import { UpdateKeyResultDialog } from "./update-key-result-dialog";
 import { EditKeyResultDialog } from "./edit-key-result-dialog";
@@ -160,7 +160,11 @@ export function KeyResultDetailView({ keyResultId, embedded }: KeyResultDetailVi
                 </select>
               ) : (
                 <button onClick={() => setEditingStatus(true)}>
-                  <OkrStatusBadge status={kr.status} />
+                  <OkrEntityStatusRow
+                  status={kr.status}
+                  workflowStatusInsight={kr.workflowStatusInsight}
+                  healthInsight={kr.healthInsight}
+                />
                 </button>
               )}
               <span className="text-xs text-muted-foreground">{METRIC_LABELS[kr.metricType]}</span>

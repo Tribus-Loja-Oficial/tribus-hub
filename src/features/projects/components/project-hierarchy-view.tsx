@@ -35,10 +35,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   ProjectStatusBadge,
-  ProjectHealthBadge,
+  ProjectHealthRow,
   PriorityBadge,
+  MilestoneHealthRow,
   MilestoneStatusBadge,
 } from "./project-badges";
+import { healthRowAccentClass } from "@/components/pace-health-badge";
+import { WorkflowStatusRow } from "@/components/workflow-status-badge";
+import { projectWorkflowSlug } from "@/features/projects/lib/project-workflow-slug";
 import { TaskFormDialog } from "@/features/tasks/components/task-form-dialog";
 import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
 import type { TaskColumn } from "@/lib/types/domain";
@@ -51,6 +55,22 @@ import { projectMatchesSearch } from "@/features/projects/lib/project-hierarchy-
 import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resizable-grid-columns";
 
 type MemberRow = { id: string; name: string; email: string };
+
+function projectStatusCell(project: ProjectHierarchyItem) {
+  return project.workflowStatusInsight ? (
+    <WorkflowStatusRow insight={project.workflowStatusInsight} />
+  ) : (
+    <ProjectStatusBadge status={project.status} />
+  );
+}
+
+function milestoneStatusCell(milestone: HierarchyMilestone) {
+  return milestone.workflowStatusInsight ? (
+    <WorkflowStatusRow insight={milestone.workflowStatusInsight} />
+  ) : (
+    <MilestoneStatusBadge status={milestone.status} />
+  );
+}
 
 /** 9 colunas: chevron | pasta | título | status | health | prioridade | prazo | progresso | ações */
 const HIERARCHY_GRID_ROW_CLASS = "hidden w-full min-w-0 items-center gap-x-2 md:grid";
@@ -305,8 +325,9 @@ function MilestoneRow({
           </button>
           <div className="flex-1" />
           <div className="flex shrink-0 items-center gap-2 opacity-75 transition-opacity group-hover:opacity-100">
-            <div className="flex justify-center" style={{ width: w[3] }}>
-              <MilestoneStatusBadge status={milestone.status} />
+            <div className="flex flex-wrap justify-center gap-0.5" style={{ width: w[3] }}>
+              {milestoneStatusCell(milestone)}
+              <MilestoneHealthRow insight={milestone.healthInsight} />
             </div>
             <div className="flex justify-center" style={{ width: w[5] }}>
               <PriorityBadge priority={milestone.priority} />
@@ -385,8 +406,9 @@ function MilestoneRow({
               </button>
             </div>
           </div>
-          <div className="flex min-w-0 justify-center opacity-75 transition-opacity group-hover:opacity-100">
-            <MilestoneStatusBadge status={milestone.status} />
+          <div className="flex min-w-0 flex-wrap justify-center gap-0.5 opacity-75 transition-opacity group-hover:opacity-100">
+            {milestoneStatusCell(milestone)}
+            <MilestoneHealthRow insight={milestone.healthInsight} />
           </div>
           <div className="min-w-0" aria-hidden />
           <div className="flex min-w-0 justify-center opacity-75 transition-opacity group-hover:opacity-100">
@@ -531,7 +553,12 @@ function ProjectRow({
   const cw = columnWidths;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
+    <div
+      className={cn(
+        "overflow-hidden rounded-xl border border-border border-l-[3px] bg-card",
+        healthRowAccentClass(project.healthInsight?.slug),
+      )}
+    >
       {/* Project header */}
       <div
         className="group cursor-pointer px-4 py-3 transition-colors hover:bg-muted/10"
@@ -567,7 +594,7 @@ function ProjectRow({
             )}
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <ProjectStatusBadge status={project.status} />
+            {projectStatusCell(project)}
             <PriorityBadge priority={project.priority} />
             <EntityQuickViewEyeButton
               entity={{ kind: "project", id: project.slug || project.id }}
@@ -629,11 +656,11 @@ function ProjectRow({
             )}
           </div>
           <div className="flex min-w-0 justify-center">
-            <ProjectStatusBadge status={project.status} />
+            {projectStatusCell(project)}
           </div>
           <div className="flex min-w-0 justify-center">
-            {project.healthStatus ? (
-              <ProjectHealthBadge health={project.healthStatus} />
+            {project.healthInsight || project.healthStatus ? (
+              <ProjectHealthRow insight={project.healthInsight} healthStatus={project.healthStatus} />
             ) : (
               <span className="text-[10px] text-muted-foreground/25">—</span>
             )}
@@ -895,9 +922,12 @@ export function ProjectHierarchyView({
     if (!data?.data) return [];
     return data.data.filter((p) => {
       if (searchQuery && !projectMatchesSearch(p, searchQuery)) return false;
-      if (filterStatus && p.status !== filterStatus) return false;
+      if (filterStatus && projectWorkflowSlug(p) !== filterStatus) return false;
       if (filterPriority && p.priority !== filterPriority) return false;
-      if (filterHealth && p.healthStatus !== filterHealth) return false;
+      if (filterHealth) {
+        const healthKey = p.healthInsight?.slug ?? p.healthStatus ?? "";
+        if (healthKey !== filterHealth) return false;
+      }
       return true;
     });
   }, [data, searchQuery, filterStatus, filterPriority, filterHealth]);
@@ -940,8 +970,10 @@ export function ProjectHierarchyView({
       <div className="overflow-x-auto">
         <div className="min-w-0 space-y-2">
           {/* Legend */}
-          <div className="flex select-none items-center gap-2 px-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/40">
-            <span className="min-w-0 flex-1 truncate md:hidden">Projeto / Milestone / Task</span>
+          <div className="flex select-none items-center gap-2 border-b border-border bg-muted/30 px-4 py-2.5 md:px-5">
+            <span className="min-w-0 flex-1 truncate text-xs font-semibold uppercase tracking-wide text-muted-foreground md:hidden">
+              Projeto / Milestone / Task
+            </span>
             <div
               className="hidden min-w-0 items-center gap-x-2 md:grid md:flex-1"
               style={hierarchyGridColumnsStyle(hierarchyGridTpl)}
@@ -953,22 +985,34 @@ export function ProjectHierarchyView({
                 startResize={startResize}
                 className="justify-start"
               >
-                <span className="min-w-0 truncate">Projeto / Milestone / Task</span>
+                <span className="min-w-0 truncate text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Projeto / Milestone / Task
+                </span>
               </HierarchyHeaderCell>
               <HierarchyHeaderCell resizeIndex={3} startResize={startResize}>
-                <span>Status</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Status
+                </span>
               </HierarchyHeaderCell>
               <HierarchyHeaderCell resizeIndex={4} startResize={startResize}>
-                <span>Health</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Saúde
+                </span>
               </HierarchyHeaderCell>
               <HierarchyHeaderCell resizeIndex={5} startResize={startResize}>
-                <span>Prioridade</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Prioridade
+                </span>
               </HierarchyHeaderCell>
               <HierarchyHeaderCell resizeIndex={6} startResize={startResize}>
-                <span>Prazo</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Prazo
+                </span>
               </HierarchyHeaderCell>
               <HierarchyHeaderCell resizeIndex={7} startResize={startResize}>
-                <span>Progresso</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Progresso
+                </span>
               </HierarchyHeaderCell>
               <div className="min-w-0" aria-hidden />
             </div>

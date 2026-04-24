@@ -1,4 +1,10 @@
-import type { OkrObjective, OkrKeyResult, Project } from "@/lib/types/domain";
+import type {
+  HealthInsight,
+  OkrObjective,
+  OkrKeyResult,
+  Project,
+  WorkflowStatusInsight,
+} from "@/lib/types/domain";
 
 /** Task row nested under hierarchy milestones (hub-api JSON). */
 export type HierarchyTask = {
@@ -32,6 +38,9 @@ export type HierarchyMilestone = {
   updatedAt: string | Date;
   tasks: HierarchyTask[];
   taskStats: { total: number; done: number };
+  taskProgressPercent?: number;
+  healthInsight?: HealthInsight;
+  workflowStatusInsight?: WorkflowStatusInsight;
 };
 
 export type ProjectHierarchyItem = Project & {

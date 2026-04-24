@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Target, TrendingUp, Plus, RefreshCw, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { OkrObjective, OkrKeyResult, OkrCycle } from "@/lib/types/domain";
-import { OkrStatusBadge, OkrPriorityBadge } from "./okr-status-badge";
+import { OkrEntityStatusRow, OkrPriorityBadge } from "./okr-status-badge";
 import { OkrProgressBar, MiniProgressRing } from "./okr-progress-bar";
 import { CreateKeyResultDialog } from "./create-key-result-dialog";
 import { UpdateKeyResultDialog } from "./update-key-result-dialog";
@@ -178,7 +178,11 @@ export function ObjectiveDetailView({ objectiveId, embedded }: ObjectiveDetailVi
                 </select>
               ) : (
                 <button onClick={() => setEditingStatus(true)}>
-                  <OkrStatusBadge status={objective.status} />
+                  <OkrEntityStatusRow
+                  status={objective.status}
+                  workflowStatusInsight={objective.workflowStatusInsight}
+                  healthInsight={objective.healthInsight}
+                />
                 </button>
               )}
               <OkrPriorityBadge priority={objective.priority} />
@@ -259,7 +263,11 @@ export function ObjectiveDetailView({ objectiveId, embedded }: ObjectiveDetailVi
                     {kr.title}
                   </Link>
                   <div className="mt-1.5 flex items-center gap-3">
-                    <OkrStatusBadge status={kr.status} />
+                    <OkrEntityStatusRow
+                    status={kr.status}
+                    workflowStatusInsight={kr.workflowStatusInsight}
+                    healthInsight={kr.healthInsight}
+                  />
                     {kr.metricType !== "boolean" && (
                       <span className="text-xs tabular-nums text-muted-foreground">
                         {kr.currentValue} / {kr.targetValue}

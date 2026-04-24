@@ -35,7 +35,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageGuide, GuideSection, GuideList, GuideExamples } from "@/components/ui/page-guide";
 import type { OkrCycle, OkrKeyResult } from "@/lib/types/domain";
-import { OkrStatusBadge } from "./okr-status-badge";
+import { OkrEntityStatusRow } from "./okr-status-badge";
 import { OkrProgressBar } from "./okr-progress-bar";
 import { CreateObjectiveDialog } from "./create-objective-dialog";
 import { CreateKeyResultDialog } from "./create-key-result-dialog";
@@ -909,7 +909,11 @@ function ObjectiveBlock({
         </div>
 
         <div className="flex items-center border-r border-border/60 px-1">
-          <OkrStatusBadge status={objective.status} />
+          <OkrEntityStatusRow
+          status={objective.status}
+          workflowStatusInsight={objective.workflowStatusInsight}
+          healthInsight={objective.healthInsight}
+        />
         </div>
 
         <div className="flex min-w-0 items-center border-r border-border/60 px-2">
@@ -1074,7 +1078,11 @@ function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete
       <div className="flex items-center border-r border-border/60 px-1" aria-hidden />
 
       <div className="flex items-center border-r border-border/60 px-1">
-        <OkrStatusBadge status={kr.status} />
+        <OkrEntityStatusRow
+        status={kr.status}
+        workflowStatusInsight={kr.workflowStatusInsight}
+        healthInsight={kr.healthInsight}
+      />
       </div>
 
       <div className="flex min-w-0 items-center border-r border-border/60 px-2">

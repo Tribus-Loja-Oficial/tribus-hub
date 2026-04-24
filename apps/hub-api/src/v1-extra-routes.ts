@@ -3,6 +3,13 @@
  * Kept separate from index.ts to limit file size.
  */
 import { ensureExternalRef } from "./external-refs";
+import {
+  buildCompletionSnapshotFromPreCompleteRow,
+  computePaceHealth,
+  resolveMilestoneWindow,
+  resolveProjectWindow,
+} from "./pace-health";
+import { workflowStatusForMilestoneRow, workflowStatusForProjectRow } from "./pace-workflow-status";
 
 type D1PreparedStatement = {
   bind: (...values: unknown[]) => D1PreparedStatement;
@@ -32,6 +39,73 @@ function json(data: unknown, status = 200) {
 
 function createId() {
   return crypto.randomUUID().replace(/-/g, "");
+}
+
+async function milestoneTaskProgressPercentByProject(
+  db: D1DatabaseLike,
+  projectId: string,
+): Promise<Map<string, number>> {
+  const r = await db
+    .prepare(
+      `SELECT milestone_id,
+              COUNT(*) as total,
+              SUM(CASE WHEN completed_at IS NOT NULL THEN 1 ELSE 0 END) as done
+       FROM tasks
+       WHERE project_id = ? AND deleted_at IS NULL AND milestone_id IS NOT NULL
+       GROUP BY milestone_id`,
+    )
+    .bind(projectId)
+    .all<{ milestone_id: string; total: number; done: number }>();
+  const m = new Map<string, number>();
+  for (const row of r.results ?? []) {
+    const t = Number(row.total ?? 0);
+    const d = Number(row.done ?? 0);
+    m.set(String(row.milestone_id), t > 0 ? Math.round((d / t) * 100) : 0);
+  }
+  return m;
+}
+
+function healthInsightForProjectRow(raw: Record<string, unknown>) {
+  const w = resolveProjectWindow(raw);
+  return computePaceHealth({
+    kind: "project",
+    status: String(raw.status ?? "planned"),
+    progressPercent: Number(raw.progress_percent ?? 0),
+    windowStart: w.start,
+    windowEnd: w.end,
+    dateSourcePt: w.dateSourcePt,
+    completedAt: (raw.completed_at as string | null) ?? null,
+    healthSnapshotJson: (raw.health_snapshot_json as string | null) ?? null,
+  });
+}
+
+function healthInsightForMilestoneRow(
+  raw: Record<string, unknown>,
+  projectRaw: Record<string, unknown>,
+  taskProgressPercent: number,
+) {
+  const progress =
+    String(raw.status ?? "") === "completed"
+      ? 100
+      : Math.max(0, Math.min(100, taskProgressPercent));
+  const w = resolveMilestoneWindow(
+    { due_date: raw.due_date as string | null },
+    {
+      start_date: projectRaw.start_date as string | null,
+      target_date: projectRaw.target_date as string | null,
+      title: projectRaw.title as string | null,
+    },
+  );
+  return computePaceHealth({
+    kind: "milestone",
+    status: String(raw.status ?? "pending"),
+    progressPercent: progress,
+    windowStart: w.start,
+    windowEnd: w.end,
+    dateSourcePt: w.dateSourcePt,
+    completedAt: (raw.completed_at as string | null) ?? null,
+    healthSnapshotJson: (raw.health_snapshot_json as string | null) ?? null,
+  });
 }
 
 /** Resolve project route param (UUID or slug) to canonical project id. */
@@ -376,14 +450,34 @@ export async function handleV1ExtraRoutes(
     const daysAhead = Number(new URL(request.url).searchParams.get("days") ?? "14");
     try {
       const proj = await db
-        .prepare(`SELECT id, title FROM projects WHERE workspace_id = ? AND deleted_at IS NULL`)
+        .prepare(
+          `SELECT id, title, start_date, target_date, status FROM projects WHERE workspace_id = ? AND deleted_at IS NULL`,
+        )
         .bind(workspaceId)
-        .all<{ id: string; title: string }>();
+        .all<{
+          id: string;
+          title: string;
+          start_date: string | null;
+          target_date: string | null;
+          status: string;
+        }>();
       if (!proj.success) throw new Error(proj.error);
       const plist = proj.results ?? [];
       if (plist.length === 0) return json({ data: [] });
       const pids = plist.map((p) => p.id);
       const titles = new Map(plist.map((p) => [p.id, p.title]));
+      const projectRowById = new Map(
+        plist.map((p) => [
+          p.id,
+          {
+            id: p.id,
+            title: p.title,
+            start_date: p.start_date,
+            target_date: p.target_date,
+            status: p.status,
+          } as Record<string, unknown>,
+        ]),
+      );
       const ph = pids.map(() => "?").join(", ");
       const today = new Date().toISOString().slice(0, 10);
       const future = new Date(Date.now() + daysAhead * 86400000).toISOString().slice(0, 10);
@@ -396,10 +490,17 @@ export async function handleV1ExtraRoutes(
       if (!ms.success) throw new Error(ms.error);
       const rows = (ms.results ?? [])
         .filter((m) => m.status !== "completed")
-        .map((m) => ({
-          ...mapMilestoneCamel(m),
-          projectTitle: titles.get(m.project_id as string) ?? "",
-        }));
+        .map((m) => {
+          const raw = m as Record<string, unknown>;
+          const pid = m.project_id as string;
+          const projectRaw = projectRowById.get(pid) ?? {};
+          const workflowStatusInsight = workflowStatusForMilestoneRow(raw, projectRaw);
+          return {
+            ...mapMilestoneCamel(m),
+            projectTitle: titles.get(pid) ?? "",
+            workflowStatusInsight,
+          };
+        });
       return json({ data: rows });
     } catch (e) {
       const message = e instanceof Error ? e.message : "upcoming milestones failed";
@@ -509,24 +610,38 @@ export async function handleV1ExtraRoutes(
         }
       }
       const today = new Date().toISOString().slice(0, 10);
+      const progCache = new Map<string, Map<string, number>>();
+      await Promise.all(
+        pids.map(async (pid) => {
+          const m = await milestoneTaskProgressPercentByProject(db, pid);
+          progCache.set(pid, m);
+        }),
+      );
       const data = plist.map((raw) => {
         const id = raw.id as string;
         const projMilestones = milestonesByProject.get(id) ?? [];
         const projTasks = tasksByProject.get(id) ?? [];
         const doneTasks = projTasks.filter((x: { completedAt: unknown }) => !!x.completedAt).length;
+        const progMap = progCache.get(id) ?? new Map<string, number>();
         return {
           ...mapProjectRowCamel(raw),
+          healthInsight: healthInsightForProjectRow(raw),
+          workflowStatusInsight: workflowStatusForProjectRow(raw),
           milestones: projMilestones.map((milestone) => {
             const mid = milestone.id as string;
             const mTasks = (tasksByMilestone.get(mid) ?? []) as {
               completedAt: unknown;
             }[];
             const mDone = mTasks.filter((t) => !!t.completedAt).length;
+            const pct = progMap.get(mid) ?? 0;
             return {
               ...mapMilestoneCamel(milestone),
               externalRef: refMap.get(`milestone:${mid}`) ?? null,
               tasks: mTasks,
               taskStats: { total: mTasks.length, done: mDone },
+              taskProgressPercent: pct,
+              healthInsight: healthInsightForMilestoneRow(milestone, raw, pct),
+              workflowStatusInsight: workflowStatusForMilestoneRow(milestone, raw),
             };
           }),
           externalRef: refMap.get(`project:${id}`) ?? null,
@@ -693,20 +808,31 @@ export async function handleV1ExtraRoutes(
           .all<Record<string, unknown>>();
         if (!row.success || !row.results?.[0])
           return json({ error: { message: "Not found" } }, 404);
-        return json({ data: mapProjectRowCamel(row.results[0]) });
+        const pr = row.results[0];
+        return json({
+          data: {
+            ...mapProjectRowCamel(pr),
+            healthInsight: healthInsightForProjectRow(pr),
+            workflowStatusInsight: workflowStatusForProjectRow(pr),
+          },
+        });
       }
       if (method === "PATCH") {
         const aerr = needActor();
         if (aerr) return aerr;
         const input = parseJson<Record<string, unknown>>(body);
-        const row = await db
+        const curRes = await db
           .prepare(
-            `SELECT id FROM projects WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`,
+            `SELECT * FROM projects WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`,
           )
           .bind(projectId, workspaceId)
-          .all<{ id: string }>();
-        if (!row.success || !row.results?.[0])
+          .all<Record<string, unknown>>();
+        if (!curRes.success || !curRes.results?.[0])
           return json({ error: { message: "Not found" } }, 404);
+        const cur = curRes.results[0];
+        const prevStatus = String(cur.status ?? "planned");
+        const nextStatus = input.status !== undefined ? String(input.status) : prevStatus;
+        const nowIso = new Date().toISOString();
         const sets: string[] = [];
         const args: unknown[] = [];
         const map: [string, string][] = [
@@ -725,8 +851,30 @@ export async function handleV1ExtraRoutes(
             args.push(input[js] ?? null);
           }
         }
+        if (nextStatus === "completed" && prevStatus !== "completed") {
+          const w = resolveProjectWindow(cur);
+          const snap = buildCompletionSnapshotFromPreCompleteRow({
+            kind: "project",
+            previousStatus: prevStatus,
+            progressPercent: Number(cur.progress_percent ?? 0),
+            windowStart: w.start,
+            windowEnd: w.end,
+            dateSourcePt: w.dateSourcePt,
+            existingSnapshot: (cur.health_snapshot_json as string | null) ?? null,
+          });
+          if (snap) {
+            sets.push("health_snapshot_json = ?", "completed_at = ?");
+            args.push(snap, cur.completed_at ? cur.completed_at : nowIso);
+          } else if (!cur.completed_at) {
+            sets.push("completed_at = ?");
+            args.push(nowIso);
+          }
+        } else if (nextStatus !== "completed" && prevStatus === "completed") {
+          sets.push("health_snapshot_json = ?", "completed_at = ?");
+          args.push(null, null);
+        }
         sets.push("updated_by = ?", "updated_at = ?");
-        args.push(actorUserId, new Date().toISOString(), projectId, workspaceId);
+        args.push(actorUserId, nowIso, projectId, workspaceId);
         const q = `UPDATE projects SET ${sets.join(", ")} WHERE id = ? AND workspace_id = ?`;
         const up = await db
           .prepare(q)
@@ -737,7 +885,14 @@ export async function handleV1ExtraRoutes(
           .prepare(`SELECT * FROM projects WHERE id = ?`)
           .bind(projectId)
           .all<Record<string, unknown>>();
-        return json({ data: mapProjectRowCamel(again.results?.[0] ?? {}) });
+        const pr2 = again.results?.[0] ?? {};
+        return json({
+          data: {
+            ...mapProjectRowCamel(pr2),
+            healthInsight: healthInsightForProjectRow(pr2),
+            workflowStatusInsight: workflowStatusForProjectRow(pr2),
+          },
+        });
       }
       if (method === "DELETE") {
         const now = new Date().toISOString();
@@ -763,8 +918,13 @@ export async function handleV1ExtraRoutes(
         .all<Record<string, unknown>>();
       if (!proj.success || !proj.results?.[0])
         return json({ error: { message: "Not found" } }, 404);
-      const project = mapProjectRowCamel(proj.results[0]);
-      const [ms, linkRows, taskCount] = await Promise.all([
+      const projectRaw = proj.results[0];
+      const projectDto = {
+        ...mapProjectRowCamel(projectRaw),
+        healthInsight: healthInsightForProjectRow(projectRaw),
+        workflowStatusInsight: workflowStatusForProjectRow(projectRaw),
+      };
+      const [ms, linkRows, taskCount, mileProg] = await Promise.all([
         db
           .prepare(`SELECT * FROM milestones WHERE project_id = ? ORDER BY sort_order ASC`)
           .bind(projectId)
@@ -779,6 +939,7 @@ export async function handleV1ExtraRoutes(
           .prepare(`SELECT COUNT(*) as c FROM tasks WHERE project_id = ? AND deleted_at IS NULL`)
           .bind(projectId)
           .all<{ c: number }>(),
+        milestoneTaskProgressPercentByProject(db, projectId),
       ]);
       const objIdsOrdered = (linkRows.results ?? [])
         .map((r) => r.okr_objective_id)
@@ -821,7 +982,16 @@ export async function handleV1ExtraRoutes(
         )
         .bind(workspaceId, projectId)
         .all<Record<string, unknown>>();
-      const milestones = (ms.results ?? []).map(mapMilestoneCamel);
+      const progMap = mileProg;
+      const milestones = (ms.results ?? []).map((mm) => {
+        const pct = progMap.get(String(mm.id)) ?? 0;
+        return {
+          ...mapMilestoneCamel(mm),
+          taskProgressPercent: pct,
+          healthInsight: healthInsightForMilestoneRow(mm, projectRaw, pct),
+          workflowStatusInsight: workflowStatusForMilestoneRow(mm, projectRaw),
+        };
+      });
       const projectRefMap = await getExternalRefMap(db, workspaceId, "project", [projectId]);
       const milestoneRefMap = await getExternalRefMap(
         db,
@@ -884,7 +1054,7 @@ export async function handleV1ExtraRoutes(
       return json({
         data: {
           project: {
-            ...project,
+            ...projectDto,
             externalRef: projectRefMap.get(projectId) ?? null,
           },
           milestones: milestones.map((m) => ({
@@ -921,7 +1091,23 @@ export async function handleV1ExtraRoutes(
           .prepare(`SELECT * FROM milestones WHERE project_id = ? ORDER BY sort_order ASC`)
           .bind(projectId)
           .all<Record<string, unknown>>();
-        return json({ data: (rows.results ?? []).map(mapMilestoneCamel) });
+        const projFull = await db
+          .prepare(`SELECT * FROM projects WHERE id = ? AND workspace_id = ?`)
+          .bind(projectId, workspaceId)
+          .all<Record<string, unknown>>();
+        const projectRaw = projFull.results?.[0] ?? {};
+        const progMap = await milestoneTaskProgressPercentByProject(db, projectId);
+        return json({
+          data: (rows.results ?? []).map((mm) => {
+            const pct = progMap.get(String(mm.id)) ?? 0;
+            return {
+              ...mapMilestoneCamel(mm),
+              taskProgressPercent: pct,
+              healthInsight: healthInsightForMilestoneRow(mm, projectRaw, pct),
+              workflowStatusInsight: workflowStatusForMilestoneRow(mm, projectRaw),
+            };
+          }),
+        });
       }
       if (method === "POST") {
         const aerr = needActor();
@@ -954,13 +1140,32 @@ export async function handleV1ExtraRoutes(
           .prepare(`SELECT * FROM milestones WHERE id = ?`)
           .bind(id)
           .all<Record<string, unknown>>();
+        const mm = row.results?.[0] ?? {};
+        const projFull = await db
+          .prepare(`SELECT * FROM projects WHERE id = ? AND workspace_id = ?`)
+          .bind(projectId, workspaceId)
+          .all<Record<string, unknown>>();
+        const projectRaw = projFull.results?.[0] ?? {};
+        const progMap = await milestoneTaskProgressPercentByProject(db, projectId);
+        const pct = progMap.get(String(id)) ?? 0;
         const externalRef = await ensureExternalRef(db, {
           workspaceId,
           entityType: "milestone",
           entityId: id,
           suggestedRef: (input.externalRef as string | undefined) ?? null,
         });
-        return json({ data: { ...mapMilestoneCamel(row.results?.[0] ?? {}), externalRef } }, 201);
+        return json(
+          {
+            data: {
+              ...mapMilestoneCamel(mm),
+              taskProgressPercent: pct,
+              healthInsight: healthInsightForMilestoneRow(mm, projectRaw, pct),
+              workflowStatusInsight: workflowStatusForMilestoneRow(mm, projectRaw),
+              externalRef,
+            },
+          },
+          201,
+        );
       }
     }
 
@@ -988,10 +1193,21 @@ export async function handleV1ExtraRoutes(
           .all<Record<string, unknown>>();
         if (!row.success || !row.results?.[0])
           return json({ error: { message: "Not found" } }, 404);
+        const mm = row.results[0];
+        const projFull = await db
+          .prepare(`SELECT * FROM projects WHERE id = ? AND workspace_id = ?`)
+          .bind(projectId, workspaceId)
+          .all<Record<string, unknown>>();
+        const projectRaw = projFull.results?.[0] ?? {};
+        const progMap = await milestoneTaskProgressPercentByProject(db, projectId);
+        const pct = progMap.get(String(milestoneId)) ?? 0;
         const mref = await getExternalRefMap(db, workspaceId, "milestone", [milestoneId]);
         return json({
           data: {
-            ...mapMilestoneCamel(row.results[0]),
+            ...mapMilestoneCamel(mm),
+            taskProgressPercent: pct,
+            healthInsight: healthInsightForMilestoneRow(mm, projectRaw, pct),
+            workflowStatusInsight: workflowStatusForMilestoneRow(mm, projectRaw),
             externalRef: mref.get(milestoneId) ?? null,
           },
         });
@@ -1000,6 +1216,22 @@ export async function handleV1ExtraRoutes(
         const aerr = needActor();
         if (aerr) return aerr;
         const input = parseJson<Record<string, unknown>>(body);
+        const curRes = await db
+          .prepare(`SELECT * FROM milestones WHERE id = ? AND project_id = ?`)
+          .bind(milestoneId, projectId)
+          .all<Record<string, unknown>>();
+        if (!curRes.success || !curRes.results?.[0])
+          return json({ error: { message: "Not found" } }, 404);
+        const cur = curRes.results[0];
+        const projFull = await db
+          .prepare(`SELECT * FROM projects WHERE id = ? AND workspace_id = ?`)
+          .bind(projectId, workspaceId)
+          .all<Record<string, unknown>>();
+        const projectRaw = projFull.results?.[0] ?? {};
+        const prevStatus = String(cur.status ?? "pending");
+        const nextStatus =
+          input.status !== undefined ? String(input.status) : prevStatus;
+        const nowIso = new Date().toISOString();
         const sets: string[] = [];
         const args: unknown[] = [];
         const pairs: [string, string][] = [
@@ -1017,15 +1249,43 @@ export async function handleV1ExtraRoutes(
             args.push(input[js] ?? null);
           }
         }
-        if (sets.length === 0) {
-          const row = await db
-            .prepare(`SELECT * FROM milestones WHERE id = ?`)
-            .bind(milestoneId)
-            .all<Record<string, unknown>>();
-          return json({ data: mapMilestoneCamel(row.results?.[0] ?? {}) });
+        const mergedMilestone = {
+          ...cur,
+          status: nextStatus,
+          due_date: input.dueDate !== undefined ? input.dueDate : cur.due_date,
+        };
+        const w = resolveMilestoneWindow(
+          { due_date: mergedMilestone.due_date as string | null },
+          {
+            start_date: projectRaw.start_date as string | null,
+            target_date: projectRaw.target_date as string | null,
+            title: projectRaw.title as string | null,
+          },
+        );
+        let healthSnap: string | null = (cur.health_snapshot_json as string | null) ?? null;
+        let completedAt: string | null = (cur.completed_at as string | null) ?? null;
+        if (nextStatus === "completed" && prevStatus !== "completed") {
+          const snap = buildCompletionSnapshotFromPreCompleteRow({
+            kind: "milestone",
+            previousStatus: prevStatus,
+            progressPercent: 100,
+            windowStart: w.start,
+            windowEnd: w.end,
+            dateSourcePt: w.dateSourcePt,
+            existingSnapshot: healthSnap,
+          });
+          if (snap) {
+            healthSnap = snap;
+            if (!completedAt) completedAt = nowIso;
+          } else if (!completedAt) completedAt = nowIso;
+        } else if (nextStatus !== "completed" && prevStatus === "completed") {
+          healthSnap = null;
+          completedAt = null;
         }
+        sets.push("health_snapshot_json = ?", "completed_at = ?");
+        args.push(healthSnap, completedAt);
         sets.push("updated_at = ?");
-        args.push(new Date().toISOString(), milestoneId);
+        args.push(nowIso, milestoneId);
         const up = await db
           .prepare(`UPDATE milestones SET ${sets.join(", ")} WHERE id = ?`)
           .bind(...args)
@@ -1035,7 +1295,17 @@ export async function handleV1ExtraRoutes(
           .prepare(`SELECT * FROM milestones WHERE id = ?`)
           .bind(milestoneId)
           .all<Record<string, unknown>>();
-        return json({ data: mapMilestoneCamel(row.results?.[0] ?? {}) });
+        const mm2 = row.results?.[0] ?? {};
+        const progMap = await milestoneTaskProgressPercentByProject(db, projectId);
+        const pct = progMap.get(String(milestoneId)) ?? 0;
+        return json({
+          data: {
+            ...mapMilestoneCamel(mm2),
+            taskProgressPercent: pct,
+            healthInsight: healthInsightForMilestoneRow(mm2, projectRaw, pct),
+            workflowStatusInsight: workflowStatusForMilestoneRow(mm2, projectRaw),
+          },
+        });
       }
       if (method === "DELETE") {
         const del = await db.prepare(`DELETE FROM milestones WHERE id = ?`).bind(milestoneId).all();
@@ -1236,6 +1506,7 @@ function mapProjectRowCamel(raw: Record<string, unknown>) {
     descriptionText: raw.description_text,
     status: raw.status,
     healthStatus: raw.health_status,
+    healthSnapshotJson: (raw.health_snapshot_json as string | null | undefined) ?? null,
     priority: raw.priority,
     progressPercent: Number(raw.progress_percent ?? 0),
     ownerUserId: raw.owner_user_id,
@@ -1280,6 +1551,7 @@ function mapMilestoneCamel(m: Record<string, unknown>) {
     priority: m.priority,
     dueDate: m.due_date,
     completedAt: m.completed_at,
+    healthSnapshotJson: (m.health_snapshot_json as string | null | undefined) ?? null,
     ownerUserId: m.owner_user_id,
     sortOrder: m.sort_order,
     createdAt: m.created_at,

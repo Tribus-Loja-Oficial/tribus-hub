@@ -25,7 +25,7 @@ export async function GET() {
     ]);
     return NextResponse.json({
       data: {
-        stats,
+        ...(stats as Record<string, unknown>),
         upcomingMilestones,
         overdueTasksCount: overdueWrap.count,
       },

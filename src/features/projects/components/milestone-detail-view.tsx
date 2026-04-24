@@ -9,7 +9,8 @@ import { DateField } from "@/components/ui/date-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Milestone } from "@/lib/types/domain";
-import { MilestoneStatusBadge, PriorityBadge } from "./project-badges";
+import { WorkflowStatusRow } from "@/components/workflow-status-badge";
+import { MilestoneHealthRow, MilestoneStatusBadge, PriorityBadge } from "./project-badges";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -109,8 +110,13 @@ export function MilestoneDetailView({ paramsPromise, embedded }: MilestoneDetail
                   Ref: {m.externalRef}
                 </p>
               )}
-              <div className="mt-2 flex flex-wrap gap-2">
-                <MilestoneStatusBadge status={m.status} />
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                {m.workflowStatusInsight ? (
+                  <WorkflowStatusRow insight={m.workflowStatusInsight} />
+                ) : (
+                  <MilestoneStatusBadge status={m.status} />
+                )}
+                <MilestoneHealthRow insight={m.healthInsight} />
                 <PriorityBadge priority={m.priority} />
                 {m.dueDate && (
                   <span className="text-xs text-muted-foreground">

@@ -1,14 +1,27 @@
 import { cn } from "@/lib/utils/cn";
+import type { PaceHealthSlug } from "@/lib/types/domain";
 
 interface OkrProgressBarProps {
   percent: number;
   status?: string;
+  /** Quando a API envia saúde por ritmo, a cor da barra segue o slug de saúde. */
+  healthSlug?: PaceHealthSlug | null;
   showLabel?: boolean;
   size?: "xs" | "sm" | "md";
   className?: string;
 }
 
-function getTrackColor(status?: string, percent?: number): string {
+function getTrackColorFromHealth(slug: PaceHealthSlug, percent: number): string {
+  if (slug === "off_track") return "bg-red-500";
+  if (slug === "at_risk") return "bg-amber-500";
+  if (slug === "on_track" || slug === "ahead") return "bg-emerald-500";
+  if (slug === "completed_legacy" || percent >= 100) return "bg-blue-500";
+  if (slug === "draft" || slug === "no_dates" || slug === "not_started") return "bg-zinc-400";
+  return "bg-zinc-400";
+}
+
+function getTrackColor(status?: string, percent?: number, healthSlug?: PaceHealthSlug | null): string {
+  if (healthSlug) return getTrackColorFromHealth(healthSlug, percent ?? 0);
   if (status === "completed" || (percent ?? 0) >= 100) return "bg-blue-500";
   if (status === "on_track") return "bg-emerald-500";
   if (status === "at_risk") return "bg-amber-500";
@@ -21,12 +34,13 @@ function getTrackColor(status?: string, percent?: number): string {
 export function OkrProgressBar({
   percent,
   status,
+  healthSlug,
   showLabel = false,
   size = "sm",
   className,
 }: OkrProgressBarProps) {
   const clamped = Math.min(100, Math.max(0, percent));
-  const trackColor = getTrackColor(status, clamped);
+  const trackColor = getTrackColor(status, clamped, healthSlug);
 
   const heights: Record<string, string> = {
     xs: "h-1",

@@ -32,7 +32,7 @@ import type {
   OkrCycleWithStats,
   ObjectiveWithKRs,
 } from "@/lib/services/okr.service";
-import { OkrStatusBadge } from "./okr-status-badge";
+import { OkrEntityStatusRow, OkrStatusBadge } from "./okr-status-badge";
 import { OkrProgressBar } from "./okr-progress-bar";
 import { CreateCycleDialog } from "./create-cycle-dialog";
 import { UpdateCycleDialog } from "./update-cycle-dialog";
@@ -912,7 +912,11 @@ function CycleExpandedObjectives({
                   {obj.title}
                 </span>
                 <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
-                  <OkrStatusBadge status={obj.status} />
+                  <OkrEntityStatusRow
+                    status={obj.status}
+                    workflowStatusInsight={obj.workflowStatusInsight}
+                    healthInsight={obj.healthInsight}
+                  />
                   <span className="text-xs tabular-nums text-muted-foreground">
                     {Math.round(obj.progressPercent)}% · {obj.keyResults.length} KR
                     {obj.keyResults.length !== 1 ? "s" : ""}

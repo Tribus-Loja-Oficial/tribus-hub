@@ -36,10 +36,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, isBefore, startOfDay, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils/cn";
+import { WorkflowStatusRow } from "@/components/workflow-status-badge";
 import {
   ProjectStatusBadge,
-  ProjectHealthBadge,
+  ProjectHealthRow,
   PriorityBadge,
+  MilestoneHealthRow,
   MilestoneStatusBadge,
 } from "./project-badges";
 import type { OkrObjective, OkrKeyResult } from "@/lib/types/domain";
@@ -611,8 +613,12 @@ export function ProjectDetailView({ paramsPromise, embedded }: ProjectDetailView
               </p>
             )}
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <ProjectStatusBadge status={project.status} />
-              {project.healthStatus && <ProjectHealthBadge health={project.healthStatus} />}
+              {project.workflowStatusInsight ? (
+                <WorkflowStatusRow insight={project.workflowStatusInsight} />
+              ) : (
+                <ProjectStatusBadge status={project.status} />
+              )}
+              <ProjectHealthRow insight={project.healthInsight} healthStatus={project.healthStatus} />
               <PriorityBadge priority={project.priority} />
               {owner && (
                 <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
@@ -856,7 +862,14 @@ export function ProjectDetailView({ paramsPromise, embedded }: ProjectDetailView
                         </span>
                       )}
                       <div className="flex shrink-0 items-center gap-1.5">
-                        <MilestoneStatusBadge status={m.status} />
+                        <span className="inline-flex flex-wrap items-center gap-1">
+                          {m.workflowStatusInsight ? (
+                            <WorkflowStatusRow insight={m.workflowStatusInsight} />
+                          ) : (
+                            <MilestoneStatusBadge status={m.status} />
+                          )}
+                          <MilestoneHealthRow insight={m.healthInsight} />
+                        </span>
                         {m.dueDate && (
                           <span
                             className={cn(

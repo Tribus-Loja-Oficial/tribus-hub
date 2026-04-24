@@ -22,13 +22,9 @@ import { Button } from "@/components/ui/button";
 import { PageGuide, GuideSection, GuideList } from "@/components/ui/page-guide";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import {
-  ProjectStatusBadge,
-  ProjectHealthBadge,
-  PriorityBadge,
-  MilestoneStatusBadge,
-} from "./project-badges";
-import type { Project } from "@/lib/types/domain";
+import { ProjectHealthRow, PriorityBadge, MilestoneStatusBadge } from "./project-badges";
+import type { Project, WorkflowStatusInsight } from "@/lib/types/domain";
+import { WorkflowStatusRow } from "@/components/workflow-status-badge";
 import { cn } from "@/lib/utils/cn";
 
 interface UpcomingMilestone {
@@ -39,6 +35,7 @@ interface UpcomingMilestone {
   status: string;
   dueDate: string | null;
   priority: string;
+  workflowStatusInsight?: WorkflowStatusInsight | null;
 }
 
 interface DashboardStats {
@@ -118,12 +115,10 @@ export function PmDashboardPage() {
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
     .slice(0, 8);
 
-  const attentionProjects = projects.filter(
-    (p) =>
-      p.healthStatus === "at_risk" ||
-      p.healthStatus === "blocked" ||
-      p.healthStatus === "off_track",
-  );
+  const attentionProjects = projects.filter((p) => {
+    const h = p.healthInsight?.slug ?? p.healthStatus;
+    return h === "at_risk" || h === "blocked" || h === "off_track";
+  });
 
   const recentProjects = projects
     .slice()
@@ -139,7 +134,7 @@ export function PmDashboardPage() {
             <FolderKanban className="h-[18px] w-[18px] text-primary" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold leading-tight text-foreground">Projects</h1>
+            <h1 className="text-lg font-semibold leading-tight text-foreground">Projetos</h1>
             <p className="mt-0.5 text-xs text-muted-foreground">Visão executiva do portfólio</p>
           </div>
         </div>
@@ -197,7 +192,7 @@ export function PmDashboardPage() {
             label="Ativos"
             value={stats.activeProjects}
             color="bg-emerald-50 text-emerald-600"
-            href="/projects/list?status=active"
+            href="/projects/list?status=in_progress"
           />
           <StatCard
             icon={AlertTriangle}
@@ -245,7 +240,7 @@ export function PmDashboardPage() {
                 Projetos ativos
               </h2>
               <Link
-                href="/projects/list?status=active"
+                href="/projects/list?status=in_progress"
                 className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
               >
                 Ver todos <ChevronRight className="h-3 w-3" />
@@ -301,7 +296,7 @@ export function PmDashboardPage() {
                       )}
                     </div>
                     <div className="flex shrink-0 items-center gap-1.5">
-                      {project.healthStatus && <ProjectHealthBadge health={project.healthStatus} />}
+                      <ProjectHealthRow insight={project.healthInsight} healthStatus={project.healthStatus} />
                       <PriorityBadge priority={project.priority} />
                       {project.targetDate && (
                         <span className="hidden text-[11px] text-muted-foreground md:block">
@@ -337,7 +332,11 @@ export function PmDashboardPage() {
                       <p className="truncate text-[11px] text-muted-foreground">{m.projectTitle}</p>
                     </div>
                     <div className="flex shrink-0 items-center gap-1.5">
-                      <MilestoneStatusBadge status={m.status} />
+                      {m.workflowStatusInsight ? (
+                        <WorkflowStatusRow insight={m.workflowStatusInsight} />
+                      ) : (
+                        <MilestoneStatusBadge status={m.status} />
+                      )}
                       {m.dueDate && (
                         <span className="text-xs tabular-nums text-muted-foreground">
                           {format(new Date(m.dueDate), "dd MMM", { locale: ptBR })}
@@ -384,7 +383,7 @@ export function PmDashboardPage() {
                       </p>
                     </div>
                     <div className="shrink-0">
-                      {project.healthStatus && <ProjectHealthBadge health={project.healthStatus} />}
+                      <ProjectHealthRow insight={project.healthInsight} healthStatus={project.healthStatus} />
                     </div>
                   </Link>
                 ))}

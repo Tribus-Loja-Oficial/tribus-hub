@@ -36,6 +36,44 @@ export type OkrKeyResultStatus = "draft" | "on_track" | "at_risk" | "off_track" 
 export type OkrMetricType = "percentage" | "number" | "currency" | "boolean" | "custom";
 export type OkrPriority = "low" | "medium" | "high" | "critical";
 
+/** Pace-based health from hub-api (`computePaceHealth`). */
+export type PaceHealthSlug =
+  | "draft"
+  | "no_dates"
+  | "not_started"
+  | "ahead"
+  | "on_track"
+  | "at_risk"
+  | "off_track"
+  | "completed_legacy";
+
+export interface HealthInsight {
+  slug: PaceHealthSlug;
+  labelPt: string;
+  diff: number | null;
+  elapsedPercent: number | null;
+  progressPercent: number;
+  band: number;
+  windowStart: string | null;
+  windowEnd: string | null;
+  dateSourcePt: string;
+  locked: boolean;
+  explanationPt: string;
+}
+
+/** Status operacional unificado (calendário + cadastro), vindo do hub-api. */
+export type WorkflowStatusSlug = "planned" | "in_progress" | "completed";
+
+export interface WorkflowStatusInsight {
+  slug: WorkflowStatusSlug;
+  labelPt: string;
+  dateSourcePt: string;
+  windowStart: string | null;
+  windowEnd: string | null;
+  locked: boolean;
+  explanationPt: string;
+}
+
 export interface OkrCycle {
   id: string;
   externalRef?: string | null;
@@ -71,6 +109,9 @@ export interface OkrObjective {
   startDate: string | null;
   targetDate: string | null;
   completedAt: string | null;
+  healthSnapshotJson?: string | null;
+  healthInsight?: HealthInsight;
+  workflowStatusInsight?: WorkflowStatusInsight;
   createdBy: string;
   updatedBy: string;
   createdAt: string;
@@ -102,6 +143,9 @@ export interface OkrKeyResult {
   startDate: string | null;
   targetDate: string | null;
   completedAt: string | null;
+  healthSnapshotJson?: string | null;
+  healthInsight?: HealthInsight;
+  workflowStatusInsight?: WorkflowStatusInsight;
   createdBy: string;
   updatedBy: string;
   createdAt: string;
@@ -143,6 +187,9 @@ export interface Project {
   startDate: string | null;
   targetDate: string | null;
   completedAt: string | null;
+  healthSnapshotJson?: string | null;
+  healthInsight?: HealthInsight;
+  workflowStatusInsight?: WorkflowStatusInsight;
   createdBy: string;
   updatedBy: string;
   createdAt: string;
@@ -163,6 +210,11 @@ export interface Milestone {
   priority: ProjectPriority;
   dueDate: string | null;
   completedAt: string | null;
+  healthSnapshotJson?: string | null;
+  /** % of tasks under this milestone that are done (hub-api). */
+  taskProgressPercent?: number;
+  healthInsight?: HealthInsight;
+  workflowStatusInsight?: WorkflowStatusInsight;
   ownerUserId: string | null;
   sortOrder: number;
   createdAt: string;

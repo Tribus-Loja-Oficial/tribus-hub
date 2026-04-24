@@ -1,5 +1,8 @@
 "use client";
 
+import { HealthInsightHint, PaceHealthBadge } from "@/components/pace-health-badge";
+import type { HealthInsight } from "@/lib/types/domain";
+
 const chip =
   "inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ring-black/[0.04] dark:ring-white/[0.06]";
 
@@ -127,6 +130,36 @@ export function ProjectHealthBadge({ health }: { health: string }) {
       <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${cfg.dot}`} />
       {cfg.label}
     </Badge>
+  );
+}
+
+/** Saúde por ritmo (API) com dica; senão health manual legado. */
+export function ProjectHealthRow({
+  insight,
+  healthStatus,
+}: {
+  insight?: HealthInsight | null;
+  healthStatus?: string | null;
+}) {
+  if (insight) {
+    return (
+      <span className="inline-flex items-center gap-1">
+        <PaceHealthBadge insight={insight} />
+        <HealthInsightHint insight={insight} />
+      </span>
+    );
+  }
+  if (healthStatus) return <ProjectHealthBadge health={healthStatus} />;
+  return null;
+}
+
+export function MilestoneHealthRow({ insight }: { insight?: HealthInsight | null }) {
+  if (!insight) return null;
+  return (
+    <span className="inline-flex items-center gap-1">
+      <PaceHealthBadge insight={insight} />
+      <HealthInsightHint insight={insight} />
+    </span>
   );
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type MouseEvent, type ReactNode } from "react";
+import { useState, useEffect, type MouseEvent, type ReactNode } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import Link from "next/link";
 import {
@@ -17,7 +18,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { OkrCycle, OkrObjective, OkrKeyResult } from "@/lib/types/domain";
-import { OkrStatusBadge } from "./okr-status-badge";
+import { HealthInsightHint, PaceHealthBadge, healthRowAccentClass } from "@/components/pace-health-badge";
+import { WorkflowStatusRow } from "@/components/workflow-status-badge";
 import { OkrProgressBar } from "./okr-progress-bar";
 import { CreateObjectiveDialog } from "./create-objective-dialog";
 import { UpdateKeyResultDialog } from "./update-key-result-dialog";
@@ -25,8 +27,11 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resizable-grid-columns";
 import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
+import { cn } from "@/lib/utils/cn";
 
 type ObjectiveWithKRs = OkrObjective & { keyResults: OkrKeyResult[] };
+
+const OKR_WORKFLOW_STATUS_QUERY = new Set(["planned", "in_progress", "completed"]);
 
 function formatDate(d: string | null | undefined) {
   if (!d) return null;
@@ -56,6 +61,7 @@ function OkrTableHeaderCell({
 
 export function OkrObjectivesPage() {
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
   const [createOpen, setCreateOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
@@ -68,12 +74,16 @@ export function OkrObjectivesPage() {
 
   const { widths, startResize } = useResizableGridColumns(
     "hub:okr-objectives-cols",
-    [20, 280, 110, 90, 80, 140, 36],
+    [20, 220, 84, 92, 92, 52, 112, 36],
   );
   const okrGridTpl = widths.map((w) => `${w}px`).join(" ");
 
+  useEffect(() => {
+    const s = searchParams.get("status");
+    if (s && OKR_WORKFLOW_STATUS_QUERY.has(s)) setFilterStatus(s);
+  }, [searchParams]);
+
   const params = new URLSearchParams();
-  if (filterStatus) params.set("status", filterStatus);
   if (filterCycle) params.set("cycleId", filterCycle);
 
   const { data, isLoading } = useQuery<{ data: ObjectiveWithKRs[] }>({
@@ -117,9 +127,11 @@ export function OkrObjectivesPage() {
   const cycles = cyclesRes?.data ?? [];
   const cycleMap = new Map(cycles.map((c) => [c.id, c.title]));
 
-  const filtered = allObjectives.filter((o) =>
-    search ? o.title.toLowerCase().includes(search.toLowerCase()) : true,
-  );
+  const filtered = allObjectives.filter((o) => {
+    if (search && !o.title.toLowerCase().includes(search.toLowerCase())) return false;
+    if (filterStatus && (o.workflowStatusInsight?.slug ?? "planned") !== filterStatus) return false;
+    return true;
+  });
 
   function toggleExpanded(id: string) {
     setExpanded((prev) => {
@@ -163,10 +175,8 @@ export function OkrObjectivesPage() {
           onChange={(e) => setFilterStatus(e.target.value)}
         >
           <option value="">Todos os status</option>
-          <option value="draft">Rascunho</option>
-          <option value="on_track">No rumo</option>
-          <option value="at_risk">Em risco</option>
-          <option value="off_track">Fora do rumo</option>
+          <option value="planned">Planejado</option>
+          <option value="in_progress">Em progresso</option>
           <option value="completed">Concluído</option>
         </select>
 
@@ -249,10 +259,15 @@ export function OkrObjectivesPage() {
             </OkrTableHeaderCell>
             <OkrTableHeaderCell resizeIndex={4} startResize={startResize}>
               <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                KRs
+                Saúde
               </span>
             </OkrTableHeaderCell>
             <OkrTableHeaderCell resizeIndex={5} startResize={startResize}>
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                KRs
+              </span>
+            </OkrTableHeaderCell>
+            <OkrTableHeaderCell resizeIndex={6} startResize={startResize}>
               <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Progresso
               </span>
@@ -326,9 +341,11 @@ function ObjectiveRow({
     <div>
       {/* Objective row */}
       <div
-        className={`grid cursor-pointer items-center gap-3 px-5 py-3.5 transition-colors ${
-          isExpanded ? "bg-muted/20" : "hover:bg-muted/20"
-        }`}
+        className={cn(
+          "grid cursor-pointer items-center gap-3 border-l-[3px] py-3.5 pl-4 pr-5 transition-colors",
+          healthRowAccentClass(objective.healthInsight?.slug),
+          isExpanded ? "bg-muted/20" : "hover:bg-muted/20",
+        )}
         style={{ gridTemplateColumns: gridTpl }}
         onClick={(e) => {
           const el = e.target as HTMLElement;
@@ -379,8 +396,19 @@ function ObjectiveRow({
         {/* Cycle */}
         <span className="truncate text-xs text-muted-foreground">{cycleName}</span>
 
-        {/* Status */}
-        <OkrStatusBadge status={objective.status} />
+        {/* Status (workflow) */}
+        <WorkflowStatusRow insight={objective.workflowStatusInsight} />
+        {/* Saúde */}
+        <span className="inline-flex flex-wrap items-center gap-1">
+          {objective.healthInsight ? (
+            <>
+              <PaceHealthBadge insight={objective.healthInsight} />
+              <HealthInsightHint insight={objective.healthInsight} />
+            </>
+          ) : (
+            <span className="text-[11px] text-muted-foreground/40">—</span>
+          )}
+        </span>
 
         {/* KRs count */}
         <span
@@ -394,6 +422,7 @@ function ObjectiveRow({
           <OkrProgressBar
             percent={objective.progressPercent}
             status={objective.status}
+            healthSlug={objective.healthInsight?.slug}
             size="xs"
             className="flex-1"
           />
@@ -454,7 +483,10 @@ function KrSubRow({
 
   return (
     <div
-      className="grid items-center gap-3 border-b border-border/40 py-2.5 pl-5 pr-5 transition-colors last:border-b-0 hover:bg-muted/20"
+      className={cn(
+        "grid items-center gap-3 border-b border-border/40 border-l-[3px] py-2.5 pl-4 pr-5 transition-colors last:border-b-0 hover:bg-muted/20",
+        healthRowAccentClass(kr.healthInsight?.slug),
+      )}
       style={{ gridTemplateColumns: gridTpl }}
     >
       {/* indent indicator */}
@@ -485,8 +517,17 @@ function KrSubRow({
       {/* empty cycle col */}
       <span />
 
-      {/* Status */}
-      <OkrStatusBadge status={kr.status} />
+      <WorkflowStatusRow insight={kr.workflowStatusInsight} />
+      <span className="inline-flex flex-wrap items-center gap-1">
+        {kr.healthInsight ? (
+          <>
+            <PaceHealthBadge insight={kr.healthInsight} />
+            <HealthInsightHint insight={kr.healthInsight} />
+          </>
+        ) : (
+          <span className="text-[11px] text-muted-foreground/40">—</span>
+        )}
+      </span>
 
       {/* empty KRs col */}
       <span />
@@ -496,6 +537,7 @@ function KrSubRow({
         <OkrProgressBar
           percent={kr.progressPercent}
           status={kr.status}
+          healthSlug={kr.healthInsight?.slug}
           size="xs"
           className="flex-1"
         />

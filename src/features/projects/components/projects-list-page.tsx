@@ -25,10 +25,16 @@ import { DateField } from "@/components/ui/date-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import type { Project } from "@/lib/types/domain";
+import type { Project, WorkflowStatusSlug } from "@/lib/types/domain";
+import { healthRowAccentClass } from "@/components/pace-health-badge";
+import { WorkflowStatusRow } from "@/components/workflow-status-badge";
+import {
+  normalizeProjectListStatusQueryParam,
+  projectWorkflowSlug,
+} from "@/features/projects/lib/project-workflow-slug";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ProjectHealthBadge, ProjectStatusBadge, PriorityBadge } from "./project-badges";
+import { ProjectHealthRow, ProjectStatusBadge, PriorityBadge } from "./project-badges";
 import { ProjectHierarchyView } from "./project-hierarchy-view";
 import { EditProjectDialog } from "./edit-project-dialog";
 import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
@@ -40,18 +46,21 @@ import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resiza
 const STATUS_OPTIONS = [
   { value: "", label: "Todos os status" },
   { value: "planned", label: "Planejado" },
-  { value: "active", label: "Ativo" },
-  { value: "on_hold", label: "Em espera" },
+  { value: "in_progress", label: "Em progresso" },
   { value: "completed", label: "Concluído" },
-  { value: "cancelled", label: "Cancelado" },
 ];
 
 const HEALTH_OPTIONS = [
-  { value: "", label: "Qualquer health" },
+  { value: "", label: "Qualquer saúde" },
+  { value: "ahead", label: "Adiantado" },
   { value: "on_track", label: "No rumo" },
   { value: "at_risk", label: "Em risco" },
   { value: "blocked", label: "Bloqueado" },
   { value: "off_track", label: "Fora do rumo" },
+  { value: "not_started", label: "Não iniciado" },
+  { value: "no_dates", label: "Sem datas" },
+  { value: "draft", label: "Rascunho" },
+  { value: "completed_legacy", label: "Concluído (legado)" },
 ];
 
 const PRIORITY_OPTIONS = [
@@ -71,12 +80,10 @@ const SORT_OPTIONS = [
 ];
 
 const PRIORITY_ORDER: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
-const STATUS_ORDER: Record<string, number> = {
-  active: 0,
-  on_hold: 1,
-  planned: 2,
-  completed: 3,
-  cancelled: 4,
+const WORKFLOW_STATUS_ORDER: Record<WorkflowStatusSlug, number> = {
+  in_progress: 0,
+  planned: 1,
+  completed: 2,
 };
 
 function projectHref(project: Project) {
@@ -105,11 +112,9 @@ function ProjectsListHeaderCell({
 }
 
 const BOARD_COLUMNS = [
-  { key: "planned", label: "Planejado" },
-  { key: "active", label: "Ativo" },
-  { key: "on_hold", label: "Em espera" },
-  { key: "completed", label: "Concluído" },
-  { key: "cancelled", label: "Cancelado" },
+  { key: "planned" as const, label: "Planejado" },
+  { key: "in_progress" as const, label: "Em progresso" },
+  { key: "completed" as const, label: "Concluído" },
 ] as const;
 
 // ─── Create Project Dialog ─────────────────────────────────────────────────────
@@ -260,7 +265,7 @@ function ListView({
 }) {
   const { widths, startResize } = useResizableGridColumns(
     "hub:projects-list-cols",
-    [280, 96, 88, 88, 88, 100, 44, 28],
+    [260, 108, 108, 88, 100, 100, 44, 28],
   );
   const gridTpl = widths.map((w) => `${w}px`).join(" ");
 
@@ -277,28 +282,40 @@ function ListView({
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-border">
+    <div className="overflow-x-auto rounded-xl border border-border bg-card">
       <div
-        className="grid items-center gap-3 border-b border-border bg-muted/30 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60"
+        className="grid items-center gap-3 border-b border-border bg-muted/30 px-5 py-2.5"
         style={{ gridTemplateColumns: gridTpl }}
       >
         <ProjectsListHeaderCell resizeIndex={0} startResize={startResize}>
-          <span className="pr-1">Projeto</span>
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Projeto
+          </span>
         </ProjectsListHeaderCell>
         <ProjectsListHeaderCell resizeIndex={1} startResize={startResize}>
-          <span className="justify-center text-center sm:text-left">Status</span>
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Status
+          </span>
         </ProjectsListHeaderCell>
         <ProjectsListHeaderCell resizeIndex={2} startResize={startResize}>
-          <span>Health</span>
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Saúde
+          </span>
         </ProjectsListHeaderCell>
         <ProjectsListHeaderCell resizeIndex={3} startResize={startResize}>
-          <span>Prioridade</span>
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Prioridade
+          </span>
         </ProjectsListHeaderCell>
         <ProjectsListHeaderCell resizeIndex={4} startResize={startResize}>
-          <span>Progresso</span>
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Progresso
+          </span>
         </ProjectsListHeaderCell>
         <ProjectsListHeaderCell resizeIndex={5} startResize={startResize}>
-          <span>Prazo alvo</span>
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Prazo alvo
+          </span>
         </ProjectsListHeaderCell>
         <ProjectsListHeaderCell resizeIndex={6} startResize={startResize}>
           <span className="sr-only">Editar</span>
@@ -308,13 +325,16 @@ function ListView({
       {projects.map((project) => (
         <div
           key={project.id}
-          className="grid items-center gap-3 border-b border-border/60 px-4 py-3 transition-colors last:border-b-0 hover:bg-muted/20"
+          className={cn(
+            "grid items-center gap-3 border-b border-border/60 border-l-[3px] py-3.5 pl-4 pr-5 transition-colors last:border-b-0 hover:bg-muted/20",
+            healthRowAccentClass(project.healthInsight?.slug),
+          )}
           style={{ gridTemplateColumns: gridTpl }}
         >
           <div className="min-w-0">
             <Link
               href={projectHref(project)}
-              className="truncate text-sm font-semibold text-foreground transition-colors hover:text-primary"
+              className="truncate text-sm font-medium text-foreground transition-colors hover:text-primary"
             >
               {project.title}
             </Link>
@@ -327,12 +347,16 @@ function ListView({
               <p className="mt-0.5 truncate text-xs text-muted-foreground">{project.summary}</p>
             )}
           </div>
-          <div className="flex justify-center sm:justify-start">
-            <ProjectStatusBadge status={project.status} />
+          <div className="flex justify-start">
+            {project.workflowStatusInsight ? (
+              <WorkflowStatusRow insight={project.workflowStatusInsight} />
+            ) : (
+              <ProjectStatusBadge status={project.status} />
+            )}
           </div>
           <div>
-            {project.healthStatus ? (
-              <ProjectHealthBadge health={project.healthStatus} />
+            {project.healthInsight || project.healthStatus ? (
+              <ProjectHealthRow insight={project.healthInsight} healthStatus={project.healthStatus} />
             ) : (
               <span className="text-xs text-muted-foreground/40">—</span>
             )}
@@ -404,7 +428,7 @@ function BoardView({
 }) {
   const grouped = BOARD_COLUMNS.map((col) => ({
     ...col,
-    items: projects.filter((p) => p.status === col.key),
+    items: projects.filter((p) => projectWorkflowSlug(p) === col.key),
   }));
 
   return (
@@ -423,7 +447,11 @@ function BoardView({
             {col.items.map((project) => (
               <div
                 key={project.id}
-                className="relative rounded-lg border border-border bg-card transition-all hover:border-primary/30 hover:shadow-sm"
+                className={cn(
+                  "relative rounded-lg border border-border bg-card transition-all hover:border-primary/30 hover:shadow-sm",
+                  "border-l-[3px]",
+                  healthRowAccentClass(project.healthInsight?.slug),
+                )}
               >
                 <div className="absolute right-2 top-2 z-[1] flex items-center gap-0.5">
                   <EntityQuickViewEyeButton
@@ -440,17 +468,22 @@ function BoardView({
                   </button>
                 </div>
                 <Link href={projectHref(project)} className="block p-3 pr-[4.5rem]">
-                  <p className="text-sm font-semibold leading-snug text-foreground">
-                    {project.title}
-                  </p>
+                  <p className="text-sm font-medium leading-snug text-foreground">{project.title}</p>
                   {project.summary && (
                     <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
                       {project.summary}
                     </p>
                   )}
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    {project.workflowStatusInsight ? (
+                      <WorkflowStatusRow insight={project.workflowStatusInsight} />
+                    ) : (
+                      <ProjectStatusBadge status={project.status} />
+                    )}
                     <PriorityBadge priority={project.priority} />
-                    {project.healthStatus && <ProjectHealthBadge health={project.healthStatus} />}
+                    {(project.healthInsight || project.healthStatus) && (
+                      <ProjectHealthRow insight={project.healthInsight} healthStatus={project.healthStatus} />
+                    )}
                   </div>
                   {project.targetDate && (
                     <p className="mt-2 flex items-center gap-1 text-[10px] text-muted-foreground/60">
@@ -508,7 +541,7 @@ export function ProjectsListPage() {
     const status = searchParams.get("status");
     const health = searchParams.get("health");
     const priority = searchParams.get("priority");
-    if (status) setFilterStatus(status);
+    if (status) setFilterStatus(normalizeProjectListStatusQueryParam(status));
     if (health) {
       setFilterHealth(health);
       setShowMoreFilters(true);
@@ -527,9 +560,12 @@ export function ProjectsListPage() {
   const filtered = projects
     .filter((p) => {
       if (search && !p.title.toLowerCase().includes(search.toLowerCase())) return false;
-      if (filterStatus && p.status !== filterStatus) return false;
+      if (filterStatus && projectWorkflowSlug(p) !== filterStatus) return false;
       if (filterPriority && p.priority !== filterPriority) return false;
-      if (filterHealth && p.healthStatus !== filterHealth) return false;
+      if (filterHealth) {
+        const healthKey = p.healthInsight?.slug ?? p.healthStatus ?? "";
+        if (healthKey !== filterHealth) return false;
+      }
       return true;
     })
     .sort((a, b) => {
@@ -537,7 +573,10 @@ export function ProjectsListPage() {
       if (sortBy === "priority")
         return (PRIORITY_ORDER[a.priority] ?? 99) - (PRIORITY_ORDER[b.priority] ?? 99);
       if (sortBy === "status")
-        return (STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99);
+        return (
+          (WORKFLOW_STATUS_ORDER[projectWorkflowSlug(a)] ?? 99) -
+          (WORKFLOW_STATUS_ORDER[projectWorkflowSlug(b)] ?? 99)
+        );
       if (sortBy === "targetDate") {
         if (!a.targetDate && !b.targetDate) return 0;
         if (!a.targetDate) return 1;
@@ -582,7 +621,7 @@ export function ProjectsListPage() {
           <GuideList
             items={[
               "a visão Hierarquia mostra projetos → milestones → tasks de forma expandível;",
-              "a visão Board agrupa projetos por status em colunas;",
+              "a visão Board agrupa projetos por status operacional (Planejado / Em progresso / Concluído);",
               "use os filtros de status, prioridade e saúde para encontrar projetos específicos;",
               "clique em um projeto para ver seus detalhes completos.",
             ]}

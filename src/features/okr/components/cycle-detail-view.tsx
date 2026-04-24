@@ -7,7 +7,7 @@ import Link from "next/link";
 import { ArrowLeft, CalendarRange, Target, TrendingUp, CheckCircle, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { OkrCycle, OkrObjective, OkrKeyResult } from "@/lib/types/domain";
-import { OkrStatusBadge } from "./okr-status-badge";
+import { OkrEntityStatusRow, OkrStatusBadge } from "./okr-status-badge";
 import { OkrProgressBar, MiniProgressRing } from "./okr-progress-bar";
 import { UpdateCycleDialog } from "./update-cycle-dialog";
 import { format, differenceInDays, isAfter, isBefore } from "date-fns";
@@ -249,7 +249,11 @@ export function CycleDetailView({ cycleId }: CycleDetailViewProps) {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-foreground">{obj.title}</p>
                   <div className="mt-1 flex items-center gap-2">
-                    <OkrStatusBadge status={obj.status} />
+                    <OkrEntityStatusRow
+                      status={obj.status}
+                      workflowStatusInsight={obj.workflowStatusInsight}
+                      healthInsight={obj.healthInsight}
+                    />
                     <span className="text-xs text-muted-foreground">
                       {obj.keyResults.length} KR{obj.keyResults.length !== 1 ? "s" : ""}
                     </span>

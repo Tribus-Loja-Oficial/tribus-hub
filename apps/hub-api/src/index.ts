@@ -1,5 +1,7 @@
 import { handleV1ExtraRoutes } from "./v1-extra-routes";
-import { handleV1OkrWriteRoutes } from "./v1-okr-write";
+import { computePaceHealth, resolveProjectWindow } from "./pace-health";
+import { workflowStatusForProjectRow } from "./pace-workflow-status";
+import { enrichObjectiveWithHealth, handleV1OkrWriteRoutes } from "./v1-okr-write";
 import {
   ensureExternalRef,
   resolveEntityIdByExternalRef,
@@ -56,6 +58,7 @@ type ProjectRow = {
   updated_at: string;
   archived_at: string | null;
   deleted_at: string | null;
+  health_snapshot_json?: string | null;
 };
 
 type TaskColumnRow = {
@@ -255,6 +258,7 @@ type OkrObjectiveRow = {
   updated_at: string;
   archived_at: string | null;
   deleted_at: string | null;
+  health_snapshot_json?: string | null;
 };
 
 type OkrKeyResultRow = {
@@ -286,6 +290,7 @@ type OkrKeyResultRow = {
   updated_at: string;
   archived_at: string | null;
   deleted_at: string | null;
+  health_snapshot_json?: string | null;
 };
 
 type AuthUserRow = {
@@ -382,6 +387,7 @@ async function getProjectsByWorkspace(db: D1DatabaseLike, workspaceId: string) {
         p.start_date,
         p.target_date,
         p.completed_at,
+        p.health_snapshot_json,
         p.created_by,
         p.updated_by,
         p.created_at,
@@ -404,30 +410,47 @@ async function getProjectsByWorkspace(db: D1DatabaseLike, workspaceId: string) {
   if (!result.success) {
     throw new Error(result.error ?? "Failed to query projects");
   }
-  return (result.results ?? []).map((row) => ({
-    id: row.id,
-    externalRef: row.external_ref ?? null,
-    workspaceId: row.workspace_id,
-    title: row.title,
-    slug: row.slug,
-    summary: row.summary,
-    descriptionJson: row.description_json ? JSON.parse(row.description_json) : null,
-    descriptionText: row.description_text,
-    status: row.status,
-    healthStatus: row.health_status,
-    priority: row.priority,
-    progressPercent: Number(row.progress_percent ?? 0),
-    ownerUserId: row.owner_user_id,
-    startDate: row.start_date,
-    targetDate: row.target_date,
-    completedAt: row.completed_at,
-    createdBy: row.created_by,
-    updatedBy: row.updated_by,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-    archivedAt: row.archived_at,
-    deletedAt: row.deleted_at,
-  }));
+  return (result.results ?? []).map((row) => {
+    const w = resolveProjectWindow(row);
+    const healthInsight = computePaceHealth({
+      kind: "project",
+      status: String(row.status ?? "planned"),
+      progressPercent: Number(row.progress_percent ?? 0),
+      windowStart: w.start,
+      windowEnd: w.end,
+      dateSourcePt: w.dateSourcePt,
+      completedAt: row.completed_at ?? null,
+      healthSnapshotJson: row.health_snapshot_json ?? null,
+    });
+    const workflowStatusInsight = workflowStatusForProjectRow(row as unknown as Record<string, unknown>);
+    return {
+      id: row.id,
+      externalRef: row.external_ref ?? null,
+      workspaceId: row.workspace_id,
+      title: row.title,
+      slug: row.slug,
+      summary: row.summary,
+      descriptionJson: row.description_json ? JSON.parse(row.description_json) : null,
+      descriptionText: row.description_text,
+      status: row.status,
+      healthStatus: row.health_status,
+      healthSnapshotJson: row.health_snapshot_json ?? null,
+      priority: row.priority,
+      progressPercent: Number(row.progress_percent ?? 0),
+      ownerUserId: row.owner_user_id,
+      startDate: row.start_date,
+      targetDate: row.target_date,
+      completedAt: row.completed_at,
+      createdBy: row.created_by,
+      updatedBy: row.updated_by,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      archivedAt: row.archived_at,
+      deletedAt: row.deleted_at,
+      healthInsight,
+      workflowStatusInsight,
+    };
+  });
 }
 
 function slugifyProjectTitle(input: string): string {
@@ -471,6 +494,7 @@ function mapProjectRowToDto(row: ProjectRow) {
     descriptionText: row.description_text,
     status: row.status,
     healthStatus: row.health_status,
+    healthSnapshotJson: row.health_snapshot_json ?? null,
     priority: row.priority,
     progressPercent: Number(row.progress_percent ?? 0),
     ownerUserId: row.owner_user_id,
@@ -558,7 +582,7 @@ async function createProject(
       SELECT
         id, workspace_id, title, slug, summary, description_json, description_text,
         status, health_status, priority, progress_percent, owner_user_id,
-        start_date, target_date, completed_at, created_by, updated_by,
+        start_date, target_date, completed_at, health_snapshot_json, created_by, updated_by,
         created_at, updated_at, archived_at, deleted_at
       FROM projects
       WHERE id = ?
@@ -576,7 +600,20 @@ async function createProject(
     entityId: id,
     suggestedRef: input.externalRef ?? null,
   });
-  return { ...mapProjectRowToDto(p), externalRef };
+  const dto = mapProjectRowToDto(p);
+  const w = resolveProjectWindow(p as unknown as Record<string, unknown>);
+  const healthInsight = computePaceHealth({
+    kind: "project",
+    status: p.status,
+    progressPercent: Number(p.progress_percent ?? 0),
+    windowStart: w.start,
+    windowEnd: w.end,
+    dateSourcePt: w.dateSourcePt,
+    completedAt: p.completed_at ?? null,
+    healthSnapshotJson: p.health_snapshot_json ?? null,
+  });
+  const workflowStatusInsight = workflowStatusForProjectRow(p as unknown as Record<string, unknown>);
+  return { ...dto, externalRef, healthInsight, workflowStatusInsight };
 }
 
 function safeJsonParse(value: string | null): unknown {
@@ -1885,6 +1922,7 @@ async function getOkrObjectives(
       SELECT
         o.id, o.workspace_id, o.cycle_id, o.title, o.slug, o.description_json, o.description_text, o.owner_user_id,
         o.status, o.progress_percent, o.priority, o.sort_order, o.start_date, o.target_date, o.completed_at,
+        o.health_snapshot_json,
         o.created_by, o.updated_by, o.created_at, o.updated_at, o.archived_at, o.deleted_at,
         oer.external_ref
       FROM okr_objectives
@@ -1913,7 +1951,8 @@ async function getOkrObjectives(
       SELECT
         k.id, k.workspace_id, k.cycle_id, k.objective_id, k.title, k.slug, k.description_json, k.description_text, k.owner_user_id,
         k.metric_type, k.unit, k.start_value, k.current_value, k.target_value, k.progress_percent, k.status, k.confidence,
-        k.sort_order, k.start_date, k.target_date, k.completed_at, k.created_by, k.updated_by, k.created_at, k.updated_at,
+        k.sort_order, k.start_date, k.target_date, k.completed_at, k.health_snapshot_json,
+        k.created_by, k.updated_by, k.created_at, k.updated_at,
         k.archived_at, k.deleted_at, ker.external_ref
       FROM okr_key_results
       k
@@ -1939,60 +1978,21 @@ async function getOkrObjectives(
     keyResultsByObjective.set(kr.objective_id, list);
   }
 
-  return objectives.map((obj) => ({
-    id: obj.id,
-    externalRef: obj.external_ref ?? null,
-    workspaceId: obj.workspace_id,
-    cycleId: obj.cycle_id,
-    title: obj.title,
-    slug: obj.slug,
-    descriptionJson: safeJsonParse(obj.description_json),
-    descriptionText: obj.description_text,
-    ownerUserId: obj.owner_user_id,
-    status: obj.status,
-    progressPercent: Number(obj.progress_percent ?? 0),
-    priority: obj.priority,
-    sortOrder: Number(obj.sort_order ?? 0),
-    startDate: obj.start_date,
-    targetDate: obj.target_date,
-    completedAt: obj.completed_at,
-    createdBy: obj.created_by,
-    updatedBy: obj.updated_by,
-    createdAt: obj.created_at,
-    updatedAt: obj.updated_at,
-    archivedAt: obj.archived_at,
-    deletedAt: obj.deleted_at,
-    keyResults: (keyResultsByObjective.get(obj.id) ?? []).map((kr) => ({
-      id: kr.id,
-      externalRef: kr.external_ref ?? null,
-      workspaceId: kr.workspace_id,
-      cycleId: kr.cycle_id,
-      objectiveId: kr.objective_id,
-      title: kr.title,
-      slug: kr.slug,
-      descriptionJson: safeJsonParse(kr.description_json),
-      descriptionText: kr.description_text,
-      ownerUserId: kr.owner_user_id,
-      metricType: kr.metric_type,
-      unit: kr.unit,
-      startValue: Number(kr.start_value ?? 0),
-      currentValue: Number(kr.current_value ?? 0),
-      targetValue: Number(kr.target_value ?? 0),
-      progressPercent: Number(kr.progress_percent ?? 0),
-      status: kr.status,
-      confidence: kr.confidence,
-      sortOrder: Number(kr.sort_order ?? 0),
-      startDate: kr.start_date,
-      targetDate: kr.target_date,
-      completedAt: kr.completed_at,
-      createdBy: kr.created_by,
-      updatedBy: kr.updated_by,
-      createdAt: kr.created_at,
-      updatedAt: kr.updated_at,
-      archivedAt: kr.archived_at,
-      deletedAt: kr.deleted_at,
-    })),
-  }));
+  const out: unknown[] = [];
+  for (const obj of objectives) {
+    const krs = keyResultsByObjective.get(obj.id) ?? [];
+    const enriched = await enrichObjectiveWithHealth(
+      db,
+      workspaceId,
+      obj as unknown as Record<string, unknown>,
+      krs as unknown as Record<string, unknown>[],
+    );
+    out.push({
+      ...enriched,
+      externalRef: obj.external_ref ?? null,
+    });
+  }
+  return out;
 }
 
 type HubUserRole = "owner" | "admin" | "member";

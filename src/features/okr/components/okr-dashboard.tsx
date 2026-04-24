@@ -28,7 +28,7 @@ import type {
   DashboardAttentionItem,
   RecentKrUpdateWithContext,
 } from "@/lib/services/okr.service";
-import { OkrStatusBadge } from "./okr-status-badge";
+import { OkrEntityStatusRow, OkrStatusBadge } from "./okr-status-badge";
 import { OkrProgressBar, MiniProgressRing } from "./okr-progress-bar";
 import { CreateCycleDialog } from "./create-cycle-dialog";
 import { CreateObjectiveDialog } from "./create-objective-dialog";
@@ -711,7 +711,11 @@ function KrPerfList({
               {formatDistanceToNow(new Date(kr.updatedAt), { locale: ptBR, addSuffix: true })}
             </span>
           )}
-          <OkrStatusBadge status={kr.status} />
+          <OkrEntityStatusRow
+          status={kr.status}
+          workflowStatusInsight={kr.workflowStatusInsight}
+          healthInsight={kr.healthInsight}
+        />
           <span className="w-10 text-right text-xs tabular-nums text-muted-foreground">
             {Math.round(kr.progressPercent)}%
           </span>
@@ -736,7 +740,11 @@ function ObjectiveRow({ objective }: { objective: ObjectiveWithKRsForDashboard }
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-foreground">{objective.title}</p>
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-            <OkrStatusBadge status={objective.status} />
+            <OkrEntityStatusRow
+            status={objective.status}
+            workflowStatusInsight={objective.workflowStatusInsight}
+            healthInsight={objective.healthInsight}
+          />
             <span className="text-xs text-muted-foreground">
               {completedKrs}/{krCount} KRs concluídos
             </span>
