@@ -25,8 +25,8 @@ describe("calcElapsedPercent", () => {
   });
 
   it("returns 50 at the midpoint", () => {
-    const now = new Date("2026-02-01");
-    expect(calcElapsedPercent("2026-01-01", "2026-03-03", now)).toBe(50);
+    // 10-day window, now is exactly at day 5 → 5/10 = 50%
+    expect(calcElapsedPercent("2026-01-01", "2026-01-11", new Date("2026-01-06"))).toBe(50);
   });
 
   it("returns 100 when start equals end", () => {
@@ -86,9 +86,10 @@ describe("computePaceHealth", () => {
   });
 
   it("returns at_risk when slightly behind", () => {
+    // elapsed ~50%, progress 40% → diff = -10, within at_risk band (-8 to -20)
     const result = computePaceHealth({
       ...base,
-      progressPercent: 30,
+      progressPercent: 40,
       now: new Date("2026-07-02"),
     });
     expect(result.slug).toBe("at_risk");
