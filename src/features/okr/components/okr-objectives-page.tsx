@@ -18,12 +18,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { OkrCycle, OkrObjective, OkrKeyResult } from "@/lib/types/domain";
-import {
-  HealthInsightHint,
-  PaceHealthBadge,
-  healthRowAccentClass,
-} from "@/components/pace-health-badge";
+import { healthRowAccentClass } from "@/components/pace-health-badge";
 import { WorkflowStatusRow } from "@/components/workflow-status-badge";
+import { ProjectHealthRow } from "@/features/projects/components/project-badges";
 import { OkrProgressBar } from "./okr-progress-bar";
 import { CreateObjectiveDialog } from "./create-objective-dialog";
 import { UpdateKeyResultDialog } from "./update-key-result-dialog";
@@ -262,12 +259,12 @@ export function OkrObjectivesPage() {
                 Ciclo
               </span>
             </OkrTableHeaderCell>
-            <OkrTableHeaderCell resizeIndex={3} startResize={startResize}>
+            <OkrTableHeaderCell resizeIndex={3} startResize={startResize} className="justify-start">
               <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Status
               </span>
             </OkrTableHeaderCell>
-            <OkrTableHeaderCell resizeIndex={4} startResize={startResize}>
+            <OkrTableHeaderCell resizeIndex={4} startResize={startResize} className="justify-start">
               <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Health
               </span>
@@ -408,20 +405,17 @@ function ObjectiveRow({
         <span className="min-w-0 truncate text-xs text-muted-foreground">{cycleName}</span>
 
         {/* Status (workflow) */}
-        <div className="flex min-w-0 justify-center">
-          <WorkflowStatusRow className="min-w-0" insight={objective.workflowStatusInsight} />
+        <div className="flex w-full min-w-0 items-center justify-start overflow-hidden pr-0.5">
+          <WorkflowStatusRow
+            className="min-w-0"
+            insight={objective.workflowStatusInsight}
+            tableCellLayout
+          />
         </div>
         {/* Health */}
-        <span className="inline-flex min-w-0 max-w-full flex-nowrap items-center justify-center gap-1">
-          {objective.healthInsight ? (
-            <>
-              <PaceHealthBadge insight={objective.healthInsight} />
-              <HealthInsightHint insight={objective.healthInsight} />
-            </>
-          ) : (
-            <span className="text-[11px] text-muted-foreground/40">—</span>
-          )}
-        </span>
+        <div className="flex w-full min-w-0 items-center justify-start overflow-hidden pr-0.5">
+          <ProjectHealthRow insight={objective.healthInsight} tableCellLayout />
+        </div>
 
         {/* KRs count */}
         <span
@@ -531,19 +525,12 @@ function KrSubRow({
       {/* empty cycle col */}
       <span />
 
-      <div className="flex min-w-0 justify-center">
-        <WorkflowStatusRow className="min-w-0" insight={kr.workflowStatusInsight} />
+      <div className="flex w-full min-w-0 items-center justify-start overflow-hidden pr-0.5">
+        <WorkflowStatusRow className="min-w-0" insight={kr.workflowStatusInsight} tableCellLayout />
       </div>
-      <span className="inline-flex min-w-0 max-w-full flex-nowrap items-center justify-center gap-1">
-        {kr.healthInsight ? (
-          <>
-            <PaceHealthBadge insight={kr.healthInsight} />
-            <HealthInsightHint insight={kr.healthInsight} />
-          </>
-        ) : (
-          <span className="text-[11px] text-muted-foreground/40">—</span>
-        )}
-      </span>
+      <div className="flex w-full min-w-0 items-center justify-start overflow-hidden pr-0.5">
+        <ProjectHealthRow insight={kr.healthInsight} tableCellLayout />
+      </div>
 
       {/* empty KRs col */}
       <span />

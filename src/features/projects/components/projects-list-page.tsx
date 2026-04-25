@@ -292,12 +292,12 @@ function ListView({
             Projeto
           </span>
         </ProjectsListHeaderCell>
-        <ProjectsListHeaderCell resizeIndex={1} startResize={startResize}>
+        <ProjectsListHeaderCell resizeIndex={1} startResize={startResize} className="justify-start">
           <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Status
           </span>
         </ProjectsListHeaderCell>
-        <ProjectsListHeaderCell resizeIndex={2} startResize={startResize}>
+        <ProjectsListHeaderCell resizeIndex={2} startResize={startResize} className="justify-start">
           <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Health
           </span>
@@ -350,11 +350,11 @@ function ListView({
               </p>
             )}
           </div>
-          <div className="flex min-w-0 items-center justify-center overflow-hidden">
-            <WorkflowStatusRow insight={project.workflowStatusInsight} />
+          <div className="flex w-full min-w-0 items-center justify-start overflow-hidden pr-0.5">
+            <WorkflowStatusRow insight={project.workflowStatusInsight} tableCellLayout />
           </div>
-          <div className="flex min-w-0 items-center justify-center overflow-hidden">
-            <ProjectHealthRow insight={project.healthInsight} />
+          <div className="flex w-full min-w-0 items-center justify-start overflow-hidden pr-0.5">
+            <ProjectHealthRow insight={project.healthInsight} tableCellLayout />
           </div>
           <div className="flex min-w-0 items-center justify-center overflow-hidden">
             <PriorityBadge priority={project.priority} />

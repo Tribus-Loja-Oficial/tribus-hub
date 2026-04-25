@@ -2,6 +2,7 @@
 
 import { HealthInsightHint, PaceHealthBadge } from "@/components/pace-health-badge";
 import type { HealthInsight } from "@/lib/types/domain";
+import { cn } from "@/lib/utils/cn";
 
 const chip =
   "inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ring-black/[0.04] dark:ring-white/[0.06]";
@@ -34,9 +35,35 @@ function Badge({ className, children }: { className: string; children: React.Rea
 }
 
 /** Saúde por ritmo (hub-api); sem insight mostra traço. */
-export function ProjectHealthRow({ insight }: { insight?: HealthInsight | null }) {
+export function ProjectHealthRow({
+  insight,
+  /** Em tabelas: badge à esquerda, ícone à direita da célula (ícones alinhados entre linhas). */
+  tableCellLayout = false,
+}: {
+  insight?: HealthInsight | null;
+  tableCellLayout?: boolean;
+}) {
   if (!insight) {
-    return <span className="text-[11px] text-muted-foreground/40">—</span>;
+    return (
+      <span
+        className={cn(
+          "text-[11px] text-muted-foreground/40",
+          tableCellLayout && "flex w-full justify-start",
+        )}
+      >
+        —
+      </span>
+    );
+  }
+  if (tableCellLayout) {
+    return (
+      <span className="flex w-full min-w-0 items-center justify-between gap-1.5">
+        <span className="flex min-w-0 shrink justify-start overflow-hidden">
+          <PaceHealthBadge insight={insight} className="min-w-0 max-w-full truncate" />
+        </span>
+        <HealthInsightHint insight={insight} className="shrink-0" />
+      </span>
+    );
   }
   return (
     <span className="inline-flex min-w-0 max-w-full flex-nowrap items-center gap-1">

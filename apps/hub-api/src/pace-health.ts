@@ -139,7 +139,6 @@ function buildExplanationPt(params: {
     `Janela usada: de ${windowStart} até ${windowEnd}. ` +
     `Regras dos badges: diferença maior que +${band} p.p. → \"Adiantado\"; entre -${band} p.p. e +${band} p.p. (inclusive) → \"No Rumo\"; ` +
     `pior que -${band} p.p. porém ainda melhor que -${offTrack} p.p. → \"Em Risco\"; -${offTrack} p.p. ou pior → \"Fora do Rumo\".`;
-  if (locked) return `${base} Valores fixados quando o item foi concluído.`;
   const verdict =
     slug === "ahead"
       ? 'Com esses números, o resultado cai no badge "Adiantado".'
@@ -150,7 +149,8 @@ function buildExplanationPt(params: {
           : slug === "off_track"
             ? 'Com esses números, o resultado cai no badge "Fora do Rumo".'
             : "";
-  return `${base} ${verdict}`.trim();
+  const frozen = locked ? " Valores fixados quando o item foi concluído." : "";
+  return `${base} ${verdict}${frozen}`.trim();
 }
 
 const PACE_HEALTH_SLUGS: readonly PaceHealthSlug[] = [
@@ -170,6 +170,69 @@ function coercePaceHealthSlug(raw: unknown): PaceHealthSlug {
     : "on_track";
 }
 
+/**
+ * Sempre gera o texto do ícone a partir dos campos do snapshot.
+ * Ignora `explanationPt` gravado no JSON — versões antigas podiam guardar texto desatualizado ou contraditório.
+ */
+function rebuildSnapshotExplanation(o: SnapshotV1, slug: PaceHealthSlug): string {
+  const dateSourcePt = (o.dateSourcePt ?? "").trim();
+  const computedAt =
+    typeof o.computedAt === "string" && o.computedAt.length > 0
+      ? o.computedAt
+      : "data da conclusão";
+
+  if (slug === "completed_legacy") {
+    return (
+      `${dateSourcePt ? `${dateSourcePt} ` : ""}` +
+      "Concluído antes de existir registro detalhado de Health. " +
+      'O badge "No Rumo" é só referência neutra com o progresso final do cadastro.'
+    ).trim();
+  }
+
+  /** Slug interno draft/no_dates/not_started → badge unificado "Não Iniciado" (item já concluído). */
+  if (slug === "draft" || slug === "no_dates" || slug === "not_started") {
+    return (
+      `${dateSourcePt ? `${dateSourcePt} ` : ""}` +
+      `Health congelado ao concluir (${computedAt}). ` +
+      "Na hora em que fechamos o registro, ainda não dava para comparar progresso com o tempo dentro do prazo " +
+      '(por exemplo, sem janela completa ou o relógio do prazo ainda não tinha "ligado" para a conta de ritmo). ' +
+      'Por isso o valor ficou no grupo "Não Iniciado" na escala unificada — não significa que o ciclo não estava ativo, ' +
+      "e não é o estado atual do item (ele já está concluído)."
+    ).trim();
+  }
+
+  const ws = o.windowStart;
+  const we = o.windowEnd;
+  const hasWindow =
+    typeof ws === "string" && typeof we === "string" && ws.length > 0 && we.length > 0;
+  const hasPace =
+    hasWindow &&
+    typeof o.diff === "number" &&
+    Number.isFinite(o.diff) &&
+    typeof o.elapsedPercent === "number" &&
+    Number.isFinite(o.elapsedPercent);
+
+  if (hasPace) {
+    return buildExplanationPt({
+      slug,
+      progressPercent: Number(o.progressPercent ?? 0),
+      elapsedPercent: o.elapsedPercent as number,
+      diff: round1(o.diff as number),
+      band: Number(o.band ?? PACE_HEALTH_BAND_PP),
+      offTrack: PACE_HEALTH_OFF_TRACK_PP,
+      windowStart: ws as string,
+      windowEnd: we as string,
+      dateSourcePt: dateSourcePt || "Referência de prazo: janela salva no registro.",
+      locked: true,
+    });
+  }
+
+  return (
+    `${dateSourcePt ? `${dateSourcePt} ` : ""}` +
+    "Health congelado ao concluir. O texto do ícone segue o registro salvo nessa data; o badge reflete o slug armazenado."
+  ).trim();
+}
+
 export function insightFromSnapshotJson(json: string | null | undefined): HealthInsightDto | null {
   if (!json) return null;
   try {
@@ -187,10 +250,7 @@ export function insightFromSnapshotJson(json: string | null | undefined): Health
       windowEnd: o.windowEnd ?? null,
       dateSourcePt: o.dateSourcePt ?? "",
       locked: true,
-      explanationPt:
-        o.explanationPt ??
-        "Health congelado: guardamos o cálculo no momento em que marcou como concluído. " +
-          "O badge segue a mesma escala (Não Iniciado, Adiantado, No Rumo, Em Risco, Fora do Rumo); não recalculamos sozinhos depois disso.",
+      explanationPt: rebuildSnapshotExplanation(o, slug),
     };
   } catch {
     return null;
@@ -279,8 +339,8 @@ export function computePaceHealth(input: {
       dateSourcePt: input.dateSourcePt,
       locked: false,
       explanationPt:
-        'Badge "Não Iniciado": em OKR ainda em rascunho não rodamos a conta de ritmo (progresso vs tempo). ' +
-        "Depois de publicar, as mesmas datas do ciclo passam a valer para Health e para o status Planejado / Em Progresso / Concluído.",
+        'Badge "Não Iniciado": enquanto o OKR não está publicado no cadastro, não rodamos a conta de ritmo (progresso versus tempo na janela). ' +
+        "Depois de publicar, as datas do ciclo passam a alimentar Health e o status unificado (Planejado / Em Progresso / Concluído).",
     };
   }
 

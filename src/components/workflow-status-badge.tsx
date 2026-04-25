@@ -64,13 +64,39 @@ export function WorkflowStatusRow({
   insight,
   size = "sm",
   className,
+  /** Em tabelas: badge à esquerda, ícone à direita da célula (ícones alinhados entre linhas). */
+  tableCellLayout = false,
 }: {
   insight?: WorkflowStatusInsight | null;
   size?: "sm" | "md";
   className?: string;
+  tableCellLayout?: boolean;
 }) {
   if (!insight) {
-    return <span className="text-[11px] text-muted-foreground/40">—</span>;
+    return (
+      <span
+        className={cn(
+          "text-[11px] text-muted-foreground/40",
+          tableCellLayout && "flex w-full justify-start",
+        )}
+      >
+        —
+      </span>
+    );
+  }
+  if (tableCellLayout) {
+    return (
+      <span className={cn("flex w-full min-w-0 items-center justify-between gap-1.5", className)}>
+        <span className="flex min-w-0 shrink justify-start overflow-hidden">
+          <WorkflowStatusBadge
+            insight={insight}
+            size={size}
+            className="min-w-0 max-w-full truncate"
+          />
+        </span>
+        <WorkflowStatusHint insight={insight} className="shrink-0" />
+      </span>
+    );
   }
   return (
     <span
