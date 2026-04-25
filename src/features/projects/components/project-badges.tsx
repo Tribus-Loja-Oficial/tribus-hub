@@ -5,7 +5,7 @@ import type { HealthInsight } from "@/lib/types/domain";
 import { cn } from "@/lib/utils/cn";
 
 const chip =
-  "inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ring-black/[0.04] dark:ring-white/[0.06]";
+  "inline-flex items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-md border px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ring-black/[0.04] dark:ring-white/[0.06]";
 
 const PRIORITY_CONFIG: Record<string, { label: string; className: string }> = {
   low: {
