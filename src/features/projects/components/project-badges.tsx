@@ -58,15 +58,18 @@ export function ProjectHealthRow({
     );
   }
   if (tableCellLayout) {
+    const hasFixedWidth = Boolean(badgeWidthClass);
     return (
       <span className="flex w-full min-w-0 items-center justify-between gap-1.5">
-        <span className="flex min-w-0 shrink justify-start overflow-hidden">
+        <span
+          className={cn(
+            "flex justify-start overflow-hidden",
+            hasFixedWidth ? `flex-none ${badgeWidthClass}` : "min-w-0 shrink",
+          )}
+        >
           <PaceHealthBadge
             insight={insight}
-            className={cn(
-              "min-w-0 max-w-full truncate",
-              badgeWidthClass && `justify-center ${badgeWidthClass}`,
-            )}
+            className={cn("min-w-0 max-w-full truncate", hasFixedWidth && "w-full justify-center")}
           />
         </span>
         <HealthInsightHint insight={insight} className="shrink-0" />

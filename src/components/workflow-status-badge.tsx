@@ -87,16 +87,19 @@ export function WorkflowStatusRow({
     );
   }
   if (tableCellLayout) {
+    const hasFixedWidth = Boolean(badgeWidthClass);
     return (
       <span className={cn("flex w-full min-w-0 items-center justify-between gap-1.5", className)}>
-        <span className="flex min-w-0 shrink justify-start overflow-hidden">
+        <span
+          className={cn(
+            "flex justify-start overflow-hidden",
+            hasFixedWidth ? `flex-none ${badgeWidthClass}` : "min-w-0 shrink",
+          )}
+        >
           <WorkflowStatusBadge
             insight={insight}
             size={size}
-            className={cn(
-              "min-w-0 max-w-full truncate",
-              badgeWidthClass && `justify-center ${badgeWidthClass}`,
-            )}
+            className={cn("min-w-0 max-w-full truncate", hasFixedWidth && "w-full justify-center")}
           />
         </span>
         <WorkflowStatusHint insight={insight} className="shrink-0" />
