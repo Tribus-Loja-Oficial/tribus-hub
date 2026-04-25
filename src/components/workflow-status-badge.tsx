@@ -13,6 +13,21 @@ const SLUG_CLASS: Record<WorkflowStatusSlug, string> = {
   completed: `border-emerald-600/22 bg-emerald-600/[0.08] text-emerald-900/90 dark:border-emerald-500/25 dark:bg-emerald-500/12 dark:text-emerald-100 ${ring}`,
 };
 
+function workflowStatusTooltip(insight: WorkflowStatusInsight): string {
+  const slugLine: Record<WorkflowStatusSlug, string> = {
+    planned: "Esta janela ainda nao começou.",
+    in_progress: "Estamos dentro da janela planejada.",
+    completed: "A janela ja foi concluida/encerrada.",
+  };
+
+  const bullets = [
+    `• Status atual: ${workflowStatusLabel(insight.slug)}`,
+    `• ${slugLine[insight.slug] ?? "Status derivado da janela de datas."}`,
+    `• Fonte de data: ${insight.dateSourcePt || "Nao informada"}`,
+  ];
+  return bullets.join("\n");
+}
+
 export function WorkflowStatusHint({
   insight,
   className,
@@ -20,7 +35,7 @@ export function WorkflowStatusHint({
   insight: WorkflowStatusInsight;
   className?: string;
 }) {
-  const title = `${insight.explanationPt}\n\n${insight.dateSourcePt}`.trim();
+  const title = workflowStatusTooltip(insight);
   return (
     <button
       type="button"
@@ -99,7 +114,10 @@ export function WorkflowStatusRow({
           <WorkflowStatusBadge
             insight={insight}
             size={size}
-            className={cn("min-w-0 max-w-full truncate", hasFixedWidth && "w-full justify-center")}
+            className={cn(
+              "min-w-0 max-w-full truncate",
+              hasFixedWidth && "w-full min-w-full max-w-full justify-center text-center",
+            )}
           />
         </span>
         <WorkflowStatusHint insight={insight} className="shrink-0" />

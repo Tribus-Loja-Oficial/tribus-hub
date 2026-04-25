@@ -36,6 +36,34 @@ const SLUG_CLASS: Record<PaceHealthSlug, string> = {
   completed_legacy: `border-primary/20 bg-primary/[0.08] text-primary dark:border-primary/25 dark:bg-primary/15 dark:text-blue-100 ${ring}`,
 };
 
+function healthTooltip(insight: HealthInsight): string {
+  const slugLine: Record<PaceHealthSlug, string> = {
+    draft: "Sem progresso relevante ainda.",
+    no_dates: "Nao ha datas para calcular ritmo.",
+    not_started: "Dentro do prazo, mas ainda nao iniciou.",
+    ahead: "Acima do ritmo esperado.",
+    on_track: "Dentro do ritmo esperado.",
+    at_risk: "Abaixo do ritmo ideal; requer atencao.",
+    off_track: "Fora do ritmo; risco alto de atraso.",
+    completed_legacy: "Marcado como concluido no fluxo antigo.",
+  };
+
+  const progress =
+    typeof insight.progressPercent === "number" ? `${Math.round(insight.progressPercent)}%` : "n/d";
+  const elapsed =
+    typeof insight.elapsedPercent === "number" ? `${Math.round(insight.elapsedPercent)}%` : "n/d";
+  const diff = typeof insight.diff === "number" ? `${Math.round(insight.diff)} p.p.` : "n/d";
+
+  const bullets = [
+    `• Health atual: ${paceHealthLabel(insight.slug)}`,
+    `• ${slugLine[insight.slug] ?? "Saude calculada pelo ritmo."}`,
+    `• Progresso: ${progress} | Tempo decorrido: ${elapsed}`,
+    `• Diferenca de ritmo: ${diff}`,
+    `• Fonte de data: ${insight.dateSourcePt || "Nao informada"}`,
+  ];
+  return bullets.join("\n");
+}
+
 export function HealthInsightHint({
   insight,
   className,
@@ -43,7 +71,7 @@ export function HealthInsightHint({
   insight: HealthInsight;
   className?: string;
 }) {
-  const title = `${insight.explanationPt}\n\n${insight.dateSourcePt}`.trim();
+  const title = healthTooltip(insight);
   return (
     <button
       type="button"

@@ -69,7 +69,10 @@ export function ProjectHealthRow({
         >
           <PaceHealthBadge
             insight={insight}
-            className={cn("min-w-0 max-w-full truncate", hasFixedWidth && "w-full justify-center")}
+            className={cn(
+              "min-w-0 max-w-full truncate",
+              hasFixedWidth && "w-full min-w-full max-w-full justify-center text-center",
+            )}
           />
         </span>
         <HealthInsightHint insight={insight} className="shrink-0" />
