@@ -7,6 +7,8 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "d1:migrate:local": "node ./scripts/d1-migrate.mjs --local",
-    "d1:migrate:remote": "node ./scripts/d1-migrate.mjs --remote"
+    "d1:migrate:remote": "node ./scripts/d1-migrate.mjs --remote",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   }
 }

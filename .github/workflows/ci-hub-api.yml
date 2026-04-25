@@ -44,6 +44,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Unit tests
+        run: npm run test
+        working-directory: apps/hub-api
+
       - name: Wrangler deploy (dry run)
         working-directory: apps/hub-api
         run: npx wrangler deploy --dry-run
