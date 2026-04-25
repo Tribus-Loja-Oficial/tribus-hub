@@ -8,6 +8,10 @@ import type {
   OkrCycleStatus,
   WorkflowStatusInsight,
 } from "@/lib/types/domain";
+import {
+  TABLE_HEALTH_CHIP_WIDTH_CLASS,
+  TABLE_STATUS_CHIP_WIDTH_CLASS,
+} from "@/lib/ui/chip-width-tokens";
 
 type AnyStatus = OkrObjectiveStatus | OkrKeyResultStatus | OkrCycleStatus | string;
 
@@ -92,10 +96,17 @@ export function OkrEntityStatusRow({
     <span
       className={cn("inline-flex min-w-0 max-w-full flex-nowrap items-center gap-1.5", className)}
     >
-      <WorkflowStatusRow insight={workflowStatusInsight} size={size} />
+      <WorkflowStatusRow
+        insight={workflowStatusInsight}
+        size={size}
+        badgeWidthClass={TABLE_STATUS_CHIP_WIDTH_CLASS}
+      />
       {healthInsight ? (
         <>
-          <PaceHealthBadge insight={healthInsight} />
+          <PaceHealthBadge
+            insight={healthInsight}
+            className={cn("justify-center text-center", TABLE_HEALTH_CHIP_WIDTH_CLASS)}
+          />
           <HealthInsightHint insight={healthInsight} />
         </>
       ) : null}

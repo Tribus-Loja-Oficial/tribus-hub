@@ -128,7 +128,11 @@ export function WorkflowStatusRow({
     <span
       className={cn("inline-flex min-w-0 max-w-full flex-nowrap items-center gap-1", className)}
     >
-      <WorkflowStatusBadge insight={insight} size={size} />
+      <WorkflowStatusBadge
+        insight={insight}
+        size={size}
+        className={cn(badgeWidthClass && "justify-center text-center", badgeWidthClass)}
+      />
       <WorkflowStatusHint insight={insight} />
     </span>
   );
