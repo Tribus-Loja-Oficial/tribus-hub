@@ -1,6 +1,6 @@
 /**
- * Unified workflow status (Planejado / Em progresso / Concluído) from calendar window + DB state.
- * Uses the same effective date windows as pace-health (inheritance rules live in pace-health).
+ * Status operacional unificado: Planejado, Em Progresso ou Concluído (mesma regra para OKR, projeto e marco).
+ * Combina janela de datas efetivas + estado no cadastro. Mesmas janelas que pace-health.
  */
 
 import type { PaceHealthKind } from "./pace-health";
@@ -69,7 +69,8 @@ export function computeWorkflowStatus(input: {
       windowEnd: input.windowEnd,
       locked: true,
       explanationPt:
-        'Status "Concluído": o item já está marcado como concluído no sistema. O calendário não muda isso sozinho.',
+        'Status "Concluído" (um dos três da coluna, igual para objetivo, KR, projeto ou marco): o cadastro já está encerrado. ' +
+        "As datas não reabrem esse valor sozinhas.",
     };
   }
 
@@ -82,7 +83,8 @@ export function computeWorkflowStatus(input: {
       windowEnd: input.windowEnd,
       locked: false,
       explanationPt:
-        'Status "Planejado" porque ainda está em rascunho. Quando você publicar, as datas de início e fim passam a definir quando aparece como "Em progresso".',
+        'Status "Planejado": em OKR ainda em rascunho o item não entra no fluxo publicado; a coluna mostra Planejado. ' +
+        'Depois de publicar, início e fim de prazo passam a definir quando o status vira "Em Progresso".',
     };
   }
 
@@ -96,7 +98,7 @@ export function computeWorkflowStatus(input: {
         windowEnd: input.windowEnd,
         locked: false,
         explanationPt:
-          'O projeto está cancelado no sistema. Nesta tela ele aparece como "Planejado"; os detalhes de cancelamento continuam no cadastro.',
+          'Projeto cancelado no cadastro. Na coluna de status unificado ele aparece como "Planejado"; o cancelamento continua registrado nos detalhes do projeto.',
       };
     }
     if (dbStatus === "on_hold") {
@@ -108,7 +110,7 @@ export function computeWorkflowStatus(input: {
         windowEnd: input.windowEnd,
         locked: false,
         explanationPt:
-          'O projeto está em pausa no cadastro. Aqui mostramos como "Planejado" até ele voltar para ativo.',
+          'Projeto em pausa no cadastro. O status unificado fica em "Planejado" até o projeto voltar a ficar ativo.',
       };
     }
   }
@@ -122,7 +124,7 @@ export function computeWorkflowStatus(input: {
       windowEnd: input.windowEnd,
       locked: false,
       explanationPt:
-        'O marco está marcado como atrasado ou perdido no cadastro. Nesta visão ele segue como "Em progresso" até ser concluído de fato.',
+        'Marco marcado como atrasado/perdido no cadastro. O status unificado segue "Em Progresso" até ser marcado como concluído (aí vai para "Concluído").',
     };
   }
 
@@ -134,7 +136,7 @@ export function computeWorkflowStatus(input: {
       windowStart: input.windowStart,
       windowEnd: input.windowEnd,
       locked: false,
-      explanationPt: `${input.dateSourcePt} Não há início e fim claros no calendário, então continua como \"Planejado\" até existir um período com datas.`,
+      explanationPt: `${input.dateSourcePt} Sem início e fim de prazo definidos, o status unificado fica em \"Planejado\" até existir uma janela com as duas datas.`,
     };
   }
 
@@ -146,7 +148,7 @@ export function computeWorkflowStatus(input: {
       windowStart: input.windowStart,
       windowEnd: input.windowEnd,
       locked: false,
-      explanationPt: `${input.dateSourcePt} Contando por dia em UTC, hoje ainda é antes de ${input.windowStart} — o prazo oficial ainda não começou.`,
+      explanationPt: `${input.dateSourcePt} Contando por dia em UTC, hoje ainda é antes de ${input.windowStart}, então o prazo não começou — o status unificado fica em \"Planejado\".`,
     };
   }
 
@@ -159,8 +161,8 @@ export function computeWorkflowStatus(input: {
     windowEnd: input.windowEnd,
     locked: false,
     explanationPt: afterEnd
-      ? `${input.dateSourcePt} Em calendário (por dia em UTC), o fim do prazo (${input.windowEnd}) já passou, mas o item ainda não está concluído no sistema — por isso segue como \"Em progresso\".`
-      : `${input.dateSourcePt} Estamos dentro do período oficial, de ${input.windowStart} até ${input.windowEnd} (contagem por dia em UTC).`,
+      ? `${input.dateSourcePt} O fim do prazo (${input.windowEnd}) já passou em calendário (dias em UTC), mas o cadastro ainda não está concluído — o status unificado continua \"Em Progresso\" até você encerrar.`
+      : `${input.dateSourcePt} Estamos entre ${input.windowStart} e ${input.windowEnd} (dias em UTC): prazo em andamento, então o status unificado é \"Em Progresso\".`,
   };
 }
 

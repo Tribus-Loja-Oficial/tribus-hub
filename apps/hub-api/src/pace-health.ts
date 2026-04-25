@@ -133,22 +133,22 @@ function buildExplanationPt(params: {
     locked,
   } = params;
   const base =
-    `${dateSourcePt} Período considerado: de ${windowStart} até ${windowEnd}. ` +
-    `Seu progresso está em ${progressPercent}% e o tempo já \"corrido\" dentro do prazo está em ${elapsedPercent}% ` +
-    `(diferença de ${diff} pontos percentuais: progresso menos a parte do tempo que já passou). ` +
-    `Como lemos isso: acima de +${band} p.p. = adiantado; entre -${band} e +${band} p.p. = no rumo; ` +
-    `entre -${offTrack} e -${band} p.p. = em risco; ` +
-    `-${offTrack} p.p. ou pior = fora do rumo.`;
-  if (locked) return `${base} Saúde travada no momento em que foi concluído.`;
+    `${dateSourcePt} ` +
+    `O badge de Health é sempre um destes cinco (mesma lógica para objetivo, KR, projeto ou marco): Não Iniciado, Adiantado, No Rumo, Em Risco ou Fora do Rumo. ` +
+    `Pegamos seu progresso em ${progressPercent}% e comparamos com o tempo já decorrido dentro do prazo (${elapsedPercent}%): a diferença é ${diff} pontos percentuais (p.p.), ou seja, progresso menos o “tempo gasto” do prazo. ` +
+    `Janela usada: de ${windowStart} até ${windowEnd}. ` +
+    `Regras dos badges: diferença maior que +${band} p.p. → \"Adiantado\"; entre -${band} p.p. e +${band} p.p. (inclusive) → \"No Rumo\"; ` +
+    `pior que -${band} p.p. porém ainda melhor que -${offTrack} p.p. → \"Em Risco\"; -${offTrack} p.p. ou pior → \"Fora do Rumo\".`;
+  if (locked) return `${base} Valores fixados quando o item foi concluído.`;
   const verdict =
     slug === "ahead"
-      ? "No fim das contas: você está à frente do que o calendário sugeriria."
+      ? 'Com esses números, o resultado cai no badge "Adiantado".'
       : slug === "on_track"
-        ? "No fim das contas: está alinhado com o tempo que já passou."
+        ? 'Com esses números, o resultado cai no badge "No Rumo".'
         : slug === "at_risk"
-          ? "No fim das contas: um pouco atrás do que o calendário sugeriria."
+          ? 'Com esses números, o resultado cai no badge "Em Risco".'
           : slug === "off_track"
-            ? "No fim das contas: bem atrás do que o calendário sugeriria."
+            ? 'Com esses números, o resultado cai no badge "Fora do Rumo".'
             : "";
   return `${base} ${verdict}`.trim();
 }
@@ -189,7 +189,8 @@ export function insightFromSnapshotJson(json: string | null | undefined): Health
       locked: true,
       explanationPt:
         o.explanationPt ??
-        "Salvamos como estava a saúde quando você marcou como concluído; depois disso não recalculamos sozinhos.",
+        "Health congelado: guardamos o cálculo no momento em que marcou como concluído. " +
+          "O badge segue a mesma escala (Não Iniciado, Adiantado, No Rumo, Em Risco, Fora do Rumo); não recalculamos sozinhos depois disso.",
     };
   } catch {
     return null;
@@ -230,7 +231,8 @@ function completedLegacyInsight(progressPercent: number): HealthInsightDto {
     dateSourcePt: "—",
     locked: true,
     explanationPt:
-      "Este item foi concluído antes de guardarmos o detalhe da saúde. Não dá para refazer a conta com precisão; mostramos só o progresso final do cadastro como referência.",
+      "Concluído antes de existir registro detalhado de Health. " +
+      'Mostramos o badge "No Rumo" como referência neutra e o progresso final do cadastro; não dá para refazer a conta de ritmo com precisão.',
   };
 }
 
@@ -267,7 +269,7 @@ export function computePaceHealth(input: {
   ) {
     return {
       slug: "draft",
-      labelPt: "Rascunho",
+      labelPt: labelForSlug("draft"),
       diff: null,
       elapsedPercent: null,
       progressPercent: input.progressPercent,
@@ -277,7 +279,8 @@ export function computePaceHealth(input: {
       dateSourcePt: input.dateSourcePt,
       locked: false,
       explanationPt:
-        "Enquanto estiver em rascunho, não calculamos saúde por ritmo. Depois de publicar, passamos a usar as datas e o progresso no ciclo.",
+        'Badge "Não Iniciado": em OKR ainda em rascunho não rodamos a conta de ritmo (progresso vs tempo). ' +
+        "Depois de publicar, as mesmas datas do ciclo passam a valer para Health e para o status Planejado / Em Progresso / Concluído.",
     };
   }
 
@@ -293,7 +296,9 @@ export function computePaceHealth(input: {
       windowEnd: input.windowEnd,
       dateSourcePt: input.dateSourcePt,
       locked: false,
-      explanationPt: `${input.dateSourcePt} Falta início e fim claros no calendário, então não dá para comparar progresso com o tempo que já passou.`,
+      explanationPt:
+        `${input.dateSourcePt} Badge \"Não Iniciado\": sem início e fim de prazo no calendário não dá para comparar progresso com o tempo; ` +
+        "vale para objetivo, KR, projeto ou marco da mesma forma.",
     };
   }
 
@@ -309,7 +314,7 @@ export function computePaceHealth(input: {
       windowEnd: input.windowEnd,
       dateSourcePt: input.dateSourcePt,
       locked: false,
-      explanationPt: `${input.dateSourcePt} Contando por dia em UTC, a data de início ainda não chegou — o prazo oficial nem começou.`,
+      explanationPt: `${input.dateSourcePt} Badge \"Não Iniciado\": contando por dia em UTC, a data de início do prazo ainda não chegou, então o relógio do ritmo nem começou.`,
     };
   }
 
@@ -371,8 +376,8 @@ export function resolveOkrObjectiveWindow(
     parts.push(`fim vem do ciclo${cycle.title ? ` \"${cycle.title}\"` : ""}`);
   const dateSourcePt =
     parts.length > 0
-      ? `Datas usadas no cálculo: ${parts.join(" · ")}.`
-      : "Datas usadas no cálculo: não há datas no objetivo nem no ciclo.";
+      ? `Mesma janela de datas para status (Planejado / Em Progresso / Concluído) e para Health: ${parts.join(" · ")}.`
+      : "Sem datas no objetivo nem no ciclo: não há janela para status unificado nem para Health por ritmo.";
   return { start, end, dateSourcePt };
 }
 
@@ -402,8 +407,8 @@ export function resolveOkrKrWindow(
     parts.push(`fim vem do ciclo${cycle.title ? ` \"${cycle.title}\"` : ""}`);
   const dateSourcePt =
     parts.length > 0
-      ? `Datas usadas no cálculo: ${parts.join(" · ")}.`
-      : "Datas usadas no cálculo: não há datas no KR, no objetivo nem no ciclo.";
+      ? `Mesma janela de datas para status e Health (Não Iniciado / Adiantado / No Rumo / Em Risco / Fora do Rumo): ${parts.join(" · ")}.`
+      : "Sem datas no KR, no objetivo nem no ciclo: não há janela para comparar ritmo nem para status por calendário.";
   return { start, end, dateSourcePt };
 }
 
@@ -417,7 +422,7 @@ export function resolveProjectWindow(project: {
     start,
     end,
     dateSourcePt:
-      "Datas usadas no cálculo: início e fim cadastrados no projeto (não há item pai acima no modelo atual).",
+      "Projeto: início e fim do cadastro definem a mesma janela para o status unificado (Planejado / Em Progresso / Concluído) e para o Health por ritmo.",
   };
 }
 
@@ -432,10 +437,10 @@ export function resolveMilestoneWindow(
     null;
   const ptitle = project.title ? ` \"${project.title}\"` : "";
   const dateSourcePt =
-    `Datas usadas no cálculo: início vem do projeto${ptitle}; ` +
+    `Marco: mesma janela para status e Health — início herdado do projeto${ptitle}; ` +
     (milestone.due_date
-      ? "fim é a data do marco."
-      : "fim vem do projeto quando o marco não tem data própria.");
+      ? "fim = data do marco."
+      : "fim herdado do projeto se o marco não tiver data própria.");
   return { start, end, dateSourcePt };
 }
 
@@ -478,7 +483,7 @@ export function buildCompletionSnapshotFromPreCompleteRow(input: {
       windowStart: insight.windowStart,
       windowEnd: insight.windowEnd,
       dateSourcePt: insight.dateSourcePt,
-      explanationPt: `${insight.explanationPt} Valores fixados quando foi marcado como concluído (${computedAt}).`,
+      explanationPt: `${insight.explanationPt} Texto e números fixados ao marcar como concluído (${computedAt}); os cinco badges de Health continuam válidos para leitura do que foi salvo.`,
     },
     computedAt,
   );
