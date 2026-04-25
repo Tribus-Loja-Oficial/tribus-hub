@@ -91,6 +91,11 @@ function fmtDate(d: string | null | undefined) {
   return format(new Date(d), "dd MMM", { locale: ptBR });
 }
 
+function fmtDateCompact(d: string | null | undefined) {
+  if (!d) return null;
+  return format(new Date(d), "dd/MM", { locale: ptBR });
+}
+
 function fmtMetric(kr: OkrKeyResult): string {
   if (kr.metricType === "boolean") return kr.currentValue >= 1 ? "Concluído" : "Pendente";
   const unit = kr.unit ?? "";
@@ -1103,6 +1108,23 @@ function ObjectiveBlock({
             </div>
           ) : (
             <>
+              <div
+                className={cn(
+                  OKR_LIST_GRID_BASE,
+                  "select-none border-b border-border/40 bg-muted/20 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground [&>*]:py-1.5",
+                )}
+                style={{ gridTemplateColumns: gridTpl }}
+              >
+                <div aria-hidden />
+                <div className="flex items-center justify-start">Key Results</div>
+                <div aria-hidden />
+                <div className="flex items-center justify-start">Status</div>
+                <div className="flex items-center justify-start">Health</div>
+                <div className="flex items-center justify-start">Métrica</div>
+                <div className="flex items-center justify-start">Progresso</div>
+                <div className="flex items-center justify-start">Meta</div>
+                <div aria-hidden />
+              </div>
               {krs.map((kr, idx) => (
                 <KrRow
                   key={kr.id}
@@ -1147,7 +1169,7 @@ interface KrRowProps {
 
 function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete }: KrRowProps) {
   const metric = fmtMetric(kr);
-  const targetDate = fmtDate(kr.targetDate);
+  const targetDate = fmtDateCompact(kr.targetDate);
 
   return (
     <div
@@ -1212,7 +1234,7 @@ function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete
 
       <div className="flex min-w-0 items-center justify-start overflow-hidden px-1">
         <span
-          className="min-w-0 text-xs tabular-nums text-muted-foreground"
+          className="whitespace-nowrap text-xs tabular-nums text-muted-foreground"
           title={targetDate ?? undefined}
         >
           {targetDate ?? "—"}

@@ -70,9 +70,9 @@ function hierarchyGridColumnsStyle(gridTpl: string): CSSProperties {
   return { gridTemplateColumns: gridTpl };
 }
 
-/** Larguras default (px); título e status/health mais largos para reduzir corte de texto. */
-const HIERARCHY_COL_DEFAULTS = [24, 44, 320, 148, 140, 100, 108, 128, 152] as const;
-const HIERARCHY_COL_STORAGE_KEY = "hub:project-hierarchy-cols-v3";
+/** Larguras default (px); coluna de ações maior para evitar corte de contadores e botões. */
+const HIERARCHY_COL_DEFAULTS = [24, 44, 320, 148, 140, 100, 108, 128, 210] as const;
+const HIERARCHY_COL_STORAGE_KEY = "hub:project-hierarchy-cols-v4";
 
 function HierarchyHeaderCell({
   children,
@@ -589,26 +589,26 @@ function ProjectRow({
               showFraction={false}
             />
           </div>
-          <div className="flex min-w-0 items-center justify-end gap-1.5 overflow-hidden">
+          <div className="flex min-w-0 items-center justify-end gap-1.5">
             {owner && (
               <span className="mr-0.5 flex min-w-0 items-center gap-0.5 text-[10px] text-muted-foreground">
                 <User className="h-3 w-3 shrink-0" />
                 <span className="truncate">{owner.name.split(" ")[0]}</span>
               </span>
             )}
-            <span className="truncate text-[10px] tabular-nums text-muted-foreground">
+            <span className="shrink-0 whitespace-nowrap text-[10px] tabular-nums text-muted-foreground">
               {project.projectStats.totalMilestones}m · {project.projectStats.totalTasks}t
             </span>
             <EntityQuickViewEyeButton
               entity={{ kind: "project", id: project.slug || project.id }}
-              className="h-6 w-6 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+              className="h-6 w-6 shrink-0"
             />
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setCreateMilestoneOpen(true);
               }}
-              className="shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-all hover:bg-muted hover:text-foreground group-hover:opacity-100"
+              className="shrink-0 rounded p-1 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
               title="Novo milestone"
               type="button"
             >
@@ -621,7 +621,7 @@ function ProjectRow({
                   e.stopPropagation();
                   onEditProject(project);
                 }}
-                className="shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-all hover:bg-muted hover:text-foreground group-hover:opacity-100"
+                className="shrink-0 rounded p-1 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
                 title="Editar projeto"
               >
                 <Pencil className="h-3.5 w-3.5" />
