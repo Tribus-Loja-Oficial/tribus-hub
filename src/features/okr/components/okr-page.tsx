@@ -91,11 +91,6 @@ function fmtDate(d: string | null | undefined) {
   return format(new Date(d), "dd MMM", { locale: ptBR });
 }
 
-function fmtDateCompact(d: string | null | undefined) {
-  if (!d) return null;
-  return format(new Date(d), "dd/MM", { locale: ptBR });
-}
-
 function fmtMetric(kr: OkrKeyResult): string {
   if (kr.metricType === "boolean") return kr.currentValue >= 1 ? "Concluído" : "Pendente";
   const unit = kr.unit ?? "";
@@ -1169,7 +1164,7 @@ interface KrRowProps {
 
 function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete }: KrRowProps) {
   const metric = fmtMetric(kr);
-  const targetDate = fmtDateCompact(kr.targetDate);
+  const targetDate = fmtDate(kr.targetDate);
 
   return (
     <div
