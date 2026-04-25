@@ -35,7 +35,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageGuide, GuideSection, GuideList, GuideExamples } from "@/components/ui/page-guide";
 import type { OkrCycle, OkrKeyResult } from "@/lib/types/domain";
-import { OkrStatusBadge } from "./okr-status-badge";
 import { HealthInsightHint, PaceHealthBadge } from "@/components/pace-health-badge";
 import { WorkflowStatusRow } from "@/components/workflow-status-badge";
 import { OkrProgressBar } from "./okr-progress-bar";
@@ -105,10 +104,8 @@ const OKR_LIST_GRID_BASE =
   "grid w-full items-center gap-x-0 [&>*]:min-w-0 [&>*]:border-r [&>*]:border-border/70 [&>*]:px-3 [&>*:last-child]:border-r-0";
 
 const STATUS_FILTER_OPTIONS = [
-  { value: "draft", label: "Rascunho" },
-  { value: "on_track", label: "No rumo" },
-  { value: "at_risk", label: "Em risco" },
-  { value: "off_track", label: "Fora do rumo" },
+  { value: "planned", label: "Planejado" },
+  { value: "in_progress", label: "Em Progresso" },
   { value: "completed", label: "Concluído" },
 ] as const;
 
@@ -235,7 +232,10 @@ export function OkrPage() {
   const afterScopeFilters = useMemo(() => {
     let list = allObjectives;
     if (filterStatuses.size > 0) {
-      list = list.filter((o) => filterStatuses.has(o.status));
+      list = list.filter((o) => {
+        const slug = o.workflowStatusInsight?.slug ?? "planned";
+        return filterStatuses.has(slug);
+      });
     }
     if (filterCycleIds.size > 0) {
       list = list.filter((o) => o.cycleId != null && filterCycleIds.has(o.cycleId));
@@ -968,11 +968,7 @@ function ObjectiveBlock({
         </div>
 
         <div className="flex min-w-0 items-center justify-center px-1">
-          {objective.workflowStatusInsight ? (
-            <WorkflowStatusRow insight={objective.workflowStatusInsight} />
-          ) : (
-            <OkrStatusBadge status={objective.status} />
-          )}
+          <WorkflowStatusRow insight={objective.workflowStatusInsight} />
         </div>
 
         <div className="flex min-w-0 items-center justify-center px-1">
@@ -1153,11 +1149,7 @@ function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete
       <div className="flex items-center px-1" aria-hidden />
 
       <div className="flex min-w-0 items-center justify-center px-1">
-        {kr.workflowStatusInsight ? (
-          <WorkflowStatusRow insight={kr.workflowStatusInsight} />
-        ) : (
-          <OkrStatusBadge status={kr.status} />
-        )}
+        <WorkflowStatusRow insight={kr.workflowStatusInsight} />
       </div>
 
       <div className="flex min-w-0 items-center justify-center px-1">

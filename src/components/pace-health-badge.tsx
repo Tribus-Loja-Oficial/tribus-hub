@@ -3,6 +3,7 @@
 import { Info } from "lucide-react";
 import type { HealthInsight, PaceHealthSlug } from "@/lib/types/domain";
 import { cn } from "@/lib/utils/cn";
+import { paceHealthBadgeToneSlug, paceHealthLabel } from "@/lib/pace-health-display";
 
 /** Barra vertical à esquerda da linha (lista OKR / projetos), alinhada à saúde por ritmo. */
 const ROW_ACCENT: Record<PaceHealthSlug, string> = {
@@ -18,7 +19,8 @@ const ROW_ACCENT: Record<PaceHealthSlug, string> = {
 
 export function healthRowAccentClass(slug?: PaceHealthSlug | null): string {
   if (!slug) return "border-l-transparent";
-  return ROW_ACCENT[slug] ?? "border-l-transparent";
+  const tone = paceHealthBadgeToneSlug(slug);
+  return ROW_ACCENT[tone] ?? "border-l-transparent";
 }
 
 const ring = "ring-1 ring-inset ring-black/[0.04] dark:ring-white/[0.06]";
@@ -64,15 +66,17 @@ export function PaceHealthBadge({
   insight: HealthInsight;
   className?: string;
 }) {
+  const tone = paceHealthBadgeToneSlug(insight.slug);
+  const label = paceHealthLabel(insight.slug);
   return (
     <span
       className={cn(
         "inline-flex items-center whitespace-nowrap rounded-md border px-2 py-0.5 text-[11px] font-medium",
-        SLUG_CLASS[insight.slug] ?? SLUG_CLASS.no_dates,
+        SLUG_CLASS[tone] ?? SLUG_CLASS.no_dates,
         className,
       )}
     >
-      {insight.labelPt}
+      {label}
     </span>
   );
 }

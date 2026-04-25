@@ -2,6 +2,7 @@
 
 import { Info } from "lucide-react";
 import type { WorkflowStatusInsight, WorkflowStatusSlug } from "@/lib/types/domain";
+import { workflowStatusLabel } from "@/lib/pace-health-display";
 import { cn } from "@/lib/utils/cn";
 
 const ring = "ring-1 ring-inset ring-black/[0.04] dark:ring-white/[0.06]";
@@ -53,7 +54,7 @@ export function WorkflowStatusBadge({
         className,
       )}
     >
-      {insight.labelPt}
+      {workflowStatusLabel(insight.slug)}
     </span>
   );
 }

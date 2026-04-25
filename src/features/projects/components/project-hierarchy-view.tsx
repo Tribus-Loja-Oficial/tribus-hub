@@ -33,13 +33,8 @@ import { DateField } from "@/components/ui/date-field";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  ProjectStatusBadge,
-  ProjectHealthRow,
-  PriorityBadge,
-  MilestoneHealthRow,
-  MilestoneStatusBadge,
-} from "./project-badges";
+import { ProjectHealthRow, PriorityBadge, MilestoneHealthRow } from "./project-badges";
+import { paceHealthBadgeToneSlug } from "@/lib/pace-health-display";
 import { healthRowAccentClass } from "@/components/pace-health-badge";
 import { WorkflowStatusRow } from "@/components/workflow-status-badge";
 import { projectWorkflowSlug } from "@/features/projects/lib/project-workflow-slug";
@@ -57,19 +52,11 @@ import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resiza
 type MemberRow = { id: string; name: string; email: string };
 
 function projectStatusCell(project: ProjectHierarchyItem) {
-  return project.workflowStatusInsight ? (
-    <WorkflowStatusRow insight={project.workflowStatusInsight} />
-  ) : (
-    <ProjectStatusBadge status={project.status} />
-  );
+  return <WorkflowStatusRow insight={project.workflowStatusInsight} />;
 }
 
 function milestoneStatusCell(milestone: HierarchyMilestone) {
-  return milestone.workflowStatusInsight ? (
-    <WorkflowStatusRow insight={milestone.workflowStatusInsight} />
-  ) : (
-    <MilestoneStatusBadge status={milestone.status} />
-  );
+  return <WorkflowStatusRow insight={milestone.workflowStatusInsight} />;
 }
 
 /** 9 colunas: chevron | pasta | título | status | health | prioridade | prazo | progresso | ações */
@@ -669,14 +656,7 @@ function ProjectRow({
           </div>
           <div className="flex min-w-0 justify-center">{projectStatusCell(project)}</div>
           <div className="flex min-w-0 justify-center">
-            {project.healthInsight || project.healthStatus ? (
-              <ProjectHealthRow
-                insight={project.healthInsight}
-                healthStatus={project.healthStatus}
-              />
-            ) : (
-              <span className="text-[10px] text-muted-foreground/25">—</span>
-            )}
+            <ProjectHealthRow insight={project.healthInsight} />
           </div>
           <div className="flex min-w-0 justify-center">
             <PriorityBadge priority={project.priority} />
@@ -940,8 +920,9 @@ export function ProjectHierarchyView({
       if (filterStatus && projectWorkflowSlug(p) !== filterStatus) return false;
       if (filterPriority && p.priority !== filterPriority) return false;
       if (filterHealth) {
-        const healthKey = p.healthInsight?.slug ?? p.healthStatus ?? "";
-        if (healthKey !== filterHealth) return false;
+        const slug = p.healthInsight?.slug;
+        if (!slug) return false;
+        if (paceHealthBadgeToneSlug(slug) !== filterHealth) return false;
       }
       return true;
     });

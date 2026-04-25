@@ -1,6 +1,7 @@
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { OkrObjective, OkrKeyResult } from "@/lib/types/domain";
+import { paceHealthLabel, workflowStatusLabel } from "@/lib/pace-health-display";
 
 export type ObjectiveWithKRs = OkrObjective & { keyResults: OkrKeyResult[] };
 
@@ -79,10 +80,16 @@ function dateSearchChunks(d: string | null | undefined): string[] {
 }
 
 function collectKeyResultSearchText(kr: OkrKeyResult): string[] {
+  const wf = kr.workflowStatusInsight?.slug;
+  const hk = kr.healthInsight?.slug;
   const parts: string[] = [
     kr.title,
     kr.slug,
     KR_STATUS_LABELS[kr.status] ?? kr.status,
+    wf ? workflowStatusLabel(wf) : "",
+    wf ?? "",
+    hk ? paceHealthLabel(hk) : "",
+    hk ?? "",
     METRIC_TYPE_LABELS[kr.metricType] ?? kr.metricType,
     kr.metricType,
     formatMetricLine(kr),
@@ -106,6 +113,11 @@ export const OKR_OKRS_LIST_SEARCH_EXTRACTORS: OkrOkrsSearchTextExtractor[] = [
     OBJECTIVE_STATUS_LABELS[objective.status] ?? objective.status,
     objective.status,
   ],
+  ({ objective }) => {
+    const wf = objective.workflowStatusInsight?.slug;
+    const hk = objective.healthInsight?.slug;
+    return [wf ? workflowStatusLabel(wf) : "", wf ?? "", hk ? paceHealthLabel(hk) : "", hk ?? ""];
+  },
   ({ objective }) => [
     String(Math.round(objective.progressPercent)),
     String(objective.progressPercent),

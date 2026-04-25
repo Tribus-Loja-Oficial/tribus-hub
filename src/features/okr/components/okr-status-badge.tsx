@@ -1,5 +1,5 @@
 import { HealthInsightHint, PaceHealthBadge } from "@/components/pace-health-badge";
-import { WorkflowStatusBadge, WorkflowStatusHint } from "@/components/workflow-status-badge";
+import { WorkflowStatusRow } from "@/components/workflow-status-badge";
 import { cn } from "@/lib/utils/cn";
 import type {
   HealthInsight,
@@ -92,14 +92,7 @@ export function OkrEntityStatusRow({
     <span
       className={cn("inline-flex min-w-0 max-w-full flex-nowrap items-center gap-1.5", className)}
     >
-      {workflowStatusInsight ? (
-        <>
-          <WorkflowStatusBadge insight={workflowStatusInsight} size={size} />
-          <WorkflowStatusHint insight={workflowStatusInsight} />
-        </>
-      ) : (
-        <OkrStatusBadge status={status} size={size} />
-      )}
+      <WorkflowStatusRow insight={workflowStatusInsight} size={size} />
       {healthInsight ? (
         <>
           <PaceHealthBadge insight={healthInsight} />

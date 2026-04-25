@@ -1,12 +1,10 @@
 import type { ObjectiveWithKRs } from "@/features/okr/lib/okr-okrs-list-search";
 
-/** Ordem lógica de status (Rascunho → … → Concluído) */
-export const OKR_OBJECTIVE_STATUS_RANK: Record<string, number> = {
-  draft: 0,
-  on_track: 1,
-  at_risk: 2,
-  off_track: 3,
-  completed: 4,
+/** Ordem de status unificado (Planejado → Em Progresso → Concluído). */
+export const OKR_WORKFLOW_STATUS_RANK: Record<string, number> = {
+  planned: 0,
+  in_progress: 1,
+  completed: 2,
 };
 
 export type OkrListSortField = "title" | "status" | "progress" | "meta";
@@ -15,6 +13,11 @@ function targetDateSortValue(iso: string | null | undefined): number {
   if (!iso) return Number.POSITIVE_INFINITY;
   const t = new Date(iso).getTime();
   return Number.isNaN(t) ? Number.POSITIVE_INFINITY : t;
+}
+
+function workflowRank(o: ObjectiveWithKRs): number {
+  const slug = o.workflowStatusInsight?.slug ?? "planned";
+  return OKR_WORKFLOW_STATUS_RANK[slug] ?? 99;
 }
 
 function compareObjectives(
@@ -26,8 +29,8 @@ function compareObjectives(
     case "title":
       return a.title.localeCompare(b.title, "pt-BR", { sensitivity: "base" });
     case "status": {
-      const ra = OKR_OBJECTIVE_STATUS_RANK[a.status] ?? 99;
-      const rb = OKR_OBJECTIVE_STATUS_RANK[b.status] ?? 99;
+      const ra = workflowRank(a);
+      const rb = workflowRank(b);
       return ra - rb;
     }
     case "progress":

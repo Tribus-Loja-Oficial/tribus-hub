@@ -8,7 +8,29 @@ function makeProject(overrides: Partial<ProjectHierarchyItem> = {}): ProjectHier
     title: "Lançamento de Produto",
     summary: "Plano de go-to-market",
     status: "active",
-    healthStatus: "on_track",
+    healthStatus: null,
+    healthInsight: {
+      slug: "on_track",
+      labelPt: "No Rumo",
+      diff: 0,
+      elapsedPercent: 40,
+      progressPercent: 40,
+      band: 8,
+      windowStart: "2025-01-01",
+      windowEnd: "2025-12-31",
+      dateSourcePt: "",
+      locked: false,
+      explanationPt: "",
+    },
+    workflowStatusInsight: {
+      slug: "in_progress",
+      labelPt: "Em Progresso",
+      dateSourcePt: "",
+      windowStart: null,
+      windowEnd: null,
+      locked: false,
+      explanationPt: "",
+    },
     priority: "high",
     targetDate: "2025-06-30",
     milestones: [],
@@ -71,13 +93,29 @@ describe("projectMatchesSearch", () => {
     expect(projectMatchesSearch(makeProject({ status: "active" }), "active")).toBe(true);
   });
 
-  it("matches by Portuguese health label", () => {
-    expect(projectMatchesSearch(makeProject({ healthStatus: "on_track" }), "no rumo")).toBe(true);
-    expect(projectMatchesSearch(makeProject({ healthStatus: "at_risk" }), "em risco")).toBe(true);
-    expect(projectMatchesSearch(makeProject({ healthStatus: "blocked" }), "bloqueado")).toBe(true);
-    expect(projectMatchesSearch(makeProject({ healthStatus: "off_track" }), "off_track")).toBe(
-      true,
-    );
+  it("matches by unified health label from insight", () => {
+    expect(projectMatchesSearch(makeProject(), "no rumo")).toBe(true);
+    expect(
+      projectMatchesSearch(
+        makeProject({
+          healthInsight: {
+            slug: "at_risk",
+            labelPt: "Em Risco",
+            diff: -10,
+            elapsedPercent: 50,
+            progressPercent: 40,
+            band: 8,
+            windowStart: "2025-01-01",
+            windowEnd: "2025-12-31",
+            dateSourcePt: "",
+            locked: false,
+            explanationPt: "",
+          },
+        }),
+        "em risco",
+      ),
+    ).toBe(true);
+    expect(projectMatchesSearch(makeProject(), "on_track")).toBe(true);
   });
 
   it("matches by Portuguese priority label", () => {
@@ -102,7 +140,9 @@ describe("projectMatchesSearch", () => {
   });
 
   it("matches by milestone Portuguese status label", () => {
-    const project = makeProject({ milestones: [makeMilestone({ status: "in_progress" })] as never });
+    const project = makeProject({
+      milestones: [makeMilestone({ status: "in_progress" })] as never,
+    });
     expect(projectMatchesSearch(project, "em andamento")).toBe(true);
   });
 
@@ -131,7 +171,12 @@ describe("projectMatchesSearch", () => {
   });
 
   it("handles project with null/undefined optional fields", () => {
-    const project = makeProject({ summary: null as never, healthStatus: null as never, targetDate: null as never });
+    const project = makeProject({
+      summary: null as never,
+      healthInsight: undefined,
+      workflowStatusInsight: undefined,
+      targetDate: null as never,
+    });
     expect(projectMatchesSearch(project, "lançamento")).toBe(true);
     expect(projectMatchesSearch(project, "xyz")).toBe(false);
   });

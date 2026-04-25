@@ -116,7 +116,7 @@ export function computeWorkflowStatus(input: {
   if (kind === "milestone" && dbStatus === "missed") {
     return {
       slug: "in_progress",
-      labelPt: "Em progresso",
+      labelPt: "Em Progresso",
       dateSourcePt: input.dateSourcePt,
       windowStart: input.windowStart,
       windowEnd: input.windowEnd,
@@ -153,7 +153,7 @@ export function computeWorkflowStatus(input: {
   const afterEnd = isStrictlyAfterEnd(input.windowEnd, now);
   return {
     slug: "in_progress",
-    labelPt: "Em progresso",
+    labelPt: "Em Progresso",
     dateSourcePt: input.dateSourcePt,
     windowStart: input.windowStart,
     windowEnd: input.windowEnd,

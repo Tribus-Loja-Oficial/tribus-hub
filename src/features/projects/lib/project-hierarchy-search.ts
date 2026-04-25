@@ -1,20 +1,15 @@
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { ProjectHierarchyItem } from "@/lib/types/pm-hierarchy";
+import { paceHealthLabel, workflowStatusLabel } from "@/lib/pace-health-display";
 
+/** Status operacional no cadastro (ainda pesquisável). */
 const STATUS_LABELS: Record<string, string> = {
   planned: "Planejado",
   active: "Em andamento",
   on_hold: "Em pausa",
   completed: "Concluído",
   cancelled: "Cancelado",
-};
-
-const HEALTH_LABELS: Record<string, string> = {
-  on_track: "No rumo",
-  at_risk: "Em risco",
-  blocked: "Bloqueado",
-  needs_attention: "Atenção",
 };
 
 const PRIORITY_LABELS: Record<string, string> = {
@@ -53,24 +48,32 @@ export function projectMatchesSearch(project: ProjectHierarchyItem, query: strin
   if (!query.trim()) return true;
   const q = norm(query);
 
+  const wf = project.workflowStatusInsight?.slug;
   const parts: string[] = [
     project.title,
     project.summary ?? "",
     STATUS_LABELS[project.status] ?? project.status,
     project.status,
-    HEALTH_LABELS[project.healthStatus ?? ""] ?? project.healthStatus ?? "",
-    project.healthStatus ?? "",
+    wf ? workflowStatusLabel(wf) : "",
+    wf ?? "",
+    project.healthInsight?.slug ? paceHealthLabel(project.healthInsight.slug) : "",
+    project.healthInsight?.slug ?? "",
     PRIORITY_LABELS[project.priority] ?? project.priority,
     project.priority,
     ...dateChunks(project.targetDate),
   ];
 
   for (const ms of project.milestones) {
+    const mwf = ms.workflowStatusInsight?.slug;
     parts.push(
       ms.title,
       ms.description ?? "",
       MILESTONE_STATUS_LABELS[ms.status] ?? ms.status,
       ms.status,
+      mwf ? workflowStatusLabel(mwf) : "",
+      mwf ?? "",
+      ms.healthInsight?.slug ? paceHealthLabel(ms.healthInsight.slug) : "",
+      ms.healthInsight?.slug ?? "",
       PRIORITY_LABELS[ms.priority] ?? ms.priority,
       ...dateChunks(ms.dueDate),
     );

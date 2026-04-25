@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { Project, WorkflowStatusSlug } from "@/lib/types/domain";
+import { paceHealthBadgeToneSlug } from "@/lib/pace-health-display";
 import { healthRowAccentClass } from "@/components/pace-health-badge";
 import { WorkflowStatusRow } from "@/components/workflow-status-badge";
 import {
@@ -34,7 +35,7 @@ import {
 } from "@/features/projects/lib/project-workflow-slug";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ProjectHealthRow, ProjectStatusBadge, PriorityBadge } from "./project-badges";
+import { ProjectHealthRow, PriorityBadge } from "./project-badges";
 import { ProjectHierarchyView } from "./project-hierarchy-view";
 import { EditProjectDialog } from "./edit-project-dialog";
 import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
@@ -46,21 +47,17 @@ import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resiza
 const STATUS_OPTIONS = [
   { value: "", label: "Todos os status" },
   { value: "planned", label: "Planejado" },
-  { value: "in_progress", label: "Em progresso" },
+  { value: "in_progress", label: "Em Progresso" },
   { value: "completed", label: "Concluído" },
 ];
 
 const HEALTH_OPTIONS = [
   { value: "", label: "Qualquer saúde" },
+  { value: "not_started", label: "Não Iniciado" },
   { value: "ahead", label: "Adiantado" },
-  { value: "on_track", label: "No rumo" },
-  { value: "at_risk", label: "Em risco" },
-  { value: "blocked", label: "Bloqueado" },
-  { value: "off_track", label: "Fora do rumo" },
-  { value: "not_started", label: "Não iniciado" },
-  { value: "no_dates", label: "Sem datas" },
-  { value: "draft", label: "Rascunho" },
-  { value: "completed_legacy", label: "Concluído (legado)" },
+  { value: "on_track", label: "No Rumo" },
+  { value: "at_risk", label: "Em Risco" },
+  { value: "off_track", label: "Fora do Rumo" },
 ];
 
 const PROJECTS_LIST_TABLE_GRID =
@@ -116,7 +113,7 @@ function ProjectsListHeaderCell({
 
 const BOARD_COLUMNS = [
   { key: "planned" as const, label: "Planejado" },
-  { key: "in_progress" as const, label: "Em progresso" },
+  { key: "in_progress" as const, label: "Em Progresso" },
   { key: "completed" as const, label: "Concluído" },
 ] as const;
 
@@ -354,21 +351,10 @@ function ListView({
             )}
           </div>
           <div className="flex min-w-0 items-center justify-center overflow-hidden">
-            {project.workflowStatusInsight ? (
-              <WorkflowStatusRow insight={project.workflowStatusInsight} />
-            ) : (
-              <ProjectStatusBadge status={project.status} />
-            )}
+            <WorkflowStatusRow insight={project.workflowStatusInsight} />
           </div>
           <div className="flex min-w-0 items-center justify-center overflow-hidden">
-            {project.healthInsight || project.healthStatus ? (
-              <ProjectHealthRow
-                insight={project.healthInsight}
-                healthStatus={project.healthStatus}
-              />
-            ) : (
-              <span className="text-xs text-muted-foreground/40">—</span>
-            )}
+            <ProjectHealthRow insight={project.healthInsight} />
           </div>
           <div className="flex min-w-0 items-center justify-center overflow-hidden">
             <PriorityBadge priority={project.priority} />
@@ -486,18 +472,9 @@ function BoardView({
                     </p>
                   )}
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                    {project.workflowStatusInsight ? (
-                      <WorkflowStatusRow insight={project.workflowStatusInsight} />
-                    ) : (
-                      <ProjectStatusBadge status={project.status} />
-                    )}
+                    <WorkflowStatusRow insight={project.workflowStatusInsight} />
                     <PriorityBadge priority={project.priority} />
-                    {(project.healthInsight || project.healthStatus) && (
-                      <ProjectHealthRow
-                        insight={project.healthInsight}
-                        healthStatus={project.healthStatus}
-                      />
-                    )}
+                    <ProjectHealthRow insight={project.healthInsight} />
                   </div>
                   {project.targetDate && (
                     <p className="mt-2 flex items-center gap-1 text-[10px] text-muted-foreground/60">
@@ -577,8 +554,9 @@ export function ProjectsListPage() {
       if (filterStatus && projectWorkflowSlug(p) !== filterStatus) return false;
       if (filterPriority && p.priority !== filterPriority) return false;
       if (filterHealth) {
-        const healthKey = p.healthInsight?.slug ?? p.healthStatus ?? "";
-        if (healthKey !== filterHealth) return false;
+        const slug = p.healthInsight?.slug;
+        if (!slug) return false;
+        if (paceHealthBadgeToneSlug(slug) !== filterHealth) return false;
       }
       return true;
     })

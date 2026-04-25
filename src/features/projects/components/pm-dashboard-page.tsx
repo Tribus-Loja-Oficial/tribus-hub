@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { PageGuide, GuideSection, GuideList } from "@/components/ui/page-guide";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ProjectHealthRow, PriorityBadge, MilestoneStatusBadge } from "./project-badges";
+import { ProjectHealthRow, PriorityBadge } from "./project-badges";
 import type { Project, WorkflowStatusInsight } from "@/lib/types/domain";
 import { WorkflowStatusRow } from "@/components/workflow-status-badge";
 import { cn } from "@/lib/utils/cn";
@@ -115,8 +115,8 @@ export function PmDashboardPage() {
     .slice(0, 8);
 
   const attentionProjects = projects.filter((p) => {
-    const h = p.healthInsight?.slug ?? p.healthStatus;
-    return h === "at_risk" || h === "blocked" || h === "off_track";
+    const slug = p.healthInsight?.slug;
+    return slug === "at_risk" || slug === "off_track";
   });
 
   const recentProjects = projects
@@ -295,10 +295,7 @@ export function PmDashboardPage() {
                       )}
                     </div>
                     <div className="flex shrink-0 items-center gap-1.5">
-                      <ProjectHealthRow
-                        insight={project.healthInsight}
-                        healthStatus={project.healthStatus}
-                      />
+                      <ProjectHealthRow insight={project.healthInsight} />
                       <PriorityBadge priority={project.priority} />
                       {project.targetDate && (
                         <span className="hidden text-[11px] text-muted-foreground md:block">
@@ -334,11 +331,7 @@ export function PmDashboardPage() {
                       <p className="truncate text-[11px] text-muted-foreground">{m.projectTitle}</p>
                     </div>
                     <div className="flex shrink-0 items-center gap-1.5">
-                      {m.workflowStatusInsight ? (
-                        <WorkflowStatusRow insight={m.workflowStatusInsight} />
-                      ) : (
-                        <MilestoneStatusBadge status={m.status} />
-                      )}
+                      <WorkflowStatusRow insight={m.workflowStatusInsight} />
                       {m.dueDate && (
                         <span className="text-xs tabular-nums text-muted-foreground">
                           {format(new Date(m.dueDate), "dd MMM", { locale: ptBR })}
@@ -385,10 +378,7 @@ export function PmDashboardPage() {
                       </p>
                     </div>
                     <div className="shrink-0">
-                      <ProjectHealthRow
-                        insight={project.healthInsight}
-                        healthStatus={project.healthStatus}
-                      />
+                      <ProjectHealthRow insight={project.healthInsight} />
                     </div>
                   </Link>
                 ))}

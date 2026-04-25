@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Milestone } from "@/lib/types/domain";
 import { WorkflowStatusRow } from "@/components/workflow-status-badge";
-import { MilestoneHealthRow, MilestoneStatusBadge, PriorityBadge } from "./project-badges";
+import { MilestoneHealthRow, PriorityBadge } from "./project-badges";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -111,11 +111,7 @@ export function MilestoneDetailView({ paramsPromise, embedded }: MilestoneDetail
                 </p>
               )}
               <div className="mt-2 flex flex-wrap items-center gap-2">
-                {m.workflowStatusInsight ? (
-                  <WorkflowStatusRow insight={m.workflowStatusInsight} />
-                ) : (
-                  <MilestoneStatusBadge status={m.status} />
-                )}
+                <WorkflowStatusRow insight={m.workflowStatusInsight} />
                 <MilestoneHealthRow insight={m.healthInsight} />
                 <PriorityBadge priority={m.priority} />
                 {m.dueDate && (

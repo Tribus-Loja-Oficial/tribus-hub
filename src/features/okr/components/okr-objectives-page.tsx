@@ -183,7 +183,7 @@ export function OkrObjectivesPage() {
         >
           <option value="">Todos os status</option>
           <option value="planned">Planejado</option>
-          <option value="in_progress">Em progresso</option>
+          <option value="in_progress">Em Progresso</option>
           <option value="completed">Concluído</option>
         </select>
 

@@ -75,24 +75,23 @@ function isBeforeWindowStart(windowStart: string, now: Date): boolean {
   return dayUtc(now) < dayUtc(start);
 }
 
+/** Rótulos unificados (PT-BR) para todos os tipos de item com saúde por ritmo. */
 function labelForSlug(slug: PaceHealthSlug): string {
   switch (slug) {
     case "draft":
-      return "Rascunho";
     case "no_dates":
-      return "Indefinido";
     case "not_started":
-      return "Não iniciado";
+      return "Não Iniciado";
     case "ahead":
       return "Adiantado";
     case "on_track":
-      return "No rumo";
+      return "No Rumo";
     case "at_risk":
-      return "Em risco";
+      return "Em Risco";
     case "off_track":
-      return "Fora do rumo";
+      return "Fora do Rumo";
     case "completed_legacy":
-      return "Concluído";
+      return "No Rumo";
     default:
       return slug;
   }
@@ -154,14 +153,32 @@ function buildExplanationPt(params: {
   return `${base} ${verdict}`.trim();
 }
 
+const PACE_HEALTH_SLUGS: readonly PaceHealthSlug[] = [
+  "draft",
+  "no_dates",
+  "not_started",
+  "ahead",
+  "on_track",
+  "at_risk",
+  "off_track",
+  "completed_legacy",
+] as const;
+
+function coercePaceHealthSlug(raw: unknown): PaceHealthSlug {
+  return typeof raw === "string" && (PACE_HEALTH_SLUGS as readonly string[]).includes(raw)
+    ? (raw as PaceHealthSlug)
+    : "on_track";
+}
+
 export function insightFromSnapshotJson(json: string | null | undefined): HealthInsightDto | null {
   if (!json) return null;
   try {
     const o = JSON.parse(json) as SnapshotV1;
     if (o?.v !== 1 || typeof o.slug !== "string") return null;
+    const slug = coercePaceHealthSlug(o.slug);
     return {
-      slug: o.slug,
-      labelPt: o.labelPt ?? labelForSlug(o.slug),
+      slug,
+      labelPt: labelForSlug(slug),
       diff: typeof o.diff === "number" ? o.diff : null,
       elapsedPercent: typeof o.elapsedPercent === "number" ? o.elapsedPercent : null,
       progressPercent: Number(o.progressPercent ?? 0),
@@ -203,7 +220,7 @@ export function serializeHealthSnapshot(
 function completedLegacyInsight(progressPercent: number): HealthInsightDto {
   return {
     slug: "completed_legacy",
-    labelPt: "Concluído",
+    labelPt: labelForSlug("completed_legacy"),
     diff: null,
     elapsedPercent: null,
     progressPercent,

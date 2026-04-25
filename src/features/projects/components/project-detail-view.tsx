@@ -37,13 +37,7 @@ import { format, isBefore, startOfDay, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils/cn";
 import { WorkflowStatusRow } from "@/components/workflow-status-badge";
-import {
-  ProjectStatusBadge,
-  ProjectHealthRow,
-  PriorityBadge,
-  MilestoneHealthRow,
-  MilestoneStatusBadge,
-} from "./project-badges";
+import { ProjectHealthRow, PriorityBadge, MilestoneHealthRow } from "./project-badges";
 import type { OkrObjective, OkrKeyResult } from "@/lib/types/domain";
 import { EditProjectDialog } from "./edit-project-dialog";
 import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
@@ -613,15 +607,8 @@ export function ProjectDetailView({ paramsPromise, embedded }: ProjectDetailView
               </p>
             )}
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              {project.workflowStatusInsight ? (
-                <WorkflowStatusRow insight={project.workflowStatusInsight} />
-              ) : (
-                <ProjectStatusBadge status={project.status} />
-              )}
-              <ProjectHealthRow
-                insight={project.healthInsight}
-                healthStatus={project.healthStatus}
-              />
+              <WorkflowStatusRow insight={project.workflowStatusInsight} />
+              <ProjectHealthRow insight={project.healthInsight} />
               <PriorityBadge priority={project.priority} />
               {owner && (
                 <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
@@ -671,17 +658,6 @@ export function ProjectDetailView({ paramsPromise, embedded }: ProjectDetailView
             <option value="on_hold">Em espera</option>
             <option value="completed">Concluído</option>
             <option value="cancelled">Cancelado</option>
-          </select>
-          <select
-            className="h-8 rounded-md border border-input bg-background px-2.5 text-xs"
-            value={project.healthStatus ?? ""}
-            onChange={(e) => patchMutation.mutate({ healthStatus: e.target.value || null })}
-          >
-            <option value="">Health: —</option>
-            <option value="on_track">No rumo</option>
-            <option value="at_risk">Em risco</option>
-            <option value="blocked">Bloqueado</option>
-            <option value="off_track">Fora do rumo</option>
           </select>
         </div>
       </div>
@@ -866,11 +842,7 @@ export function ProjectDetailView({ paramsPromise, embedded }: ProjectDetailView
                       )}
                       <div className="flex shrink-0 items-center gap-1.5">
                         <span className="inline-flex flex-wrap items-center gap-1">
-                          {m.workflowStatusInsight ? (
-                            <WorkflowStatusRow insight={m.workflowStatusInsight} />
-                          ) : (
-                            <MilestoneStatusBadge status={m.status} />
-                          )}
+                          <WorkflowStatusRow insight={m.workflowStatusInsight} />
                           <MilestoneHealthRow insight={m.healthInsight} />
                         </span>
                         {m.dueDate && (

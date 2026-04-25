@@ -24,7 +24,6 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
   const [status, setStatus] = useState("planned");
-  const [healthStatus, setHealthStatus] = useState("");
   const [priority, setPriority] = useState("medium");
   const [ownerUserId, setOwnerUserId] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -60,7 +59,6 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
     setTitle(project.title);
     setSummary(project.summary ?? "");
     setStatus(project.status);
-    setHealthStatus(project.healthStatus ?? "");
     setPriority(project.priority);
     setOwnerUserId(project.ownerUserId ?? "");
     setStartDate(project.startDate ?? "");
@@ -86,7 +84,6 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
               title: title.trim(),
               summary: summary.trim() || undefined,
               status,
-              healthStatus: healthStatus || null,
               priority,
               ownerUserId: ownerUserId || undefined,
               startDate: startDate || undefined,
@@ -102,35 +99,23 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
             <Label>Resumo</Label>
             <Input value={summary} onChange={(e) => setSummary(e.target.value)} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>Status</Label>
-              <select
-                className={nativeSelectClassName}
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-              >
-                <option value="planned">Planejado</option>
-                <option value="active">Ativo</option>
-                <option value="on_hold">Em espera</option>
-                <option value="completed">Concluído</option>
-                <option value="cancelled">Cancelado</option>
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Health</Label>
-              <select
-                className={nativeSelectClassName}
-                value={healthStatus}
-                onChange={(e) => setHealthStatus(e.target.value)}
-              >
-                <option value="">—</option>
-                <option value="on_track">No rumo</option>
-                <option value="at_risk">Em risco</option>
-                <option value="blocked">Bloqueado</option>
-                <option value="off_track">Fora do rumo</option>
-              </select>
-            </div>
+          <div className="space-y-1.5">
+            <Label>Status no cadastro</Label>
+            <select
+              className={nativeSelectClassName}
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+            >
+              <option value="planned">Planejado</option>
+              <option value="active">Ativo</option>
+              <option value="on_hold">Em espera</option>
+              <option value="completed">Concluído</option>
+              <option value="cancelled">Cancelado</option>
+            </select>
+            <p className="text-[11px] text-muted-foreground">
+              Na lista, o status exibido é o unificado (Planejado / Em Progresso / Concluído),
+              calculado a partir destes valores e das datas.
+            </p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
