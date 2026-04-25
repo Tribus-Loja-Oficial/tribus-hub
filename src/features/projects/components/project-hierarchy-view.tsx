@@ -52,24 +52,27 @@ import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resiza
 type MemberRow = { id: string; name: string; email: string };
 
 function projectStatusCell(project: ProjectHierarchyItem) {
-  return <WorkflowStatusRow insight={project.workflowStatusInsight} />;
+  return <WorkflowStatusRow insight={project.workflowStatusInsight} tableCellLayout />;
 }
 
 function milestoneStatusCell(milestone: HierarchyMilestone) {
-  return <WorkflowStatusRow insight={milestone.workflowStatusInsight} />;
+  return <WorkflowStatusRow insight={milestone.workflowStatusInsight} tableCellLayout />;
 }
 
-/** 9 colunas: chevron | pasta | título | status | health | prioridade | prazo | progresso | ações */
+/**
+ * 9 colunas: chevron | ícone | título | status | health | prioridade | prazo | progresso | ações.
+ * Cada célula define o próprio flex; não forçar flex global para evitar desalinhamento entre níveis.
+ */
 const HIERARCHY_GRID_ROW_CLASS =
-  "hidden w-full min-w-0 items-center gap-x-0 overflow-hidden md:grid [&>div]:flex [&>div]:min-w-0 [&>div]:min-h-0 [&>div]:items-center [&>div]:border-r [&>div]:border-border/70 [&>div]:px-2.5 [&>div]:py-1 [&>div:last-child]:border-r-0 [&>div:nth-child(3)]:!items-stretch [&>div:nth-child(3)]:overflow-hidden";
+  "grid w-full min-w-0 items-stretch gap-x-0 overflow-hidden [&>div]:min-h-0 [&>div]:min-w-0 [&>div]:border-r [&>div]:border-border/60 [&>div]:px-2 [&>div]:py-2 [&>div:last-child]:border-r-0";
 
 function hierarchyGridColumnsStyle(gridTpl: string): CSSProperties {
   return { gridTemplateColumns: gridTpl };
 }
 
-/** Larguras alinhadas ao cabeçalho: status/health com espaço para badge + dica. */
-const HIERARCHY_COL_DEFAULTS = [22, 40, 248, 124, 118, 84, 88, 108, 132] as const;
-const HIERARCHY_COL_STORAGE_KEY = "hub:project-hierarchy-cols-v2";
+/** Larguras default (px); título e status/health mais largos para reduzir corte de texto. */
+const HIERARCHY_COL_DEFAULTS = [24, 44, 320, 148, 140, 100, 108, 128, 152] as const;
+const HIERARCHY_COL_STORAGE_KEY = "hub:project-hierarchy-cols-v3";
 
 function HierarchyHeaderCell({
   children,
@@ -145,89 +148,121 @@ function TaskRow({
   task,
   members,
   onEditTask,
+  hierarchyGridTpl,
 }: {
   task: HierarchyTask;
   members: Map<string, MemberRow>;
   onEditTask: (taskId: string) => void;
+  hierarchyGridTpl: string;
 }) {
   const done = !!task.completedAt;
   const overdue = isOverdue(task.dueDate, task.completedAt);
   const assignee = task.assigneeUserId ? members.get(task.assigneeUserId) : null;
 
   return (
-    <div className="group flex items-center gap-2.5 rounded-lg px-3 py-1.5 transition-colors hover:bg-muted/30">
-      {/* indent connector */}
-      <div className="flex w-5 shrink-0 justify-center">
-        <div className="h-full w-px bg-border/40" />
+    <div
+      className={cn(
+        HIERARCHY_GRID_ROW_CLASS,
+        "group rounded-md transition-colors hover:bg-muted/25",
+      )}
+      style={hierarchyGridColumnsStyle(hierarchyGridTpl)}
+    >
+      <div className="flex items-center justify-center border-l-2 border-border/40 pl-1">
+        <div className="h-6 w-px shrink-0 bg-border/50" aria-hidden />
       </div>
-      {done ? (
-        <CheckSquare className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
-      ) : (
-        <Square className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40" />
-      )}
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="h-6 w-6 shrink-0 text-muted-foreground hover:text-foreground"
-        title="Editar tarefa"
-        aria-label="Editar tarefa"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onEditTask(task.id);
-        }}
-      >
-        <Eye className="h-3.5 w-3.5" />
-      </Button>
-      <Link
-        href={`/tasks/${encodeURIComponent(task.id)}`}
-        className={cn(
-          "min-w-0 flex-1 truncate text-sm transition-colors hover:text-primary",
-          done ? "text-muted-foreground/60 line-through" : "text-foreground",
+      <div className="flex items-center justify-center gap-0.5">
+        {done ? (
+          <CheckSquare className="h-3.5 w-3.5 shrink-0 text-emerald-500" aria-hidden />
+        ) : (
+          <Square className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40" aria-hidden />
         )}
-      >
-        {task.title}
-      </Link>
-      {task.externalRef && (
-        <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
-          Ref: {task.externalRef}
-        </span>
-      )}
-      <div className="flex shrink-0 items-center gap-2 opacity-70 transition-opacity group-hover:opacity-100">
-        <div className="flex w-[72px] justify-center">
-          <PriorityBadge priority={task.priority} />
-        </div>
-        <div className="flex w-[80px] justify-center">
-          <span className="max-w-full truncate rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-            {task.columnName}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+          title="Editar tarefa"
+          aria-label="Editar tarefa"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onEditTask(task.id);
+          }}
+        >
+          <Eye className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+      <div className="flex min-h-0 min-w-0 flex-col justify-center gap-0.5 overflow-hidden">
+        <Link
+          href={`/tasks/${encodeURIComponent(task.id)}`}
+          className={cn(
+            "line-clamp-2 min-w-0 break-words text-sm leading-snug transition-colors hover:text-primary",
+            done ? "text-muted-foreground/70 line-through" : "text-foreground",
+          )}
+        >
+          {task.title}
+        </Link>
+        {task.externalRef ? (
+          <span className="font-mono text-[10px] leading-tight text-muted-foreground">
+            Ref: {task.externalRef}
           </span>
-        </div>
-        <div className="flex w-[80px] justify-center">
-          {assignee ? (
-            <span className="flex max-w-full items-center gap-0.5 text-[10px] text-muted-foreground">
-              <User className="h-2.5 w-2.5 shrink-0" />
-              <span className="truncate">{assignee.name.split(" ")[0]}</span>
-            </span>
-          ) : (
-            <span className="text-[10px] text-muted-foreground/25">—</span>
+        ) : null}
+      </div>
+      <div
+        className="flex min-w-0 items-center justify-start overflow-hidden"
+        title="Coluna do board"
+      >
+        <span className="line-clamp-2 min-w-0 rounded-md border border-border/60 bg-muted/40 px-1.5 py-0.5 text-left text-[10px] leading-tight text-muted-foreground">
+          {task.columnName || "—"}
+        </span>
+      </div>
+      <div className="flex min-w-0 items-center justify-start overflow-hidden" title="Responsável">
+        {assignee ? (
+          <span className="flex min-w-0 items-center gap-0.5 text-[10px] text-muted-foreground">
+            <User className="h-3 w-3 shrink-0" />
+            <span className="truncate">{assignee.name}</span>
+          </span>
+        ) : (
+          <span className="text-[10px] text-muted-foreground/40">—</span>
+        )}
+      </div>
+      <div className="flex min-w-0 items-center justify-start overflow-hidden">
+        <PriorityBadge priority={task.priority} />
+      </div>
+      <div className="flex min-w-0 items-center justify-start overflow-hidden">
+        {task.dueDate ? (
+          <span
+            className={cn(
+              "inline-flex items-center gap-0.5 text-[10px] tabular-nums",
+              overdue ? "font-medium text-red-500" : "text-muted-foreground",
+            )}
+          >
+            {overdue ? <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden /> : null}
+            {format(new Date(task.dueDate), "dd MMM", { locale: ptBR })}
+          </span>
+        ) : (
+          <span className="text-[10px] text-muted-foreground/40">—</span>
+        )}
+      </div>
+      <div className="flex min-w-0 items-center justify-start overflow-hidden">
+        <span
+          className={cn(
+            "text-[10px] font-medium tabular-nums",
+            done ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/50",
           )}
-        </div>
-        <div className="flex w-[72px] justify-center">
-          {task.dueDate ? (
-            <span
-              className={cn(
-                "text-[10px] tabular-nums",
-                overdue ? "font-medium text-red-500" : "text-muted-foreground",
-              )}
-            >
-              {overdue && <AlertTriangle className="mr-0.5 inline h-2.5 w-2.5" />}
-              {format(new Date(task.dueDate), "dd MMM", { locale: ptBR })}
-            </span>
-          ) : (
-            <span className="text-[10px] text-muted-foreground/25">—</span>
-          )}
-        </div>
+        >
+          {done ? "Concluída" : "—"}
+        </span>
+      </div>
+      <div className="flex min-w-0 items-center justify-end gap-0.5">
+        <Link
+          href={`/tasks/${encodeURIComponent(task.id)}`}
+          className="rounded p-1 text-muted-foreground opacity-60 transition-all hover:bg-muted hover:text-foreground hover:opacity-100"
+          title="Abrir tarefa"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <ExternalLink className="h-3.5 w-3.5" />
+        </Link>
       </div>
     </div>
   );
@@ -240,128 +275,43 @@ function MilestoneRow({
   projectId,
   projectSlug,
   members,
-  onTaskCreated,
   onCreateTask,
   onEditTask,
   hierarchyGridTpl,
-  columnWidths,
 }: {
   milestone: HierarchyMilestone;
   projectId: string;
   projectSlug: string;
   members: Map<string, MemberRow>;
-  onTaskCreated: () => void;
   onCreateTask: (projectId: string, milestoneId: string) => void;
   onEditTask: (taskId: string) => void;
   hierarchyGridTpl: string;
-  columnWidths: number[];
 }) {
   const [expanded, setExpanded] = useState(false);
   const overdue = isOverdue(milestone.dueDate, milestone.completedAt);
-  const owner = milestone.ownerUserId ? members.get(milestone.ownerUserId) : null;
 
   const projectForPath = { id: projectId, slug: projectSlug };
 
-  const w = columnWidths;
-
   return (
     <div>
-      {/* Milestone header */}
+      {/* Milestone header — mesma grelha 9 colunas que projeto / cabeçalho */}
       <div
-        className="group cursor-pointer rounded-lg px-3 py-2 transition-colors hover:bg-muted/20"
+        className="group cursor-pointer rounded-lg px-2 py-0.5 transition-colors hover:bg-muted/20 md:px-0"
         onClick={(e) => {
           if ((e.target as HTMLElement).closest("a, button")) return;
           setExpanded((v) => !v);
         }}
       >
-        <div className="flex items-center gap-2.5 md:hidden">
-          <div className="ml-1 h-5 w-4 shrink-0 border-l border-border/40" />
-          <ChevronRight
-            className={cn(
-              "h-3.5 w-3.5 shrink-0 text-muted-foreground/60 transition-transform",
-              expanded && "rotate-90",
-            )}
-          />
-          <Flag className="h-3.5 w-3.5 shrink-0 text-blue-500/70" />
-          <EntityQuickViewEyeButton
-            entity={{
-              kind: "milestone",
-              projectId: projectSlug || projectId,
-              milestoneId: milestone.id,
-            }}
-            className="h-6 w-6 shrink-0"
-          />
-          <Link
-            href={milestonePath(projectForPath, milestone.id)}
-            onClick={(e) => e.stopPropagation()}
-            className="min-w-0 truncate text-sm font-medium text-foreground transition-colors hover:text-primary"
-          >
-            {milestone.title}
-          </Link>
-          {milestone.externalRef && (
-            <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
-              Ref: {milestone.externalRef}
-            </span>
-          )}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onCreateTask(projectId, milestone.id);
-            }}
-            className="ml-2 flex shrink-0 items-center gap-0.5 text-[11px] text-primary opacity-0 transition-opacity hover:underline group-hover:opacity-100"
-          >
-            <Plus className="h-3 w-3" /> task
-          </button>
-          <div className="flex-1" />
-          <div className="flex shrink-0 items-center gap-2 opacity-75 transition-opacity group-hover:opacity-100">
-            <div className="flex justify-center" style={{ width: w[3] }}>
-              {milestoneStatusCell(milestone)}
-            </div>
-            <div className="flex justify-center" style={{ width: w[4] }}>
-              <MilestoneHealthRow insight={milestone.healthInsight} />
-            </div>
-            <div className="flex justify-center" style={{ width: w[5] }}>
-              <PriorityBadge priority={milestone.priority} />
-            </div>
-            <div className="flex justify-center" style={{ width: w[6] }}>
-              {milestone.dueDate ? (
-                <span
-                  className={cn(
-                    "text-[10px] tabular-nums",
-                    overdue ? "font-medium text-red-500" : "text-muted-foreground",
-                  )}
-                >
-                  {overdue && <AlertTriangle className="mr-0.5 inline h-2.5 w-2.5" />}
-                  {format(new Date(milestone.dueDate), "dd MMM", { locale: ptBR })}
-                </span>
-              ) : (
-                <span className="text-[10px] text-muted-foreground/25">—</span>
-              )}
-            </div>
-            <div
-              className="flex items-center justify-center overflow-hidden"
-              style={{ width: w[7] }}
-            >
-              <ProgressBar
-                done={milestone.taskStats.done}
-                total={milestone.taskStats.total}
-                className="w-full"
-                showFraction={false}
-              />
-            </div>
-          </div>
-        </div>
-
         <div
           className={HIERARCHY_GRID_ROW_CLASS}
           style={hierarchyGridColumnsStyle(hierarchyGridTpl)}
         >
           <div
-            className="min-h-0 min-w-0 !items-stretch overflow-hidden"
+            className="flex min-h-0 min-w-0 items-stretch overflow-hidden"
             style={{ gridColumn: "1 / 4" }}
           >
-            <div className="flex min-h-0 min-w-0 items-center gap-2.5 overflow-hidden">
-              <div className="ml-1 h-5 w-4 shrink-0 border-l border-border/40" />
+            <div className="flex min-h-0 min-w-0 flex-1 items-center gap-2 overflow-hidden py-0.5">
+              <div className="ml-0.5 h-5 w-3 shrink-0 self-center border-l-2 border-border/45" />
               <ChevronRight
                 className={cn(
                   "h-3.5 w-3.5 shrink-0 text-muted-foreground/60 transition-transform",
@@ -377,56 +327,59 @@ function MilestoneRow({
                 }}
                 className="h-6 w-6 shrink-0"
               />
-              <div className="min-w-0 flex-1 overflow-hidden">
+              <div className="flex min-h-0 min-w-0 flex-1 flex-col justify-center gap-0.5 overflow-hidden">
                 <Link
                   href={milestonePath(projectForPath, milestone.id)}
                   onClick={(e) => e.stopPropagation()}
-                  className="block truncate text-sm font-medium text-foreground transition-colors hover:text-primary"
+                  className="line-clamp-2 min-w-0 break-words text-sm font-medium leading-snug text-foreground transition-colors hover:text-primary"
                 >
                   {milestone.title}
                 </Link>
+                {milestone.externalRef ? (
+                  <span className="font-mono text-[10px] leading-tight text-muted-foreground">
+                    Ref: {milestone.externalRef}
+                  </span>
+                ) : null}
               </div>
-              {milestone.externalRef && (
-                <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
-                  Ref: {milestone.externalRef}
-                </span>
-              )}
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   onCreateTask(projectId, milestone.id);
                 }}
-                className="ml-1 flex shrink-0 items-center gap-0.5 text-[11px] text-primary opacity-0 transition-opacity hover:underline group-hover:opacity-100"
+                className="flex shrink-0 items-center gap-0.5 self-center text-[11px] text-primary opacity-0 transition-opacity hover:underline group-hover:opacity-100"
               >
                 <Plus className="h-3 w-3" /> task
               </button>
             </div>
           </div>
-          <div className="flex min-w-0 justify-center opacity-75 transition-opacity group-hover:opacity-100">
-            {milestoneStatusCell(milestone)}
+          <div className="flex min-w-0 items-center justify-start overflow-hidden opacity-90 transition-opacity group-hover:opacity-100">
+            <div className="w-full min-w-0">{milestoneStatusCell(milestone)}</div>
           </div>
-          <div className="flex min-w-0 justify-center opacity-75 transition-opacity group-hover:opacity-100">
-            <MilestoneHealthRow insight={milestone.healthInsight} />
+          <div className="flex min-w-0 items-center justify-start overflow-hidden opacity-90 transition-opacity group-hover:opacity-100">
+            <div className="w-full min-w-0">
+              <MilestoneHealthRow insight={milestone.healthInsight} tableCellLayout />
+            </div>
           </div>
-          <div className="flex min-w-0 justify-center opacity-75 transition-opacity group-hover:opacity-100">
+          <div className="flex min-w-0 items-center justify-start overflow-hidden opacity-90 transition-opacity group-hover:opacity-100">
             <PriorityBadge priority={milestone.priority} />
           </div>
-          <div className="flex min-w-0 justify-center opacity-75 transition-opacity group-hover:opacity-100">
+          <div className="flex min-w-0 items-center justify-start overflow-hidden opacity-90 transition-opacity group-hover:opacity-100">
             {milestone.dueDate ? (
               <span
                 className={cn(
-                  "text-[10px] tabular-nums",
+                  "inline-flex items-center gap-0.5 text-[10px] tabular-nums",
                   overdue ? "font-medium text-red-500" : "text-muted-foreground",
                 )}
               >
-                {overdue && <AlertTriangle className="mr-0.5 inline h-2.5 w-2.5" />}
+                {overdue ? <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden /> : null}
                 {format(new Date(milestone.dueDate), "dd MMM", { locale: ptBR })}
               </span>
             ) : (
-              <span className="text-[10px] text-muted-foreground/25">—</span>
+              <span className="text-[10px] text-muted-foreground/40">—</span>
             )}
           </div>
-          <div className="flex min-w-0 items-center justify-center overflow-hidden opacity-75 transition-opacity group-hover:opacity-100">
+          <div className="flex min-w-0 items-center justify-start overflow-hidden opacity-90 transition-opacity group-hover:opacity-100">
             <ProgressBar
               done={milestone.taskStats.done}
               total={milestone.taskStats.total}
@@ -438,13 +391,13 @@ function MilestoneRow({
         </div>
       </div>
 
-      {/* Tasks — visually grouped under the milestone */}
       {expanded && (
-        <div className="mb-2 ml-9 mr-1 overflow-hidden rounded-r-lg border-l-2 border-blue-300/50 bg-blue-50/20 dark:bg-blue-950/10">
+        <div className="mb-1.5 mt-0.5 overflow-hidden rounded-md border border-border/50 bg-muted/10">
           {milestone.tasks.length === 0 ? (
-            <div className="flex items-center gap-2 px-4 py-3 text-xs text-muted-foreground/50">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-3 py-2.5 text-xs text-muted-foreground/70">
               <span>Sem tasks neste milestone.</span>
               <button
+                type="button"
                 className="text-primary hover:underline"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -456,29 +409,25 @@ function MilestoneRow({
             </div>
           ) : (
             <>
-              {/* Task column sub-header */}
-              <div className="flex select-none items-center gap-2 px-3 pb-0.5 pt-2 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/30">
-                <div className="w-5 shrink-0" />
-                <div className="w-3.5 shrink-0" />
-                <span className="flex-1">Tasks</span>
-                <div className="w-[72px] text-center">Prioridade</div>
-                <div className="w-[80px] text-center">Coluna</div>
-                <div className="w-[80px] text-center">Responsável</div>
-                <div className="w-[72px] text-center">Prazo</div>
-              </div>
-              <div className="space-y-0.5 py-1">
+              <div className="divide-y divide-border/40">
                 {milestone.tasks.map((task) => (
-                  <TaskRow key={task.id} task={task} members={members} onEditTask={onEditTask} />
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    members={members}
+                    onEditTask={onEditTask}
+                    hierarchyGridTpl={hierarchyGridTpl}
+                  />
                 ))}
               </div>
-              {/* Footer: always-visible add task */}
-              <div className="border-t border-blue-200/30 px-4 py-1.5">
+              <div className="border-t border-border/50 px-2 py-1.5">
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     onCreateTask(projectId, milestone.id);
                   }}
-                  className="flex items-center gap-1 text-[11px] text-muted-foreground/50 transition-colors hover:text-primary"
+                  className="flex items-center gap-1 text-[11px] text-muted-foreground/60 transition-colors hover:text-primary"
                 >
                   <Plus className="h-3 w-3" /> Adicionar task
                 </button>
@@ -502,7 +451,6 @@ function ProjectRow({
   onEditProject,
   expandSignal,
   hierarchyGridTpl,
-  columnWidths,
 }: {
   project: ProjectHierarchyItem;
   members: Map<string, MemberRow>;
@@ -512,7 +460,6 @@ function ProjectRow({
   onEditProject?: (p: ProjectHierarchyItem) => void;
   expandSignal: boolean;
   hierarchyGridTpl: string;
-  columnWidths: number[];
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -547,8 +494,6 @@ function ProjectRow({
   const [msTitle, setMsTitle] = useState("");
   const [msDueDate, setMsDueDate] = useState("");
 
-  const cw = columnWidths;
-
   return (
     <div
       className={cn(
@@ -561,57 +506,11 @@ function ProjectRow({
         className="group cursor-pointer px-4 py-3 transition-colors hover:bg-muted/10"
         onClick={() => setExpanded((v) => !v)}
       >
-        <div className="flex items-center gap-3 md:hidden">
-          <ChevronRight
-            className={cn(
-              "h-4 w-4 shrink-0 text-muted-foreground/60 transition-transform",
-              expanded && "rotate-90",
-            )}
-          />
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-            <FolderKanban className="h-4 w-4 text-primary" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <Link
-                href={projectPath(project)}
-                onClick={(e) => e.stopPropagation()}
-                className="truncate text-sm font-semibold text-foreground transition-colors hover:text-primary"
-              >
-                {project.title}
-              </Link>
-              {project.externalRef && (
-                <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
-                  Ref: {project.externalRef}
-                </span>
-              )}
-            </div>
-            {project.summary && (
-              <p className="mt-0.5 truncate text-xs text-muted-foreground">{project.summary}</p>
-            )}
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            {projectStatusCell(project)}
-            <PriorityBadge priority={project.priority} />
-            <EntityQuickViewEyeButton
-              entity={{ kind: "project", id: project.slug || project.id }}
-              className="h-7 w-7"
-            />
-            <Link
-              href={projectPath(project)}
-              onClick={(e) => e.stopPropagation()}
-              className="rounded p-1 text-muted-foreground opacity-60 transition-all hover:bg-muted hover:opacity-100"
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-        </div>
-
         <div
           className={HIERARCHY_GRID_ROW_CLASS}
           style={hierarchyGridColumnsStyle(hierarchyGridTpl)}
         >
-          <div className="flex justify-center">
+          <div className="flex items-center justify-center">
             <ChevronRight
               className={cn(
                 "h-4 w-4 shrink-0 text-muted-foreground/60 transition-transform",
@@ -619,53 +518,57 @@ function ProjectRow({
               )}
             />
           </div>
-          <div className="flex justify-center">
+          <div className="flex items-center justify-center">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
               <FolderKanban className="h-4 w-4 text-primary" />
             </div>
           </div>
-          <div className="flex min-h-0 w-full min-w-0 max-w-full flex-col !items-stretch gap-1 overflow-hidden">
-            <div className="flex min-w-0 items-center gap-2 overflow-hidden">
+          <div className="flex min-h-0 w-full min-w-0 flex-col justify-center gap-1 overflow-hidden">
+            <div className="flex min-w-0 items-start gap-2 overflow-hidden">
               <div className="min-w-0 flex-1 overflow-hidden">
                 <Link
                   href={projectPath(project)}
                   onClick={(e) => e.stopPropagation()}
-                  className="block truncate text-sm font-semibold text-foreground transition-colors hover:text-primary"
+                  className="line-clamp-2 min-w-0 break-words text-sm font-semibold leading-snug text-foreground transition-colors hover:text-primary"
                 >
                   {project.title}
                 </Link>
               </div>
-              {project.projectStats.overdueMilestones > 0 && (
+              {project.projectStats.overdueMilestones > 0 ? (
                 <span className="flex shrink-0 items-center gap-0.5 whitespace-nowrap text-[10px] font-medium text-red-500">
                   <AlertTriangle className="h-3 w-3 shrink-0" />
                   {project.projectStats.overdueMilestones} atrasado
                   {project.projectStats.overdueMilestones > 1 ? "s" : ""}
                 </span>
-              )}
+              ) : null}
             </div>
-            {project.externalRef && (
-              <span className="block min-w-0 max-w-full truncate font-mono text-[10px] text-muted-foreground">
+            {project.externalRef ? (
+              <span className="block min-w-0 break-all font-mono text-[10px] leading-tight text-muted-foreground">
                 Ref: {project.externalRef}
               </span>
-            )}
-            {project.summary && (
-              <p className="line-clamp-2 hidden min-h-0 min-w-0 max-w-full break-words text-xs leading-snug text-muted-foreground sm:block">
+            ) : null}
+            {project.summary ? (
+              <p className="line-clamp-2 min-h-0 min-w-0 break-words text-xs leading-snug text-muted-foreground">
                 {project.summary}
               </p>
-            )}
+            ) : null}
           </div>
-          <div className="flex min-w-0 justify-center">{projectStatusCell(project)}</div>
-          <div className="flex min-w-0 justify-center">
-            <ProjectHealthRow insight={project.healthInsight} />
+          <div className="flex min-w-0 items-center justify-start overflow-hidden">
+            <div className="w-full min-w-0">{projectStatusCell(project)}</div>
           </div>
-          <div className="flex min-w-0 justify-center">
+          <div className="flex min-w-0 items-center justify-start overflow-hidden">
+            <div className="w-full min-w-0">
+              <ProjectHealthRow insight={project.healthInsight} tableCellLayout />
+            </div>
+          </div>
+          <div className="flex min-w-0 items-center justify-start overflow-hidden">
             <PriorityBadge priority={project.priority} />
           </div>
-          <div className="flex min-w-0 justify-center">
+          <div className="flex min-w-0 items-center justify-start overflow-hidden">
             {project.targetDate ? (
               <span
                 className={cn(
-                  "flex items-center gap-0.5 text-[11px] tabular-nums",
+                  "inline-flex min-w-0 items-center gap-0.5 text-[11px] tabular-nums",
                   projectOverdue ? "font-medium text-red-500" : "text-muted-foreground",
                 )}
               >
@@ -675,10 +578,10 @@ function ProjectRow({
                 </span>
               </span>
             ) : (
-              <span className="text-[10px] text-muted-foreground/25">—</span>
+              <span className="text-[10px] text-muted-foreground/40">—</span>
             )}
           </div>
-          <div className="flex min-w-0 items-center overflow-hidden">
+          <div className="flex min-w-0 items-center justify-start overflow-hidden">
             <ProgressBar
               done={project.projectStats.doneTasks}
               total={project.projectStats.totalTasks}
@@ -738,11 +641,12 @@ function ProjectRow({
 
       {/* Milestones */}
       {expanded && (
-        <div className="space-y-0.5 border-t border-border/60 bg-muted/5 px-2 py-1.5">
+        <div className="space-y-0.5 border-t border-border/60 bg-muted/5 px-4 py-2">
           {project.milestones.length === 0 ? (
-            <div className="flex items-center justify-between px-3 py-3 text-sm text-muted-foreground/60">
+            <div className="flex items-center justify-between px-1 py-3 text-sm text-muted-foreground/60">
               <span>Nenhum milestone neste projeto.</span>
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   setCreateMilestoneOpen(true);
@@ -754,24 +658,25 @@ function ProjectRow({
             </div>
           ) : (
             <>
-              {/* Milestone column sub-header */}
-              <div className="ml-6 flex select-none items-center gap-2 px-3 pb-0.5 pt-1 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/30">
-                <span className="min-w-0 flex-1">Milestones</span>
-                <div className="shrink-0 text-center" style={{ width: cw[3] }}>
-                  Status
+              <div
+                className={cn(
+                  HIERARCHY_GRID_ROW_CLASS,
+                  "select-none border-b border-border/50 bg-muted/25 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground [&>div]:py-1.5",
+                )}
+                style={hierarchyGridColumnsStyle(hierarchyGridTpl)}
+              >
+                <div
+                  className="flex items-center border-l border-transparent pl-1"
+                  style={{ gridColumn: "1 / 4" }}
+                >
+                  Milestones
                 </div>
-                <div className="shrink-0 text-center" style={{ width: cw[4] }}>
-                  Health
-                </div>
-                <div className="shrink-0 text-center" style={{ width: cw[5] }}>
-                  Prioridade
-                </div>
-                <div className="shrink-0 text-center" style={{ width: cw[6] }}>
-                  Prazo
-                </div>
-                <div className="shrink-0 text-center" style={{ width: cw[7] }}>
-                  Progresso
-                </div>
+                <div className="flex items-center justify-start">Status</div>
+                <div className="flex items-center justify-start">Health</div>
+                <div className="flex items-center justify-start">Prioridade</div>
+                <div className="flex items-center justify-start">Prazo</div>
+                <div className="flex items-center justify-start">Progresso</div>
+                <div className="min-w-0" aria-hidden />
               </div>
               {project.milestones.map((milestone) => (
                 <MilestoneRow
@@ -780,17 +685,14 @@ function ProjectRow({
                   projectId={project.id}
                   projectSlug={project.slug || project.id}
                   members={members}
-                  onTaskCreated={() =>
-                    queryClient.invalidateQueries({ queryKey: ["project-hierarchy"] })
-                  }
                   onCreateTask={onCreateTask}
                   onEditTask={onEditTask}
                   hierarchyGridTpl={hierarchyGridTpl}
-                  columnWidths={columnWidths}
                 />
               ))}
-              <div className="ml-6 flex items-center gap-2 px-3 py-1.5">
+              <div className="flex items-center gap-2 px-1 py-1.5">
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     setCreateMilestoneOpen(true);
@@ -881,6 +783,10 @@ export function ProjectHierarchyView({
     ...HIERARCHY_COL_DEFAULTS,
   ]);
   const hierarchyGridTpl = widths.map((w) => `${w}px`).join(" ");
+  const hierarchyTableMinWidth = useMemo(
+    () => Math.max(720, widths.reduce((a, b) => a + b, 0) + 32),
+    [widths],
+  );
 
   const [createTaskOpen, setCreateTaskOpen] = useState(false);
   const [createTaskProjectId, setCreateTaskProjectId] = useState("");
@@ -964,7 +870,7 @@ export function ProjectHierarchyView({
   return (
     <>
       <div className="overflow-x-auto">
-        <div className="min-w-0 space-y-2">
+        <div className="min-w-0 space-y-2" style={{ minWidth: hierarchyTableMinWidth }}>
           {/* Legend — mesmo grid e padding horizontal que cada cartão de projeto (md+). */}
           <div className="select-none border-b border-border bg-muted/30 px-4 py-2.5">
             <span className="mb-1.5 block truncate text-xs font-semibold uppercase tracking-wide text-muted-foreground md:hidden">
@@ -985,27 +891,47 @@ export function ProjectHierarchyView({
                   Projeto / Milestone / Task
                 </span>
               </HierarchyHeaderCell>
-              <HierarchyHeaderCell resizeIndex={3} startResize={startResize}>
+              <HierarchyHeaderCell
+                resizeIndex={3}
+                startResize={startResize}
+                className="justify-start"
+              >
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Status
                 </span>
               </HierarchyHeaderCell>
-              <HierarchyHeaderCell resizeIndex={4} startResize={startResize}>
+              <HierarchyHeaderCell
+                resizeIndex={4}
+                startResize={startResize}
+                className="justify-start"
+              >
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Health
                 </span>
               </HierarchyHeaderCell>
-              <HierarchyHeaderCell resizeIndex={5} startResize={startResize}>
+              <HierarchyHeaderCell
+                resizeIndex={5}
+                startResize={startResize}
+                className="justify-start"
+              >
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Prioridade
                 </span>
               </HierarchyHeaderCell>
-              <HierarchyHeaderCell resizeIndex={6} startResize={startResize}>
+              <HierarchyHeaderCell
+                resizeIndex={6}
+                startResize={startResize}
+                className="justify-start"
+              >
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Prazo
                 </span>
               </HierarchyHeaderCell>
-              <HierarchyHeaderCell resizeIndex={7} startResize={startResize}>
+              <HierarchyHeaderCell
+                resizeIndex={7}
+                startResize={startResize}
+                className="justify-start"
+              >
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Progresso
                 </span>
@@ -1026,7 +952,6 @@ export function ProjectHierarchyView({
               onEditProject={onEditProject}
               expandSignal={allExpanded}
               hierarchyGridTpl={hierarchyGridTpl}
-              columnWidths={widths}
             />
           ))}
         </div>
