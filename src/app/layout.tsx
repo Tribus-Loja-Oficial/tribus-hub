@@ -6,11 +6,13 @@ import { Providers } from "./providers";
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: {
-    default: "Tribus Hub",
-    template: "%s | Tribus Hub",
-  },
+  title: "Tribus Hub",
   description: "Plataforma interna central da Tribus",
+  icons: {
+    icon: "/tribus-hub-icon.png",
+    shortcut: "/tribus-hub-icon.png",
+    apple: "/tribus-hub-icon.png",
+  },
   robots: { index: false, follow: false },
 };
 
