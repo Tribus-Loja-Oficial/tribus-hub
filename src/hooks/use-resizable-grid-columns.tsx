@@ -8,11 +8,18 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from "react";
 
+type ResizeMode = "balance" | "push";
+
 /**
- * Persisted pixel widths for adjacent grid columns. Use `startResize(i, e)` to drag
- * the boundary between column `i` and `i + 1` (both must be pixel-based in the template).
+ * Persisted pixel widths for grid columns.
+ * - `balance`: keeps total width stable by growing left and shrinking right.
+ * - `push`: grows/shrinks only the left column, pushing the rest of the grid.
  */
-export function useResizableGridColumns(storageKey: string, defaults: number[]) {
+export function useResizableGridColumns(
+  storageKey: string,
+  defaults: number[],
+  options?: { mode?: ResizeMode },
+) {
   const [widths, setWidths] = useState<number[]>(() => [...defaults]);
   const widthsRef = useRef(widths);
   widthsRef.current = widths;
@@ -44,9 +51,12 @@ export function useResizableGridColumns(storageKey: string, defaults: number[]) 
       const onMove = (ev: globalThis.MouseEvent) => {
         const dx = ev.clientX - startX;
         const left = start[leftIndex] ?? 48;
-        const right = start[leftIndex + 1] ?? 48;
+        const mode: ResizeMode = options?.mode ?? "balance";
         current[leftIndex] = Math.max(48, left + dx);
-        current[leftIndex + 1] = Math.max(48, right - dx);
+        if (mode === "balance") {
+          const right = start[leftIndex + 1] ?? 48;
+          current[leftIndex + 1] = Math.max(48, right - dx);
+        }
         setWidths([...current]);
       };
       const onUp = () => {
@@ -61,7 +71,7 @@ export function useResizableGridColumns(storageKey: string, defaults: number[]) 
       document.addEventListener("mousemove", onMove);
       document.addEventListener("mouseup", onUp);
     },
-    [storageKey],
+    [storageKey, options?.mode],
   );
 
   return { widths, startResize };

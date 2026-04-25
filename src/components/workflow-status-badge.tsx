@@ -66,11 +66,13 @@ export function WorkflowStatusRow({
   className,
   /** Em tabelas: badge à esquerda, ícone à direita da célula (ícones alinhados entre linhas). */
   tableCellLayout = false,
+  badgeWidthClass,
 }: {
   insight?: WorkflowStatusInsight | null;
   size?: "sm" | "md";
   className?: string;
   tableCellLayout?: boolean;
+  badgeWidthClass?: string;
 }) {
   if (!insight) {
     return (
@@ -91,7 +93,10 @@ export function WorkflowStatusRow({
           <WorkflowStatusBadge
             insight={insight}
             size={size}
-            className="min-w-0 max-w-full truncate"
+            className={cn(
+              "min-w-0 max-w-full truncate",
+              badgeWidthClass && `justify-center ${badgeWidthClass}`,
+            )}
           />
         </span>
         <WorkflowStatusHint insight={insight} className="shrink-0" />

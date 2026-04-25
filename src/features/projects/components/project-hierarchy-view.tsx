@@ -48,15 +48,32 @@ import type {
 } from "@/lib/types/pm-hierarchy";
 import { projectMatchesSearch } from "@/features/projects/lib/project-hierarchy-search";
 import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resizable-grid-columns";
+import {
+  TABLE_HEALTH_CHIP_WIDTH_CLASS,
+  TABLE_PRIORITY_CHIP_WIDTH_CLASS,
+  TABLE_STATUS_CHIP_WIDTH_CLASS,
+} from "@/lib/ui/chip-width-tokens";
 
 type MemberRow = { id: string; name: string; email: string };
 
 function projectStatusCell(project: ProjectHierarchyItem) {
-  return <WorkflowStatusRow insight={project.workflowStatusInsight} tableCellLayout />;
+  return (
+    <WorkflowStatusRow
+      insight={project.workflowStatusInsight}
+      tableCellLayout
+      badgeWidthClass={TABLE_STATUS_CHIP_WIDTH_CLASS}
+    />
+  );
 }
 
 function milestoneStatusCell(milestone: HierarchyMilestone) {
-  return <WorkflowStatusRow insight={milestone.workflowStatusInsight} tableCellLayout />;
+  return (
+    <WorkflowStatusRow
+      insight={milestone.workflowStatusInsight}
+      tableCellLayout
+      badgeWidthClass={TABLE_STATUS_CHIP_WIDTH_CLASS}
+    />
+  );
 }
 
 /**
@@ -227,7 +244,10 @@ function TaskRow({
         )}
       </div>
       <div className="flex min-w-0 items-center justify-start overflow-hidden">
-        <PriorityBadge priority={task.priority} />
+        <PriorityBadge
+          priority={task.priority}
+          className={cn("justify-center", TABLE_PRIORITY_CHIP_WIDTH_CLASS)}
+        />
       </div>
       <div className="flex min-w-0 items-center justify-start overflow-hidden">
         {task.dueDate ? (
@@ -358,11 +378,18 @@ function MilestoneRow({
           </div>
           <div className="flex min-w-0 items-center justify-start overflow-hidden opacity-90 transition-opacity group-hover:opacity-100">
             <div className="w-full min-w-0">
-              <MilestoneHealthRow insight={milestone.healthInsight} tableCellLayout />
+              <MilestoneHealthRow
+                insight={milestone.healthInsight}
+                tableCellLayout
+                badgeWidthClass={TABLE_HEALTH_CHIP_WIDTH_CLASS}
+              />
             </div>
           </div>
           <div className="flex min-w-0 items-center justify-start overflow-hidden opacity-90 transition-opacity group-hover:opacity-100">
-            <PriorityBadge priority={milestone.priority} />
+            <PriorityBadge
+              priority={milestone.priority}
+              className={cn("justify-center", TABLE_PRIORITY_CHIP_WIDTH_CLASS)}
+            />
           </div>
           <div className="flex min-w-0 items-center justify-start overflow-hidden opacity-90 transition-opacity group-hover:opacity-100">
             {milestone.dueDate ? (
@@ -558,11 +585,18 @@ function ProjectRow({
           </div>
           <div className="flex min-w-0 items-center justify-start overflow-hidden">
             <div className="w-full min-w-0">
-              <ProjectHealthRow insight={project.healthInsight} tableCellLayout />
+              <ProjectHealthRow
+                insight={project.healthInsight}
+                tableCellLayout
+                badgeWidthClass={TABLE_HEALTH_CHIP_WIDTH_CLASS}
+              />
             </div>
           </div>
           <div className="flex min-w-0 items-center justify-start overflow-hidden">
-            <PriorityBadge priority={project.priority} />
+            <PriorityBadge
+              priority={project.priority}
+              className={cn("justify-center", TABLE_PRIORITY_CHIP_WIDTH_CLASS)}
+            />
           </div>
           <div className="flex min-w-0 items-center justify-start overflow-hidden">
             {project.targetDate ? (
@@ -779,9 +813,11 @@ export function ProjectHierarchyView({
   onEditProject,
 }: ProjectHierarchyViewProps) {
   const queryClient = useQueryClient();
-  const { widths, startResize } = useResizableGridColumns(HIERARCHY_COL_STORAGE_KEY, [
-    ...HIERARCHY_COL_DEFAULTS,
-  ]);
+  const { widths, startResize } = useResizableGridColumns(
+    HIERARCHY_COL_STORAGE_KEY,
+    [...HIERARCHY_COL_DEFAULTS],
+    { mode: "push" },
+  );
   const hierarchyGridTpl = widths.map((w) => `${w}px`).join(" ");
   const hierarchyTableMinWidth = useMemo(
     () => Math.max(720, widths.reduce((a, b) => a + b, 0) + 32),

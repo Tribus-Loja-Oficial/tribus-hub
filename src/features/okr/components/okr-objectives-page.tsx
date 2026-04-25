@@ -29,6 +29,10 @@ import { ptBR } from "date-fns/locale";
 import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resizable-grid-columns";
 import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
 import { cn } from "@/lib/utils/cn";
+import {
+  TABLE_HEALTH_CHIP_WIDTH_CLASS,
+  TABLE_STATUS_CHIP_WIDTH_CLASS,
+} from "@/lib/ui/chip-width-tokens";
 
 type ObjectiveWithKRs = OkrObjective & { keyResults: OkrKeyResult[] };
 
@@ -80,6 +84,7 @@ export function OkrObjectivesPage() {
   const { widths, startResize } = useResizableGridColumns(
     "hub:okr-objectives-cols-v3",
     [24, 300, 128, 140, 140, 64, 136, 48],
+    { mode: "push" },
   );
   const okrGridTpl = widths.map((w) => `${w}px`).join(" ");
   const okrTableMinWidth = useMemo(
@@ -443,11 +448,16 @@ function ObjectiveRow({
             className="min-w-0"
             insight={objective.workflowStatusInsight}
             tableCellLayout
+            badgeWidthClass={TABLE_STATUS_CHIP_WIDTH_CLASS}
           />
         </div>
         {/* Health */}
         <div className="flex w-full min-w-0 items-center justify-start overflow-hidden pr-0.5">
-          <ProjectHealthRow insight={objective.healthInsight} tableCellLayout />
+          <ProjectHealthRow
+            insight={objective.healthInsight}
+            tableCellLayout
+            badgeWidthClass={TABLE_HEALTH_CHIP_WIDTH_CLASS}
+          />
         </div>
 
         {/* KRs count */}
@@ -559,10 +569,19 @@ function KrSubRow({
       <span className="flex items-center justify-start" aria-hidden />
 
       <div className="flex w-full min-w-0 items-center justify-start overflow-hidden pr-0.5">
-        <WorkflowStatusRow className="min-w-0" insight={kr.workflowStatusInsight} tableCellLayout />
+        <WorkflowStatusRow
+          className="min-w-0"
+          insight={kr.workflowStatusInsight}
+          tableCellLayout
+          badgeWidthClass={TABLE_STATUS_CHIP_WIDTH_CLASS}
+        />
       </div>
       <div className="flex w-full min-w-0 items-center justify-start overflow-hidden pr-0.5">
-        <ProjectHealthRow insight={kr.healthInsight} tableCellLayout />
+        <ProjectHealthRow
+          insight={kr.healthInsight}
+          tableCellLayout
+          badgeWidthClass={TABLE_HEALTH_CHIP_WIDTH_CLASS}
+        />
       </div>
 
       <span className="flex items-center justify-start" aria-hidden />

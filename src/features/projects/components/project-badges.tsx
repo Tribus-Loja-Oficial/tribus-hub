@@ -39,9 +39,11 @@ export function ProjectHealthRow({
   insight,
   /** Em tabelas: badge à esquerda, ícone à direita da célula (ícones alinhados entre linhas). */
   tableCellLayout = false,
+  badgeWidthClass,
 }: {
   insight?: HealthInsight | null;
   tableCellLayout?: boolean;
+  badgeWidthClass?: string;
 }) {
   if (!insight) {
     return (
@@ -59,7 +61,13 @@ export function ProjectHealthRow({
     return (
       <span className="flex w-full min-w-0 items-center justify-between gap-1.5">
         <span className="flex min-w-0 shrink justify-start overflow-hidden">
-          <PaceHealthBadge insight={insight} className="min-w-0 max-w-full truncate" />
+          <PaceHealthBadge
+            insight={insight}
+            className={cn(
+              "min-w-0 max-w-full truncate",
+              badgeWidthClass && `justify-center ${badgeWidthClass}`,
+            )}
+          />
         </span>
         <HealthInsightHint insight={insight} className="shrink-0" />
       </span>
@@ -75,10 +83,10 @@ export function ProjectHealthRow({
 
 export const MilestoneHealthRow = ProjectHealthRow;
 
-export function PriorityBadge({ priority }: { priority: string }) {
+export function PriorityBadge({ priority, className }: { priority: string; className?: string }) {
   const cfg = PRIORITY_CONFIG[priority] ?? {
     label: priority,
     className: "border-border/70 bg-muted/50 text-muted-foreground",
   };
-  return <Badge className={cfg.className}>{cfg.label}</Badge>;
+  return <Badge className={cn(cfg.className, className)}>{cfg.label}</Badge>;
 }

@@ -54,6 +54,10 @@ import {
 import { cn } from "@/lib/utils/cn";
 import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resizable-grid-columns";
 import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
+import {
+  TABLE_HEALTH_CHIP_WIDTH_CLASS,
+  TABLE_STATUS_CHIP_WIDTH_CLASS,
+} from "@/lib/ui/chip-width-tokens";
 
 function OkrListHeaderCell({
   children,
@@ -138,6 +142,7 @@ export function OkrPage() {
     "hub:okr-page-list-cols-v4",
     /** Título/status/health mais largos; scroll horizontal quando necessário (minWidth abaixo). */
     [24, 300, 136, 140, 140, 152, 196, 108, 124],
+    { mode: "push" },
   );
   const okrListGridTpl = widths.map((w) => `${w}px`).join(" ");
   const okrListMinWidth = useMemo(
@@ -516,7 +521,10 @@ export function OkrPage() {
               role="row"
             >
               <div
-                className={cn(OKR_LIST_GRID_BASE, "min-h-[44px] px-4 py-2 [&>*]:py-1.5")}
+                className={cn(
+                  OKR_LIST_GRID_BASE,
+                  "min-h-[44px] border-l-[3px] border-transparent px-4 py-2 [&>*]:py-1.5",
+                )}
                 style={{ gridTemplateColumns: okrListGridTpl }}
               >
                 <OkrListHeaderCell resizeIndex={0} startResize={startResize} className="pr-2">
@@ -837,7 +845,7 @@ export function OkrPage() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-1.5 border-t border-border bg-background/50 p-1 pt-1.5">
+              <div className="space-y-1.5 border-t border-border bg-background/50 px-0 py-1.5">
                 {sortedFiltered.map((obj) => (
                   <ObjectiveBlock
                     key={obj.id}
@@ -1004,11 +1012,19 @@ function ObjectiveBlock({
         </div>
 
         <div className="flex w-full min-w-0 items-center justify-start overflow-hidden px-1 pr-0.5">
-          <WorkflowStatusRow insight={objective.workflowStatusInsight} tableCellLayout />
+          <WorkflowStatusRow
+            insight={objective.workflowStatusInsight}
+            tableCellLayout
+            badgeWidthClass={TABLE_STATUS_CHIP_WIDTH_CLASS}
+          />
         </div>
 
         <div className="flex w-full min-w-0 items-center justify-start overflow-hidden px-1 pr-0.5">
-          <ProjectHealthRow insight={objective.healthInsight} tableCellLayout />
+          <ProjectHealthRow
+            insight={objective.healthInsight}
+            tableCellLayout
+            badgeWidthClass={TABLE_HEALTH_CHIP_WIDTH_CLASS}
+          />
         </div>
 
         <div className="flex min-w-0 items-center justify-start px-2">
@@ -1199,11 +1215,19 @@ function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete
       <div className="flex items-center justify-start px-1" aria-hidden />
 
       <div className="flex w-full min-w-0 items-center justify-start overflow-hidden px-1 pr-0.5">
-        <WorkflowStatusRow insight={kr.workflowStatusInsight} tableCellLayout />
+        <WorkflowStatusRow
+          insight={kr.workflowStatusInsight}
+          tableCellLayout
+          badgeWidthClass={TABLE_STATUS_CHIP_WIDTH_CLASS}
+        />
       </div>
 
       <div className="flex w-full min-w-0 items-center justify-start overflow-hidden px-1 pr-0.5">
-        <ProjectHealthRow insight={kr.healthInsight} tableCellLayout />
+        <ProjectHealthRow
+          insight={kr.healthInsight}
+          tableCellLayout
+          badgeWidthClass={TABLE_HEALTH_CHIP_WIDTH_CLASS}
+        />
       </div>
 
       <div className="flex min-w-0 items-center justify-start px-2">
