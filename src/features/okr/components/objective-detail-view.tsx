@@ -182,6 +182,9 @@ export function ObjectiveDetailView({ objectiveId, embedded }: ObjectiveDetailVi
                     status={objective.status}
                     workflowStatusInsight={objective.workflowStatusInsight}
                     healthInsight={objective.healthInsight}
+                    startDate={objective.startDate}
+                    targetDate={objective.targetDate}
+                    progressPercent={objective.progressPercent}
                   />
                 </button>
               )}
@@ -267,6 +270,9 @@ export function ObjectiveDetailView({ objectiveId, embedded }: ObjectiveDetailVi
                       status={kr.status}
                       workflowStatusInsight={kr.workflowStatusInsight}
                       healthInsight={kr.healthInsight}
+                      startDate={kr.startDate}
+                      targetDate={kr.targetDate}
+                      progressPercent={kr.progressPercent}
                     />
                     {kr.metricType !== "boolean" && (
                       <span className="text-xs tabular-nums text-muted-foreground">

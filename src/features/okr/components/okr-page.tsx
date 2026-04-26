@@ -51,6 +51,7 @@ import {
   sortOkrObjectivesForList,
   type OkrListSortField,
 } from "@/features/okr/lib/okr-okrs-list-sort";
+import { deriveOkrWorkflowStatusInsight } from "@/features/okr/lib/okr-workflow-status";
 import { cn } from "@/lib/utils/cn";
 import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resizable-grid-columns";
 import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
@@ -955,6 +956,12 @@ function ObjectiveBlock({
   const completedKrs = krs.filter((k) => k.status === "completed").length;
   const accentColor = STATUS_ACCENT[objective.status] ?? STATUS_ACCENT.draft;
   const targetDate = fmtDate(objective.targetDate);
+  const objectiveWorkflow = deriveOkrWorkflowStatusInsight({
+    workflowStatusInsight: objective.workflowStatusInsight,
+    startDate: objective.startDate,
+    targetDate: objective.targetDate,
+    progressPercent: objective.progressPercent,
+  });
 
   return (
     <div
@@ -1015,7 +1022,7 @@ function ObjectiveBlock({
 
         <div className="flex w-full min-w-0 items-center justify-start overflow-hidden px-1 pr-0.5">
           <WorkflowStatusRow
-            insight={objective.workflowStatusInsight}
+            insight={objectiveWorkflow}
             tableCellLayout
             badgeWidthClass={TABLE_STATUS_CHIP_WIDTH_CLASS}
             tableChipWidthPx={TABLE_STATUS_CHIP_PX}
@@ -1185,6 +1192,12 @@ interface KrRowProps {
 function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete }: KrRowProps) {
   const metric = fmtMetric(kr);
   const targetDate = fmtDate(kr.targetDate);
+  const krWorkflow = deriveOkrWorkflowStatusInsight({
+    workflowStatusInsight: kr.workflowStatusInsight,
+    startDate: kr.startDate,
+    targetDate: kr.targetDate,
+    progressPercent: kr.progressPercent,
+  });
 
   return (
     <div
@@ -1220,7 +1233,7 @@ function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete
 
       <div className="flex w-full min-w-0 items-center justify-start overflow-hidden px-1 pr-0.5">
         <WorkflowStatusRow
-          insight={kr.workflowStatusInsight}
+          insight={krWorkflow}
           tableCellLayout
           badgeWidthClass={TABLE_STATUS_CHIP_WIDTH_CLASS}
           tableChipWidthPx={TABLE_STATUS_CHIP_PX}

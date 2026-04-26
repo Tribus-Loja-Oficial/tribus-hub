@@ -164,6 +164,9 @@ export function KeyResultDetailView({ keyResultId, embedded }: KeyResultDetailVi
                     status={kr.status}
                     workflowStatusInsight={kr.workflowStatusInsight}
                     healthInsight={kr.healthInsight}
+                    startDate={kr.startDate}
+                    targetDate={kr.targetDate}
+                    progressPercent={kr.progressPercent}
                   />
                 </button>
               )}

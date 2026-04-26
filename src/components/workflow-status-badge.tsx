@@ -13,6 +13,8 @@ const SLUG_CLASS: Record<WorkflowStatusSlug, string> = {
   planned: `border-border/75 bg-muted/65 text-muted-foreground dark:bg-muted/35 dark:text-muted-foreground ${ring}`,
   in_progress: `border-primary/22 bg-primary/[0.08] text-primary dark:border-primary/28 dark:bg-primary/14 dark:text-blue-100 ${ring}`,
   completed: `border-emerald-600/22 bg-emerald-600/[0.08] text-emerald-900/90 dark:border-emerald-500/25 dark:bg-emerald-500/12 dark:text-emerald-100 ${ring}`,
+  achieved: `border-emerald-600/24 bg-emerald-500/[0.10] text-emerald-900/95 dark:border-emerald-500/30 dark:bg-emerald-500/14 dark:text-emerald-100 ${ring}`,
+  not_achieved: `border-rose-600/24 bg-rose-500/[0.10] text-rose-900/95 dark:border-rose-500/30 dark:bg-rose-500/14 dark:text-rose-100 ${ring}`,
 };
 
 function fmtWindowDate(raw: string | null | undefined): string {
@@ -27,6 +29,8 @@ function workflowStatusTooltip(insight: WorkflowStatusInsight): string {
     planned: "Esta janela ainda nao começou.",
     in_progress: "Estamos dentro da janela planejada.",
     completed: "A janela ja foi concluida/encerrada.",
+    achieved: "A data final passou e a meta foi atingida.",
+    not_achieved: "A data final passou e a meta nao foi atingida.",
   };
 
   const bullets = [

@@ -8,6 +8,8 @@ export const WORKFLOW_STATUS_LABELS: Record<WorkflowStatusSlug, string> = {
   planned: "Planejado",
   in_progress: "Em Progresso",
   completed: "Concluído",
+  achieved: "Atingido",
+  not_achieved: "Não Atingido",
 };
 
 /** Cinco estados de saúde por ritmo exibidos na UI (slug interno pode variar). */

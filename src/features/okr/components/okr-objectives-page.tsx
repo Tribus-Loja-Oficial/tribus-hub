@@ -29,6 +29,7 @@ import { ptBR } from "date-fns/locale";
 import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resizable-grid-columns";
 import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
 import { cn } from "@/lib/utils/cn";
+import { deriveOkrWorkflowStatusInsight } from "@/features/okr/lib/okr-workflow-status";
 import {
   TABLE_HEALTH_CHIP_PX,
   TABLE_HEALTH_CHIP_WIDTH_CLASS,
@@ -381,6 +382,12 @@ function ObjectiveRow({
   const krCount = objective.keyResults.length;
   const completedKrs = objective.keyResults.filter((kr) => kr.status === "completed").length;
   const hasKrs = krCount > 0;
+  const objectiveWorkflow = deriveOkrWorkflowStatusInsight({
+    workflowStatusInsight: objective.workflowStatusInsight,
+    startDate: objective.startDate,
+    targetDate: objective.targetDate,
+    progressPercent: objective.progressPercent,
+  });
 
   return (
     <div>
@@ -448,7 +455,7 @@ function ObjectiveRow({
         <div className="flex w-full min-w-0 items-center justify-start overflow-hidden pr-0.5">
           <WorkflowStatusRow
             className="min-w-0"
-            insight={objective.workflowStatusInsight}
+            insight={objectiveWorkflow}
             tableCellLayout
             badgeWidthClass={TABLE_STATUS_CHIP_WIDTH_CLASS}
             tableChipWidthPx={TABLE_STATUS_CHIP_PX}
@@ -534,6 +541,12 @@ function KrSubRow({
   onUpdate: () => void;
 }) {
   const isBoolean = kr.metricType === "boolean";
+  const krWorkflow = deriveOkrWorkflowStatusInsight({
+    workflowStatusInsight: kr.workflowStatusInsight,
+    startDate: kr.startDate,
+    targetDate: kr.targetDate,
+    progressPercent: kr.progressPercent,
+  });
 
   return (
     <div
@@ -575,7 +588,7 @@ function KrSubRow({
       <div className="flex w-full min-w-0 items-center justify-start overflow-hidden pr-0.5">
         <WorkflowStatusRow
           className="min-w-0"
-          insight={kr.workflowStatusInsight}
+          insight={krWorkflow}
           tableCellLayout
           badgeWidthClass={TABLE_STATUS_CHIP_WIDTH_CLASS}
           tableChipWidthPx={TABLE_STATUS_CHIP_PX}

@@ -92,6 +92,8 @@ const WORKFLOW_STATUS_ORDER: Record<WorkflowStatusSlug, number> = {
   in_progress: 0,
   planned: 1,
   completed: 2,
+  achieved: 3,
+  not_achieved: 4,
 };
 
 function projectHref(project: Project) {

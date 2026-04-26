@@ -253,6 +253,9 @@ export function CycleDetailView({ cycleId }: CycleDetailViewProps) {
                       status={obj.status}
                       workflowStatusInsight={obj.workflowStatusInsight}
                       healthInsight={obj.healthInsight}
+                      startDate={obj.startDate}
+                      targetDate={obj.targetDate}
+                      progressPercent={obj.progressPercent}
                     />
                     <span className="text-xs text-muted-foreground">
                       {obj.keyResults.length} KR{obj.keyResults.length !== 1 ? "s" : ""}

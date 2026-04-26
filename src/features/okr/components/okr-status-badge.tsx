@@ -14,6 +14,7 @@ import {
   TABLE_STATUS_CHIP_PX,
   TABLE_STATUS_CHIP_WIDTH_CLASS,
 } from "@/lib/ui/chip-width-tokens";
+import { deriveOkrWorkflowStatusInsight } from "@/features/okr/lib/okr-workflow-status";
 
 type AnyStatus = OkrObjectiveStatus | OkrKeyResultStatus | OkrCycleStatus | string;
 
@@ -88,18 +89,30 @@ export function OkrEntityStatusRow({
   status,
   workflowStatusInsight,
   healthInsight,
+  startDate,
+  targetDate,
+  progressPercent,
   size = "sm",
   className,
 }: OkrStatusBadgeProps & {
   healthInsight?: HealthInsight | null;
   workflowStatusInsight?: WorkflowStatusInsight | null;
+  startDate?: string | null;
+  targetDate?: string | null;
+  progressPercent?: number | null;
 }) {
+  const okrWorkflow = deriveOkrWorkflowStatusInsight({
+    workflowStatusInsight,
+    startDate,
+    targetDate,
+    progressPercent,
+  });
   return (
     <span
       className={cn("inline-flex min-w-0 max-w-full flex-nowrap items-center gap-1.5", className)}
     >
       <WorkflowStatusRow
-        insight={workflowStatusInsight}
+        insight={okrWorkflow}
         size={size}
         badgeWidthClass={TABLE_STATUS_CHIP_WIDTH_CLASS}
         tableChipWidthPx={TABLE_STATUS_CHIP_PX}

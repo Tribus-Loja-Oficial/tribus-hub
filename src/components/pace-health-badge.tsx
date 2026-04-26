@@ -38,6 +38,13 @@ const SLUG_CLASS: Record<PaceHealthSlug, string> = {
   completed_legacy: `border-primary/20 bg-primary/[0.08] text-primary dark:border-primary/25 dark:bg-primary/15 dark:text-blue-100 ${ring}`,
 };
 
+function fmtWindowDate(raw: string | null | undefined): string {
+  if (!raw) return "n/d";
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return "n/d";
+  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(d);
+}
+
 function healthTooltip(insight: HealthInsight): string {
   const slugLine: Record<PaceHealthSlug, string> = {
     draft: "Sem progresso relevante ainda.",
@@ -59,6 +66,7 @@ function healthTooltip(insight: HealthInsight): string {
   const bullets = [
     `• Health atual: ${paceHealthLabel(insight.slug)}`,
     `• ${slugLine[insight.slug] ?? "Saude calculada pelo ritmo."}`,
+    `• Datas consideradas: ${fmtWindowDate(insight.windowStart)} a ${fmtWindowDate(insight.windowEnd)}`,
     `• Progresso: ${progress} | Tempo decorrido: ${elapsed}`,
     `• Diferenca de ritmo: ${diff}`,
   ];

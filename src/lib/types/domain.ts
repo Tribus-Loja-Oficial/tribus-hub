@@ -62,7 +62,12 @@ export interface HealthInsight {
 }
 
 /** Status operacional unificado (calendário + cadastro), vindo do hub-api. */
-export type WorkflowStatusSlug = "planned" | "in_progress" | "completed";
+export type WorkflowStatusSlug =
+  | "planned"
+  | "in_progress"
+  | "completed"
+  | "achieved"
+  | "not_achieved";
 
 export interface WorkflowStatusInsight {
   slug: WorkflowStatusSlug;

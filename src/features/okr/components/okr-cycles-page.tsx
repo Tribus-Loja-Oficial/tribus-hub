@@ -916,6 +916,9 @@ function CycleExpandedObjectives({
                     status={obj.status}
                     workflowStatusInsight={obj.workflowStatusInsight}
                     healthInsight={obj.healthInsight}
+                    startDate={obj.startDate}
+                    targetDate={obj.targetDate}
+                    progressPercent={obj.progressPercent}
                   />
                   <span className="text-xs tabular-nums text-muted-foreground">
                     {Math.round(obj.progressPercent)}% · {obj.keyResults.length} KR

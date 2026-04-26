@@ -715,6 +715,9 @@ function KrPerfList({
             status={kr.status}
             workflowStatusInsight={kr.workflowStatusInsight}
             healthInsight={kr.healthInsight}
+            startDate={kr.startDate}
+            targetDate={kr.targetDate}
+            progressPercent={kr.progressPercent}
           />
           <span className="w-10 text-right text-xs tabular-nums text-muted-foreground">
             {Math.round(kr.progressPercent)}%
@@ -744,6 +747,9 @@ function ObjectiveRow({ objective }: { objective: ObjectiveWithKRsForDashboard }
               status={objective.status}
               workflowStatusInsight={objective.workflowStatusInsight}
               healthInsight={objective.healthInsight}
+              startDate={objective.startDate}
+              targetDate={objective.targetDate}
+              progressPercent={objective.progressPercent}
             />
             <span className="text-xs text-muted-foreground">
               {completedKrs}/{krCount} KRs concluídos
