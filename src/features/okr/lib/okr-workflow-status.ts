@@ -32,8 +32,15 @@ export function deriveOkrWorkflowStatusInsight(input: {
 
   const now = input.now ?? new Date();
   const today = startOfLocalDay(now);
-  const windowStartRaw = base.windowStart ?? input.startDate ?? null;
-  const windowEndRaw = base.windowEnd ?? input.targetDate ?? null;
+  /** Datas do próprio registo (formulário) vencem a janela preenchida da API, que às vezes reflete só o ciclo. */
+  const windowStartRaw =
+    input.startDate != null && String(input.startDate).trim() !== ""
+      ? String(input.startDate)
+      : (base.windowStart ?? null);
+  const windowEndRaw =
+    input.targetDate != null && String(input.targetDate).trim() !== ""
+      ? String(input.targetDate)
+      : (base.windowEnd ?? null);
   const start = parseCivilDateInput(windowStartRaw);
   const end = parseCivilDateInput(windowEndRaw);
 

@@ -108,7 +108,10 @@ export function OkrEntityStatusRow({
     targetDate,
     progressPercent,
   });
-  const health = reconcileOkrHealthInsightForDisplay(healthInsight);
+  const health = reconcileOkrHealthInsightForDisplay(healthInsight, {
+    startDate,
+    targetDate,
+  });
   return (
     <span
       className={cn("inline-flex min-w-0 max-w-full flex-nowrap items-center gap-1.5", className)}

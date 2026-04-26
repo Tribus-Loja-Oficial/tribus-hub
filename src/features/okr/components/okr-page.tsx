@@ -1031,7 +1031,12 @@ function ObjectiveBlock({
 
         <div className="flex w-full min-w-0 items-center justify-start overflow-hidden px-1 pr-0.5">
           <ProjectHealthRow
-            insight={reconcileOkrHealthInsightForDisplay(objective.healthInsight) ?? undefined}
+            insight={
+              reconcileOkrHealthInsightForDisplay(objective.healthInsight, {
+                startDate: objective.startDate,
+                targetDate: objective.targetDate,
+              }) ?? undefined
+            }
             tableCellLayout
             badgeWidthClass={TABLE_HEALTH_CHIP_WIDTH_CLASS}
             tableChipWidthPx={TABLE_HEALTH_CHIP_PX}
@@ -1242,7 +1247,12 @@ function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete
 
       <div className="flex w-full min-w-0 items-center justify-start overflow-hidden px-1 pr-0.5">
         <ProjectHealthRow
-          insight={reconcileOkrHealthInsightForDisplay(kr.healthInsight) ?? undefined}
+          insight={
+            reconcileOkrHealthInsightForDisplay(kr.healthInsight, {
+              startDate: kr.startDate,
+              targetDate: kr.targetDate,
+            }) ?? undefined
+          }
           tableCellLayout
           badgeWidthClass={TABLE_HEALTH_CHIP_WIDTH_CLASS}
           tableChipWidthPx={TABLE_HEALTH_CHIP_PX}
