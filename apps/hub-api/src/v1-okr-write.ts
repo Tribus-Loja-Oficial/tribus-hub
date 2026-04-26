@@ -1010,13 +1010,13 @@ export async function handleV1OkrWriteRoutes(
       .all<Record<string, unknown>>();
     const objective = objFull.results?.[0] ?? {};
     const cid = (krRow.cycle_id as string | null) ?? (objective.cycle_id as string | null);
-    const cycle = await loadOkrCycleRow(db, workspaceId!, cid);
+    const responseCycle = cid === cycleId ? cycle : await loadOkrCycleRow(db, workspaceId!, cid);
     return json(
       {
         data: {
           ...mapKr(krRow),
-          healthInsight: healthInsightForKr(krRow, objective, cycle),
-          workflowStatusInsight: workflowStatusForOkrKr(krRow, objective, cycle),
+          healthInsight: healthInsightForKr(krRow, objective, responseCycle),
+          workflowStatusInsight: workflowStatusForOkrKr(krRow, objective, responseCycle),
           externalRef,
         },
       },
