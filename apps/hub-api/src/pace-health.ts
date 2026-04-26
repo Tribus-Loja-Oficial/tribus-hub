@@ -3,6 +3,12 @@
  * Used for OKR objectives/KRs, projects, and milestones (with inherited dates).
  */
 
+import {
+  PACE_CIVIL_TIMEZONE_DEFAULT,
+  calcElapsedPercentCivilInTimeZone,
+  isCivilCalendarBeforePrazoStart,
+} from "./pace-civil-dates";
+
 export const PACE_HEALTH_BAND_PP = 8;
 export const PACE_HEALTH_OFF_TRACK_PP = 20;
 
@@ -47,32 +53,25 @@ type SnapshotV1 = {
   explanationPt: string;
 };
 
-/** Calendar-day based, aligned with hub web `calcCycleTimeProgress` / OKR cycle pace. */
+/**
+ * Calendario civil no fuso de referencia (default America/Sao_Paulo);
+ * nao "dia em UTC" nem `new Date(yyyy-MM-dd)` como meia-noite GMT.
+ */
 export function calcElapsedPercent(
   startDateStr: string,
   endDateStr: string,
   now = new Date(),
 ): number {
-  const start = new Date(startDateStr);
-  const end = new Date(endDateStr);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0;
-  if (now.getTime() < start.getTime()) return 0;
-  if (now.getTime() > end.getTime()) return 100;
-  const day = (d: Date) => Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
-  const totalDays = Math.max(0, (day(end) - day(start)) / 86400000);
-  const elapsedDays = Math.max(0, (day(now) - day(start)) / 86400000);
-  if (totalDays === 0) return 100;
-  return Math.min(100, Math.round((elapsedDays / totalDays) * 100));
-}
-
-function dayUtc(d: Date) {
-  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  return calcElapsedPercentCivilInTimeZone(
+    startDateStr,
+    endDateStr,
+    now,
+    PACE_CIVIL_TIMEZONE_DEFAULT,
+  );
 }
 
 function isBeforeWindowStart(windowStart: string, now: Date): boolean {
-  const start = new Date(windowStart);
-  if (Number.isNaN(start.getTime())) return false;
-  return dayUtc(now) < dayUtc(start);
+  return isCivilCalendarBeforePrazoStart(windowStart, now, PACE_CIVIL_TIMEZONE_DEFAULT);
 }
 
 /** Rótulos unificados (PT-BR) para todos os tipos de item com saúde por ritmo. */
@@ -374,7 +373,7 @@ export function computePaceHealth(input: {
       windowEnd: input.windowEnd,
       dateSourcePt: input.dateSourcePt,
       locked: false,
-      explanationPt: `${input.dateSourcePt} Badge \"Não Iniciado\": contando por dia em UTC, a data de início do prazo ainda não chegou, então o relógio do ritmo nem começou.`,
+      explanationPt: `${input.dateSourcePt} Badge \"Não Iniciado\": no calendario do fuso de referencia (${PACE_CIVIL_TIMEZONE_DEFAULT}), a data de inicio do prazo ainda nao chegou, entao o relogio do ritmo ainda nao comecou.`,
     };
   }
 

@@ -10,6 +10,11 @@ import {
   resolveOkrObjectiveWindow,
   resolveProjectWindow,
 } from "./pace-health";
+import {
+  PACE_CIVIL_TIMEZONE_DEFAULT,
+  isCivilCalendarBeforePrazoStart,
+  isCivilCalendarStrictlyAfterPrazoEnd,
+} from "./pace-civil-dates";
 
 export type WorkflowStatusSlug = "planned" | "in_progress" | "completed";
 
@@ -23,22 +28,14 @@ export type WorkflowStatusInsightDto = {
   explanationPt: string;
 };
 
-function dayUtc(d: Date) {
-  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
-}
-
 function isBeforeStart(windowStart: string | null, now: Date): boolean {
   if (!windowStart) return false;
-  const start = new Date(windowStart);
-  if (Number.isNaN(start.getTime())) return false;
-  return dayUtc(now) < dayUtc(start);
+  return isCivilCalendarBeforePrazoStart(windowStart, now, PACE_CIVIL_TIMEZONE_DEFAULT);
 }
 
 function isStrictlyAfterEnd(windowEnd: string | null, now: Date): boolean {
   if (!windowEnd) return false;
-  const end = new Date(windowEnd);
-  if (Number.isNaN(end.getTime())) return false;
-  return dayUtc(now) > dayUtc(end);
+  return isCivilCalendarStrictlyAfterPrazoEnd(windowEnd, now, PACE_CIVIL_TIMEZONE_DEFAULT);
 }
 
 function isDbCompleted(kind: PaceHealthKind, dbStatus: string): boolean {
@@ -148,7 +145,7 @@ export function computeWorkflowStatus(input: {
       windowStart: input.windowStart,
       windowEnd: input.windowEnd,
       locked: false,
-      explanationPt: `${input.dateSourcePt} Contando por dia em UTC, hoje ainda é antes de ${input.windowStart}, então o prazo não começou — o status unificado fica em \"Planejado\".`,
+      explanationPt: `${input.dateSourcePt} No calendario civil do fuso ${PACE_CIVIL_TIMEZONE_DEFAULT}, ainda estamos antes de ${input.windowStart} — o status unificado fica em \"Planejado\".`,
     };
   }
 
@@ -161,8 +158,8 @@ export function computeWorkflowStatus(input: {
     windowEnd: input.windowEnd,
     locked: false,
     explanationPt: afterEnd
-      ? `${input.dateSourcePt} O fim do prazo (${input.windowEnd}) já passou em calendário (dias em UTC), mas o cadastro ainda não está concluído — o status unificado continua \"Em Progresso\" até você encerrar.`
-      : `${input.dateSourcePt} Estamos entre ${input.windowStart} e ${input.windowEnd} (dias em UTC): prazo em andamento, então o status unificado é \"Em Progresso\".`,
+      ? `${input.dateSourcePt} O fim do prazo (${input.windowEnd}) ja passou no calendario do fuso ${PACE_CIVIL_TIMEZONE_DEFAULT}, mas o cadastro ainda nao esta concluido — o status unificado continua \"Em Progresso\" ate encerrar.`
+      : `${input.dateSourcePt} Estamos entre ${input.windowStart} e ${input.windowEnd} (calendario ${PACE_CIVIL_TIMEZONE_DEFAULT}): prazo em andamento, entao o status unificado e \"Em Progresso\".`,
   };
 }
 

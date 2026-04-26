@@ -25,12 +25,15 @@ describe("calcElapsedPercent", () => {
   });
 
   it("returns 50 at the midpoint", () => {
-    // 10-day window, now is exactly at day 5 → 5/10 = 50%
-    expect(calcElapsedPercent("2026-01-01", "2026-01-11", new Date("2026-01-06"))).toBe(50);
+    // 10-day window (Jan1–Jan11 civil), 6 Jan no fuso America/Sao_Paulo → 5/10 = 50%
+    expect(
+      calcElapsedPercent("2026-01-01", "2026-01-11", new Date("2026-01-06T15:00:00.000Z")),
+    ).toBe(50);
   });
 
   it("returns 100 when start equals end", () => {
-    expect(calcElapsedPercent("2026-01-01", "2026-01-01", new Date("2026-01-01"))).toBe(100);
+    const noonUtcJan1 = new Date("2026-01-01T15:00:00.000Z");
+    expect(calcElapsedPercent("2026-01-01", "2026-01-01", noonUtcJan1)).toBe(100);
   });
 
   it("returns 0 for invalid date strings", () => {

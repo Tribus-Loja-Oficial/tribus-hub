@@ -69,7 +69,7 @@ describe("computeWorkflowStatus", () => {
       now: new Date("2027-01-15"),
     });
     expect(result.slug).toBe("in_progress");
-    expect(result.explanationPt).toContain("já passou");
+    expect(result.explanationPt).toMatch(/passou/i);
   });
 
   it("returns in_progress for missed milestone", () => {
