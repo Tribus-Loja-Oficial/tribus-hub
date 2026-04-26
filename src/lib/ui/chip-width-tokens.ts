@@ -1,11 +1,10 @@
 /**
  * Largura fixa do chip por coluna (status / health / prioridade), ponto base nos rótulos de
- * `pace-health-display` + `px-2` + borda. Valores 116/124/76: ajuste fino vs. iteração anterior
- * (≈−4px cada), **sem** alterar `useResizableGridColumns` (chip + `gap-2` + ícone + padding).
+ * `pace-health-display` + `px-2` + borda. **sem** alterar colunas do grid.
  */
-export const TABLE_STATUS_CHIP_PX = 116;
-export const TABLE_HEALTH_CHIP_PX = 124;
-export const TABLE_PRIORITY_CHIP_PX = 76;
+export const TABLE_STATUS_CHIP_PX = 110;
+export const TABLE_HEALTH_CHIP_PX = 118;
+export const TABLE_PRIORITY_CHIP_PX = 70;
 
 export function tableChipBoxStyle(px: number) {
   return {
