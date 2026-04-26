@@ -112,7 +112,12 @@ export function WorkflowStatusRow({
   if (tableCellLayout) {
     const hasFixedWidth = typeof tableChipWidthPx === "number";
     return (
-      <span className={cn("flex w-full min-w-0 items-center justify-between gap-1.5", className)}>
+      <span
+        className={cn(
+          "flex w-full min-w-0 flex-nowrap items-center justify-start gap-2",
+          className,
+        )}
+      >
         <span
           className={cn(
             "flex justify-start overflow-hidden",

@@ -84,8 +84,8 @@ export function OkrObjectivesPage() {
   const [selectedKr, setSelectedKr] = useState<OkrKeyResult | null>(null);
 
   const { widths, startResize } = useResizableGridColumns(
-    "hub:okr-objectives-cols-v5",
-    [24, 300, 128, 150, 152, 64, 136, 48],
+    "hub:okr-objectives-cols-v6",
+    [24, 300, 128, 176, 176, 64, 136, 48],
     { mode: "push" },
   );
   const okrGridTpl = widths.map((w) => `${w}px`).join(" ");
