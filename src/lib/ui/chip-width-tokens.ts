@@ -1,7 +1,11 @@
-/** Largura fixa do “chip” em tabelas; aplicar com `tableChipBoxStyle` (inline) para vencer `min-w-0` do grid. */
-export const TABLE_STATUS_CHIP_PX = 140;
-export const TABLE_HEALTH_CHIP_PX = 140;
-export const TABLE_PRIORITY_CHIP_PX = 108;
+/**
+ * Largura fixa por **tipo** de coluna, no mínimo possível que cobre o rótulo mais longo
+ * (pace-health-display) + `px-2` + borda, sem forçar todas as colunas ao mesmo tamanho.
+ * Status: mínimo para "Em Progresso" · Health: "Não Iniciado" / "Fora do Rumo" · Prioridade: "Urgente"/"Crítica"
+ */
+export const TABLE_STATUS_CHIP_PX = 120;
+export const TABLE_HEALTH_CHIP_PX = 128;
+export const TABLE_PRIORITY_CHIP_PX = 80;
 
 export function tableChipBoxStyle(px: number) {
   return {

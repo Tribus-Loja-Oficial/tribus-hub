@@ -272,8 +272,8 @@ function ListView({
   onEditProject: (p: Project) => void;
 }) {
   const { widths, startResize } = useResizableGridColumns(
-    "hub:projects-list-cols-v4",
-    [232, 172, 172, 120, 108, 108, 48, 32],
+    "hub:projects-list-cols-v5",
+    [232, 150, 150, 100, 108, 108, 48, 32],
     { mode: "push" },
   );
   const gridTpl = widths.map((w) => `${w}px`).join(" ");

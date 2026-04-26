@@ -93,8 +93,8 @@ function hierarchyGridColumnsStyle(gridTpl: string): CSSProperties {
 }
 
 /** Larguras default (px); coluna de ações maior para evitar corte de contadores e botões. */
-const HIERARCHY_COL_DEFAULTS = [24, 44, 320, 176, 176, 116, 108, 128, 210] as const;
-const HIERARCHY_COL_STORAGE_KEY = "hub:project-hierarchy-cols-v5";
+const HIERARCHY_COL_DEFAULTS = [24, 44, 320, 150, 152, 100, 108, 128, 210] as const;
+const HIERARCHY_COL_STORAGE_KEY = "hub:project-hierarchy-cols-v6";
 
 function HierarchyHeaderCell({
   children,
