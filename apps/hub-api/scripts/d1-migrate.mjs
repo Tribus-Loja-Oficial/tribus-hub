@@ -13,6 +13,7 @@ const migrations = [
   { id: "0007_drop_legacy_project_objectives_key_results", file: "./migrations/0007_drop_legacy_project_objectives_key_results.sql" },
   { id: "0008_external_refs_simple_sequence", file: "./migrations/0008_external_refs_simple_sequence.sql" },
   { id: "0009_health_snapshot_json", file: "./migrations/0009_health_snapshot_json.sql" },
+  { id: "0010_okr_completed_progress_invariant", file: "./migrations/0010_okr_completed_progress_invariant.sql" },
 ];
 
 function run(cmd) {

@@ -15,6 +15,7 @@ import {
   isCivilCalendarBeforePrazoStart,
   isCivilCalendarStrictlyAfterPrazoEnd,
 } from "./pace-civil-dates";
+import { effectiveOkrStatusForPaceAndWorkflow } from "./okr-pace-integrity";
 
 export type WorkflowStatusSlug = "planned" | "in_progress" | "completed";
 
@@ -168,10 +169,12 @@ export function workflowStatusForOkrObjective(
   cycle: Record<string, unknown> | null,
 ) {
   const w = resolveOkrObjectiveWindow(objective, cycle);
+  const raw = String(objective.status ?? "draft");
+  const p = Number(objective.progress_percent ?? 0);
   return computeWorkflowStatus({
     kind: "okr_objective",
-    dbStatus: String(objective.status ?? "draft"),
-    isDraft: String(objective.status ?? "") === "draft",
+    dbStatus: effectiveOkrStatusForPaceAndWorkflow(raw, p),
+    isDraft: raw === "draft",
     windowStart: w.start,
     windowEnd: w.end,
     dateSourcePt: w.dateSourcePt,
@@ -184,10 +187,12 @@ export function workflowStatusForOkrKr(
   cycle: Record<string, unknown> | null,
 ) {
   const w = resolveOkrKrWindow(kr, objective, cycle);
+  const raw = String(kr.status ?? "draft");
+  const p = Number(kr.progress_percent ?? 0);
   return computeWorkflowStatus({
     kind: "okr_key_result",
-    dbStatus: String(kr.status ?? "draft"),
-    isDraft: String(kr.status ?? "") === "draft",
+    dbStatus: effectiveOkrStatusForPaceAndWorkflow(raw, p),
+    isDraft: raw === "draft",
     windowStart: w.start,
     windowEnd: w.end,
     dateSourcePt: w.dateSourcePt,

@@ -94,12 +94,30 @@ describe("workflowStatusForOkrObjective", () => {
     expect(result.slug).toBe("planned");
   });
 
-  it("returns completed for completed objective", () => {
+  it("returns completed when cadastro concluiu e progresso 100% (atingido)", () => {
     const result = workflowStatusForOkrObjective(
-      { status: "completed", start_date: "2026-01-01", target_date: "2026-06-30" },
+      {
+        status: "completed",
+        progress_percent: 100,
+        start_date: "2026-01-01",
+        target_date: "2026-06-30",
+      },
       null,
     );
     expect(result.slug).toBe("completed");
+  });
+
+  it("não força concluido de workflow com completed sujo (p<100) — trata como em andamento", () => {
+    const result = workflowStatusForOkrObjective(
+      {
+        status: "completed",
+        progress_percent: 40,
+        start_date: "2026-01-01",
+        target_date: "2026-06-30",
+      },
+      null,
+    );
+    expect(result.slug).toBe("in_progress");
   });
 });
 

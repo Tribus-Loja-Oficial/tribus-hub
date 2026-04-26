@@ -13,6 +13,11 @@ import {
   resolveOkrObjectiveWindow,
 } from "./pace-health";
 import { workflowStatusForOkrKr, workflowStatusForOkrObjective } from "./pace-workflow-status";
+import {
+  effectiveHealthSnapshotForOkrPace,
+  effectiveOkrStatusForPaceAndWorkflow,
+  resolveOkrStatusAfterProgress,
+} from "./okr-pace-integrity";
 
 type D1PreparedStatement = {
   bind: (...values: unknown[]) => D1PreparedStatement;
@@ -207,15 +212,21 @@ function healthInsightForObjective(
   cycle: Record<string, unknown> | null,
 ) {
   const w = resolveOkrObjectiveWindow(o, cycle);
+  const raw = String(o.status ?? "draft");
+  const p = Number(o.progress_percent ?? 0);
   return computePaceHealth({
     kind: "okr_objective",
-    status: String(o.status ?? "draft"),
-    progressPercent: Number(o.progress_percent ?? 0),
+    status: effectiveOkrStatusForPaceAndWorkflow(raw, p),
+    progressPercent: p,
     windowStart: w.start,
     windowEnd: w.end,
     dateSourcePt: w.dateSourcePt,
     completedAt: (o.completed_at as string | null) ?? null,
-    healthSnapshotJson: (o.health_snapshot_json as string | null) ?? null,
+    healthSnapshotJson: effectiveHealthSnapshotForOkrPace(
+      raw,
+      p,
+      (o.health_snapshot_json as string | null) ?? null,
+    ),
   });
 }
 
@@ -225,19 +236,29 @@ function healthInsightForKr(
   cycle: Record<string, unknown> | null,
 ) {
   const w = resolveOkrKrWindow(kr, objective, cycle);
+  const raw = String(kr.status ?? "draft");
+  const p = Number(kr.progress_percent ?? 0);
   return computePaceHealth({
     kind: "okr_key_result",
-    status: String(kr.status ?? "draft"),
-    progressPercent: Number(kr.progress_percent ?? 0),
+    status: effectiveOkrStatusForPaceAndWorkflow(raw, p),
+    progressPercent: p,
     windowStart: w.start,
     windowEnd: w.end,
     dateSourcePt: w.dateSourcePt,
     completedAt: (kr.completed_at as string | null) ?? null,
-    healthSnapshotJson: (kr.health_snapshot_json as string | null) ?? null,
+    healthSnapshotJson: effectiveHealthSnapshotForOkrPace(
+      raw,
+      p,
+      (kr.health_snapshot_json as string | null) ?? null,
+    ),
   });
 }
 
-export async function enrichKrList(db: D1DatabaseLike, workspaceId: string, krRows: Record<string, unknown>[]) {
+export async function enrichKrList(
+  db: D1DatabaseLike,
+  workspaceId: string,
+  krRows: Record<string, unknown>[],
+) {
   if (krRows.length === 0) return [];
   const objIds = [...new Set(krRows.map((k) => String(k.objective_id ?? "")).filter(Boolean))];
   const ph = objIds.map(() => "?").join(", ");
@@ -268,7 +289,7 @@ export async function enrichKrList(db: D1DatabaseLike, workspaceId: string, krRo
   return krRows.map((kr) => {
     const objective = objById.get(String(kr.objective_id ?? "")) ?? {};
     const cid = (kr.cycle_id as string | null) ?? (objective.cycle_id as string | null);
-    const cycle = cid ? cycleById.get(cid) ?? null : null;
+    const cycle = cid ? (cycleById.get(cid) ?? null) : null;
     return {
       ...mapKr(kr),
       healthInsight: healthInsightForKr(kr, objective, cycle),
@@ -283,12 +304,19 @@ export async function enrichObjectiveWithHealth(
   objectiveRow: Record<string, unknown>,
   keyResultRows: Record<string, unknown>[],
 ) {
-  const cycleForObj = await loadOkrCycleRow(db, workspaceId, (objectiveRow.cycle_id as string | null) ?? null);
+  const cycleForObj = await loadOkrCycleRow(
+    db,
+    workspaceId,
+    (objectiveRow.cycle_id as string | null) ?? null,
+  );
   const objectiveMapped = mapObjective(objectiveRow);
   const krsOut = await Promise.all(
     (keyResultRows ?? []).map(async (kr) => {
       const cid = (kr.cycle_id as string | null) ?? (objectiveRow.cycle_id as string | null);
-      const cycleForKr = cid === (objectiveRow.cycle_id as string | null) ? cycleForObj : await loadOkrCycleRow(db, workspaceId, cid);
+      const cycleForKr =
+        cid === (objectiveRow.cycle_id as string | null)
+          ? cycleForObj
+          : await loadOkrCycleRow(db, workspaceId, cid);
       return {
         ...mapKr(kr),
         healthInsight: healthInsightForKr(kr, objectiveRow, cycleForKr),
@@ -459,7 +487,7 @@ export async function handleV1OkrWriteRoutes(
         .all<Record<string, unknown>>();
       const olist = objFull.results ?? [];
       const oids = olist.map((o) => o.id as string);
-      let krByObj = new Map<string, Record<string, unknown>[]>();
+      const krByObj = new Map<string, Record<string, unknown>[]>();
       if (oids.length) {
         const ph = oids.map(() => "?").join(", ");
         const allKr = await db
@@ -739,13 +767,20 @@ export async function handleV1OkrWriteRoutes(
     if (method === "PATCH") {
       const input = parseJson<Record<string, unknown>>(body);
       const ex = await db
-        .prepare(`SELECT * FROM okr_objectives WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`)
+        .prepare(
+          `SELECT * FROM okr_objectives WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`,
+        )
         .bind(id, workspaceId)
         .all<Record<string, unknown>>();
       if (!ex.results?.[0]) return json({ error: { message: "Not found" } }, 404);
       const cur = ex.results[0];
       const prevStatus = String(cur.status ?? "draft");
-      const nextStatus = input.status !== undefined ? String(input.status) : prevStatus;
+      const progress = Number(cur.progress_percent ?? 0);
+      const resolvedStatus = resolveOkrStatusAfterProgress(
+        input.status !== undefined ? String(input.status) : undefined,
+        prevStatus,
+        progress,
+      );
       const nowIso = new Date().toISOString();
       const sets: string[] = [];
       const args: unknown[] = [];
@@ -754,7 +789,6 @@ export async function handleV1OkrWriteRoutes(
         ["descriptionText", "description_text"],
         ["cycleId", "cycle_id"],
         ["ownerUserId", "owner_user_id"],
-        ["status", "status"],
         ["priority", "priority"],
         ["startDate", "start_date"],
         ["targetDate", "target_date"],
@@ -766,13 +800,19 @@ export async function handleV1OkrWriteRoutes(
           args.push(input[js] ?? null);
         }
       }
-      if (nextStatus === "completed" && prevStatus !== "completed") {
-        const cycle = await loadOkrCycleRow(db, workspaceId!, (cur.cycle_id as string | null) ?? null);
+      sets.push("status = ?");
+      args.push(resolvedStatus);
+      if (resolvedStatus === "completed" && prevStatus !== "completed") {
+        const cycle = await loadOkrCycleRow(
+          db,
+          workspaceId!,
+          (cur.cycle_id as string | null) ?? null,
+        );
         const w = resolveOkrObjectiveWindow(cur, cycle);
         const snap = buildCompletionSnapshotFromPreCompleteRow({
           kind: "okr_objective",
           previousStatus: prevStatus,
-          progressPercent: Number(cur.progress_percent ?? 0),
+          progressPercent: progress,
           windowStart: w.start,
           windowEnd: w.end,
           dateSourcePt: w.dateSourcePt,
@@ -780,12 +820,12 @@ export async function handleV1OkrWriteRoutes(
         });
         if (snap) {
           sets.push("health_snapshot_json = ?", "completed_at = ?");
-          args.push(snap, cur.completed_at ? cur.completed_at : nowIso);
+          args.push(snap, (cur.completed_at as string | null) ? cur.completed_at : nowIso);
         } else if (!cur.completed_at) {
           sets.push("completed_at = ?");
           args.push(nowIso);
         }
-      } else if (nextStatus !== "completed" && prevStatus === "completed") {
+      } else if (resolvedStatus !== "completed") {
         sets.push("health_snapshot_json = ?", "completed_at = ?");
         args.push(null, null);
       }
@@ -800,7 +840,9 @@ export async function handleV1OkrWriteRoutes(
         .bind(id)
         .all<Record<string, unknown>>();
       const krs = await db
-        .prepare(`SELECT * FROM okr_key_results WHERE objective_id = ? AND deleted_at IS NULL ORDER BY sort_order ASC`)
+        .prepare(
+          `SELECT * FROM okr_key_results WHERE objective_id = ? AND deleted_at IS NULL ORDER BY sort_order ASC`,
+        )
         .bind(id)
         .all<Record<string, unknown>>();
       const data = await enrichObjectiveWithHealth(
@@ -871,9 +913,7 @@ export async function handleV1OkrWriteRoutes(
     if (!title || !objectiveId)
       return json({ error: { message: "title and objectiveId required" } }, 400);
     const obj = await db
-      .prepare(
-        `SELECT id, cycle_id, workspace_id FROM okr_objectives WHERE id = ? AND deleted_at IS NULL`,
-      )
+      .prepare(`SELECT * FROM okr_objectives WHERE id = ? AND deleted_at IS NULL`)
       .bind(objectiveId)
       .all<Record<string, unknown>>();
     const o = obj.results?.[0];
@@ -888,15 +928,45 @@ export async function handleV1OkrWriteRoutes(
     const currentValue = Number(input.currentValue ?? startValue);
     const metricType = (input.metricType as string) ?? "number";
     const progress = calcKrProgress(startValue, currentValue, targetValue, metricType);
+    const cycleId = (input.cycleId ?? o.cycle_id ?? null) as string | null;
+    const cycle = await loadOkrCycleRow(db, workspaceId!, cycleId);
+    const w = resolveOkrKrWindow(
+      {
+        start_date: (input.startDate as string | null | undefined) ?? null,
+        target_date: (input.targetDate as string | null | undefined) ?? null,
+      },
+      o,
+      cycle,
+    );
+    const status = resolveOkrStatusAfterProgress(
+      input.status !== undefined ? String(input.status) : undefined,
+      "draft",
+      progress,
+    );
+    let healthJson: string | null = null;
+    let completedAtIns: string | null = null;
+    if (status === "completed") {
+      const snap = buildCompletionSnapshotFromPreCompleteRow({
+        kind: "okr_key_result",
+        previousStatus: "draft",
+        progressPercent: progress,
+        windowStart: w.start,
+        windowEnd: w.end,
+        dateSourcePt: w.dateSourcePt,
+        existingSnapshot: null,
+      });
+      healthJson = snap;
+      completedAtIns = now;
+    }
     const ins = await db
       .prepare(
-        `INSERT INTO okr_key_results (id, workspace_id, cycle_id, objective_id, title, slug, description_json, description_text, owner_user_id, metric_type, unit, start_value, current_value, target_value, progress_percent, status, confidence, sort_order, start_date, target_date, completed_at, created_by, updated_by, created_at, updated_at, archived_at, deleted_at)
-         VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, NULL, NULL)`,
+        `INSERT INTO okr_key_results (id, workspace_id, cycle_id, objective_id, title, slug, description_json, description_text, owner_user_id, metric_type, unit, start_value, current_value, target_value, progress_percent, status, confidence, sort_order, start_date, target_date, health_snapshot_json, completed_at, created_by, updated_by, created_at, updated_at, archived_at, deleted_at)
+         VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)`,
       )
       .bind(
         id,
         workspaceId,
-        input.cycleId ?? o.cycle_id ?? null,
+        cycleId,
         objectiveId,
         title,
         slug,
@@ -908,11 +978,13 @@ export async function handleV1OkrWriteRoutes(
         currentValue,
         targetValue,
         progress,
-        input.status ?? "draft",
+        status,
         input.confidence ?? 50,
         input.sortOrder ?? 0,
         input.startDate ?? null,
         input.targetDate ?? null,
+        healthJson,
+        completedAtIns,
         actorUserId,
         actorUserId,
         now,
@@ -1009,8 +1081,11 @@ export async function handleV1OkrWriteRoutes(
       const cycleId = input.cycleId !== undefined ? input.cycleId : c.cycle_id;
       const ownerUserId = input.ownerUserId !== undefined ? input.ownerUserId : c.owner_user_id;
       const unit = input.unit !== undefined ? input.unit : c.unit;
-      let status = input.status !== undefined ? String(input.status) : prevStatus;
-      if (progress >= 100) status = "completed";
+      const status = resolveOkrStatusAfterProgress(
+        input.status !== undefined ? String(input.status) : undefined,
+        prevStatus,
+        progress,
+      );
       const confidence = input.confidence !== undefined ? input.confidence : c.confidence;
       const sortOrder = input.sortOrder !== undefined ? input.sortOrder : c.sort_order;
       const startDate = input.startDate !== undefined ? input.startDate : c.start_date;
@@ -1028,23 +1103,26 @@ export async function handleV1OkrWriteRoutes(
         objective,
         cycle,
       );
-      let healthSnap: string | null | undefined = (c.health_snapshot_json as string | null) ?? null;
-      let completedAt: string | null = (c.completed_at as string | null) ?? null;
-      if (status === "completed" && prevStatus !== "completed") {
-        const snap = buildCompletionSnapshotFromPreCompleteRow({
-          kind: "okr_key_result",
-          previousStatus: prevStatus,
-          progressPercent: progress,
-          windowStart: w.start,
-          windowEnd: w.end,
-          dateSourcePt: w.dateSourcePt,
-          existingSnapshot: healthSnap,
-        });
-        if (snap) {
-          healthSnap = snap;
-          if (!completedAt) completedAt = now;
-        } else if (!completedAt) completedAt = now;
-      } else if (status !== "completed" && prevStatus === "completed") {
+      let healthSnap: string | null;
+      let completedAt: string | null;
+      if (status === "completed") {
+        if (prevStatus !== "completed") {
+          const snap = buildCompletionSnapshotFromPreCompleteRow({
+            kind: "okr_key_result",
+            previousStatus: prevStatus,
+            progressPercent: progress,
+            windowStart: w.start,
+            windowEnd: w.end,
+            dateSourcePt: w.dateSourcePt,
+            existingSnapshot: (c.health_snapshot_json as string | null) ?? null,
+          });
+          healthSnap = snap ?? (c.health_snapshot_json as string | null) ?? null;
+          completedAt = (c.completed_at as string | null) ?? now;
+        } else {
+          healthSnap = (c.health_snapshot_json as string | null) ?? null;
+          completedAt = (c.completed_at as string | null) ?? null;
+        }
+      } else {
         healthSnap = null;
         completedAt = null;
       }
@@ -1166,8 +1244,7 @@ export async function handleV1OkrWriteRoutes(
         c.metric_type as string,
       );
       const prevStatus = String(c.status ?? "draft");
-      let status = prevStatus;
-      if (progress >= 100) status = "completed";
+      const status = resolveOkrStatusAfterProgress(undefined, prevStatus, progress);
       const now = new Date().toISOString();
       const obj = await db
         .prepare(`SELECT * FROM okr_objectives WHERE id = ? AND deleted_at IS NULL`)
@@ -1177,22 +1254,28 @@ export async function handleV1OkrWriteRoutes(
       const cid = (c.cycle_id as string | null) ?? (objective.cycle_id as string | null);
       const cycle = await loadOkrCycleRow(db, workspaceId!, cid);
       const w = resolveOkrKrWindow(c, objective, cycle);
-      let healthSnap: string | null = (c.health_snapshot_json as string | null) ?? null;
-      let completedAt: string | null = (c.completed_at as string | null) ?? null;
-      if (status === "completed" && prevStatus !== "completed") {
-        const snap = buildCompletionSnapshotFromPreCompleteRow({
-          kind: "okr_key_result",
-          previousStatus: prevStatus,
-          progressPercent: progress,
-          windowStart: w.start,
-          windowEnd: w.end,
-          dateSourcePt: w.dateSourcePt,
-          existingSnapshot: healthSnap,
-        });
-        if (snap) {
-          healthSnap = snap;
-          if (!completedAt) completedAt = now;
-        } else if (!completedAt) completedAt = now;
+      let healthSnap: string | null;
+      let completedAt: string | null;
+      if (status === "completed") {
+        if (prevStatus !== "completed") {
+          const snap = buildCompletionSnapshotFromPreCompleteRow({
+            kind: "okr_key_result",
+            previousStatus: prevStatus,
+            progressPercent: progress,
+            windowStart: w.start,
+            windowEnd: w.end,
+            dateSourcePt: w.dateSourcePt,
+            existingSnapshot: (c.health_snapshot_json as string | null) ?? null,
+          });
+          healthSnap = snap ?? (c.health_snapshot_json as string | null) ?? null;
+          completedAt = (c.completed_at as string | null) ?? now;
+        } else {
+          healthSnap = (c.health_snapshot_json as string | null) ?? null;
+          completedAt = (c.completed_at as string | null) ?? null;
+        }
+      } else {
+        healthSnap = null;
+        completedAt = null;
       }
       const uid = createId();
       await db
