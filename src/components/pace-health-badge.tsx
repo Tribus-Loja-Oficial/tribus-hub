@@ -61,7 +61,6 @@ function healthTooltip(insight: HealthInsight): string {
     `• ${slugLine[insight.slug] ?? "Saude calculada pelo ritmo."}`,
     `• Progresso: ${progress} | Tempo decorrido: ${elapsed}`,
     `• Diferenca de ritmo: ${diff}`,
-    `• Fonte de data: ${insight.dateSourcePt || "Nao informada"}`,
   ];
   return bullets.join("\n");
 }

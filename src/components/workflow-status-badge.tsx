@@ -15,6 +15,13 @@ const SLUG_CLASS: Record<WorkflowStatusSlug, string> = {
   completed: `border-emerald-600/22 bg-emerald-600/[0.08] text-emerald-900/90 dark:border-emerald-500/25 dark:bg-emerald-500/12 dark:text-emerald-100 ${ring}`,
 };
 
+function fmtWindowDate(raw: string | null | undefined): string {
+  if (!raw) return "n/d";
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return "n/d";
+  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(d);
+}
+
 function workflowStatusTooltip(insight: WorkflowStatusInsight): string {
   const slugLine: Record<WorkflowStatusSlug, string> = {
     planned: "Esta janela ainda nao começou.",
@@ -25,7 +32,7 @@ function workflowStatusTooltip(insight: WorkflowStatusInsight): string {
   const bullets = [
     `• Status atual: ${workflowStatusLabel(insight.slug)}`,
     `• ${slugLine[insight.slug] ?? "Status derivado da janela de datas."}`,
-    `• Fonte de data: ${insight.dateSourcePt || "Nao informada"}`,
+    `• Janela programada: ${fmtWindowDate(insight.windowStart)} a ${fmtWindowDate(insight.windowEnd)}`,
   ];
   return bullets.join("\n");
 }
