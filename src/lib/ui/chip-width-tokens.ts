@@ -3,8 +3,8 @@
  * `pace-health-display` + `px-2` + borda. **sem** alterar colunas do grid.
  */
 export const TABLE_STATUS_CHIP_PX = 96;
-export const TABLE_HEALTH_CHIP_PX = 100;
-export const TABLE_PRIORITY_CHIP_PX = 60;
+export const TABLE_HEALTH_CHIP_PX = 94;
+export const TABLE_PRIORITY_CHIP_PX = 58;
 
 export function tableChipBoxStyle(px: number) {
   return {
