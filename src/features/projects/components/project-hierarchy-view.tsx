@@ -49,8 +49,11 @@ import type {
 import { projectMatchesSearch } from "@/features/projects/lib/project-hierarchy-search";
 import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resizable-grid-columns";
 import {
+  TABLE_HEALTH_CHIP_PX,
   TABLE_HEALTH_CHIP_WIDTH_CLASS,
+  TABLE_PRIORITY_CHIP_PX,
   TABLE_PRIORITY_CHIP_WIDTH_CLASS,
+  TABLE_STATUS_CHIP_PX,
   TABLE_STATUS_CHIP_WIDTH_CLASS,
 } from "@/lib/ui/chip-width-tokens";
 
@@ -62,6 +65,7 @@ function projectStatusCell(project: ProjectHierarchyItem) {
       insight={project.workflowStatusInsight}
       tableCellLayout
       badgeWidthClass={TABLE_STATUS_CHIP_WIDTH_CLASS}
+      tableChipWidthPx={TABLE_STATUS_CHIP_PX}
     />
   );
 }
@@ -72,6 +76,7 @@ function milestoneStatusCell(milestone: HierarchyMilestone) {
       insight={milestone.workflowStatusInsight}
       tableCellLayout
       badgeWidthClass={TABLE_STATUS_CHIP_WIDTH_CLASS}
+      tableChipWidthPx={TABLE_STATUS_CHIP_PX}
     />
   );
 }
@@ -88,8 +93,8 @@ function hierarchyGridColumnsStyle(gridTpl: string): CSSProperties {
 }
 
 /** Larguras default (px); coluna de ações maior para evitar corte de contadores e botões. */
-const HIERARCHY_COL_DEFAULTS = [24, 44, 320, 148, 140, 100, 108, 128, 210] as const;
-const HIERARCHY_COL_STORAGE_KEY = "hub:project-hierarchy-cols-v4";
+const HIERARCHY_COL_DEFAULTS = [24, 44, 320, 176, 176, 116, 108, 128, 210] as const;
+const HIERARCHY_COL_STORAGE_KEY = "hub:project-hierarchy-cols-v5";
 
 function HierarchyHeaderCell({
   children,
@@ -247,6 +252,7 @@ function TaskRow({
         <PriorityBadge
           priority={task.priority}
           className={cn("justify-center", TABLE_PRIORITY_CHIP_WIDTH_CLASS)}
+          tableChipWidthPx={TABLE_PRIORITY_CHIP_PX}
         />
       </div>
       <div className="flex min-w-0 items-center justify-start overflow-hidden">
@@ -382,6 +388,7 @@ function MilestoneRow({
                 insight={milestone.healthInsight}
                 tableCellLayout
                 badgeWidthClass={TABLE_HEALTH_CHIP_WIDTH_CLASS}
+                tableChipWidthPx={TABLE_HEALTH_CHIP_PX}
               />
             </div>
           </div>
@@ -389,6 +396,7 @@ function MilestoneRow({
             <PriorityBadge
               priority={milestone.priority}
               className={cn("justify-center", TABLE_PRIORITY_CHIP_WIDTH_CLASS)}
+              tableChipWidthPx={TABLE_PRIORITY_CHIP_PX}
             />
           </div>
           <div className="flex min-w-0 items-center justify-start overflow-hidden opacity-90 transition-opacity group-hover:opacity-100">
@@ -589,6 +597,7 @@ function ProjectRow({
                 insight={project.healthInsight}
                 tableCellLayout
                 badgeWidthClass={TABLE_HEALTH_CHIP_WIDTH_CLASS}
+                tableChipWidthPx={TABLE_HEALTH_CHIP_PX}
               />
             </div>
           </div>
@@ -596,6 +605,7 @@ function ProjectRow({
             <PriorityBadge
               priority={project.priority}
               className={cn("justify-center", TABLE_PRIORITY_CHIP_WIDTH_CLASS)}
+              tableChipWidthPx={TABLE_PRIORITY_CHIP_PX}
             />
           </div>
           <div className="flex min-w-0 items-center justify-start overflow-hidden">

@@ -55,7 +55,9 @@ import { cn } from "@/lib/utils/cn";
 import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resizable-grid-columns";
 import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
 import {
+  TABLE_HEALTH_CHIP_PX,
   TABLE_HEALTH_CHIP_WIDTH_CLASS,
+  TABLE_STATUS_CHIP_PX,
   TABLE_STATUS_CHIP_WIDTH_CLASS,
 } from "@/lib/ui/chip-width-tokens";
 
@@ -139,9 +141,9 @@ export function OkrPage() {
   const [krMenu, setKrMenu] = useState<string | null>(null);
 
   const { widths, startResize } = useResizableGridColumns(
-    "hub:okr-page-list-cols-v4",
+    "hub:okr-page-list-cols-v5",
     /** Título/status/health mais largos; scroll horizontal quando necessário (minWidth abaixo). */
-    [24, 300, 136, 140, 140, 152, 196, 108, 124],
+    [24, 300, 136, 176, 176, 152, 196, 108, 124],
     { mode: "push" },
   );
   const okrListGridTpl = widths.map((w) => `${w}px`).join(" ");
@@ -1016,6 +1018,7 @@ function ObjectiveBlock({
             insight={objective.workflowStatusInsight}
             tableCellLayout
             badgeWidthClass={TABLE_STATUS_CHIP_WIDTH_CLASS}
+            tableChipWidthPx={TABLE_STATUS_CHIP_PX}
           />
         </div>
 
@@ -1024,6 +1027,7 @@ function ObjectiveBlock({
             insight={objective.healthInsight}
             tableCellLayout
             badgeWidthClass={TABLE_HEALTH_CHIP_WIDTH_CLASS}
+            tableChipWidthPx={TABLE_HEALTH_CHIP_PX}
           />
         </div>
 
@@ -1219,6 +1223,7 @@ function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete
           insight={kr.workflowStatusInsight}
           tableCellLayout
           badgeWidthClass={TABLE_STATUS_CHIP_WIDTH_CLASS}
+          tableChipWidthPx={TABLE_STATUS_CHIP_PX}
         />
       </div>
 
@@ -1227,6 +1232,7 @@ function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete
           insight={kr.healthInsight}
           tableCellLayout
           badgeWidthClass={TABLE_HEALTH_CHIP_WIDTH_CLASS}
+          tableChipWidthPx={TABLE_HEALTH_CHIP_PX}
         />
       </div>
 

@@ -1,7 +1,9 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { Info } from "lucide-react";
 import type { HealthInsight, PaceHealthSlug } from "@/lib/types/domain";
+import { tableChipBoxStyle } from "@/lib/ui/chip-width-tokens";
 import { cn } from "@/lib/utils/cn";
 import { paceHealthBadgeToneSlug, paceHealthLabel } from "@/lib/pace-health-display";
 
@@ -90,19 +92,30 @@ export function HealthInsightHint({
 export function PaceHealthBadge({
   insight,
   className,
+  tableChipWidthPx,
+  style,
 }: {
   insight: HealthInsight;
   className?: string;
+  /** Largura fixa (px) em tabelas; aplica `style` inline. */
+  tableChipWidthPx?: number;
+  style?: CSSProperties;
 }) {
   const tone = paceHealthBadgeToneSlug(insight.slug);
   const label = paceHealthLabel(insight.slug);
+  const hasFixed = typeof tableChipWidthPx === "number";
+  const boxStyle: CSSProperties | undefined = hasFixed
+    ? { ...tableChipBoxStyle(tableChipWidthPx), ...style }
+    : style;
   return (
     <span
       className={cn(
-        "inline-flex items-center whitespace-nowrap rounded-md border px-2 py-0.5 text-[11px] font-medium",
+        "items-center whitespace-nowrap rounded-md border px-2 py-0.5 text-[11px] font-medium",
+        hasFixed ? "flex w-full min-w-0 max-w-full justify-center text-center" : "inline-flex",
         SLUG_CLASS[tone] ?? SLUG_CLASS.no_dates,
         className,
       )}
+      style={boxStyle}
     >
       {label}
     </span>

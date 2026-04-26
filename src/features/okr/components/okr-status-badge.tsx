@@ -9,7 +9,9 @@ import type {
   WorkflowStatusInsight,
 } from "@/lib/types/domain";
 import {
+  TABLE_HEALTH_CHIP_PX,
   TABLE_HEALTH_CHIP_WIDTH_CLASS,
+  TABLE_STATUS_CHIP_PX,
   TABLE_STATUS_CHIP_WIDTH_CLASS,
 } from "@/lib/ui/chip-width-tokens";
 
@@ -100,12 +102,14 @@ export function OkrEntityStatusRow({
         insight={workflowStatusInsight}
         size={size}
         badgeWidthClass={TABLE_STATUS_CHIP_WIDTH_CLASS}
+        tableChipWidthPx={TABLE_STATUS_CHIP_PX}
       />
       {healthInsight ? (
         <>
           <PaceHealthBadge
             insight={healthInsight}
             className={cn("justify-center text-center", TABLE_HEALTH_CHIP_WIDTH_CLASS)}
+            tableChipWidthPx={TABLE_HEALTH_CHIP_PX}
           />
           <HealthInsightHint insight={healthInsight} />
         </>

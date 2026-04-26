@@ -1,11 +1,13 @@
 "use client";
 
+import type { ComponentProps, ReactNode } from "react";
 import { HealthInsightHint, PaceHealthBadge } from "@/components/pace-health-badge";
 import type { HealthInsight } from "@/lib/types/domain";
+import { tableChipBoxStyle } from "@/lib/ui/chip-width-tokens";
 import { cn } from "@/lib/utils/cn";
 
 const chip =
-  "inline-flex items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-md border px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ring-black/[0.04] dark:ring-white/[0.06]";
+  "items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-md border px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ring-black/[0.04] dark:ring-white/[0.06]";
 
 const PRIORITY_CONFIG: Record<string, { label: string; className: string }> = {
   low: {
@@ -30,8 +32,20 @@ const PRIORITY_CONFIG: Record<string, { label: string; className: string }> = {
   },
 };
 
-function Badge({ className, children }: { className: string; children: React.ReactNode }) {
-  return <span className={`${chip} ${className}`}>{children}</span>;
+function Badge({
+  className,
+  children,
+  style,
+}: {
+  className: string;
+  children: ReactNode;
+  style?: ComponentProps<"span">["style"];
+}) {
+  return (
+    <span className={cn("inline-flex", chip, className)} style={style}>
+      {children}
+    </span>
+  );
 }
 
 /** Saúde por ritmo (hub-api); sem insight mostra traço. */
@@ -40,10 +54,12 @@ export function ProjectHealthRow({
   /** Em tabelas: badge à esquerda, ícone à direita da célula (ícones alinhados entre linhas). */
   tableCellLayout = false,
   badgeWidthClass,
+  tableChipWidthPx,
 }: {
   insight?: HealthInsight | null;
   tableCellLayout?: boolean;
   badgeWidthClass?: string;
+  tableChipWidthPx?: number;
 }) {
   if (!insight) {
     return (
@@ -58,20 +74,21 @@ export function ProjectHealthRow({
     );
   }
   if (tableCellLayout) {
-    const hasFixedWidth = Boolean(badgeWidthClass);
+    const hasFixedWidth = typeof tableChipWidthPx === "number";
     return (
       <span className="flex w-full min-w-0 items-center justify-between gap-1.5">
         <span
           className={cn(
             "flex justify-start overflow-hidden",
-            hasFixedWidth ? `flex-none ${badgeWidthClass}` : "min-w-0 shrink",
+            hasFixedWidth ? cn("shrink-0", badgeWidthClass) : "min-w-0 shrink",
           )}
+          style={hasFixedWidth ? tableChipBoxStyle(tableChipWidthPx) : undefined}
         >
           <PaceHealthBadge
             insight={insight}
             className={cn(
-              "min-w-0 max-w-full truncate",
-              hasFixedWidth && "w-full min-w-full max-w-full justify-center text-center",
+              "min-w-0 max-w-full",
+              hasFixedWidth && "flex w-full min-w-0 max-w-full justify-center text-center",
             )}
           />
         </span>
@@ -81,7 +98,14 @@ export function ProjectHealthRow({
   }
   return (
     <span className="inline-flex min-w-0 max-w-full flex-nowrap items-center gap-1">
-      <PaceHealthBadge insight={insight} />
+      <PaceHealthBadge
+        insight={insight}
+        tableChipWidthPx={tableChipWidthPx}
+        className={cn(
+          typeof tableChipWidthPx === "number" &&
+            "w-full min-w-0 max-w-full justify-center text-center",
+        )}
+      />
       <HealthInsightHint insight={insight} />
     </span>
   );
@@ -89,10 +113,30 @@ export function ProjectHealthRow({
 
 export const MilestoneHealthRow = ProjectHealthRow;
 
-export function PriorityBadge({ priority, className }: { priority: string; className?: string }) {
+export function PriorityBadge({
+  priority,
+  className,
+  tableChipWidthPx,
+}: {
+  priority: string;
+  className?: string;
+  tableChipWidthPx?: number;
+}) {
   const cfg = PRIORITY_CONFIG[priority] ?? {
     label: priority,
     className: "border-border/70 bg-muted/50 text-muted-foreground",
   };
-  return <Badge className={cn(cfg.className, className)}>{cfg.label}</Badge>;
+  const hasFixed = typeof tableChipWidthPx === "number";
+  return (
+    <Badge
+      className={cn(
+        cfg.className,
+        hasFixed && "flex w-full min-w-0 max-w-full justify-center text-center",
+        className,
+      )}
+      style={hasFixed ? tableChipBoxStyle(tableChipWidthPx) : undefined}
+    >
+      {cfg.label}
+    </Badge>
+  );
 }

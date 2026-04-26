@@ -1,8 +1,10 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { Info } from "lucide-react";
 import type { WorkflowStatusInsight, WorkflowStatusSlug } from "@/lib/types/domain";
 import { workflowStatusLabel } from "@/lib/pace-health-display";
+import { tableChipBoxStyle } from "@/lib/ui/chip-width-tokens";
 import { cn } from "@/lib/utils/cn";
 
 const ring = "ring-1 ring-inset ring-black/[0.04] dark:ring-white/[0.06]";
@@ -55,19 +57,22 @@ export function WorkflowStatusBadge({
   insight,
   size = "sm",
   className,
+  style,
 }: {
   insight: WorkflowStatusInsight;
   size?: "sm" | "md";
   className?: string;
+  style?: CSSProperties;
 }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center whitespace-nowrap rounded-md border font-medium",
+        "inline-flex min-w-0 items-center whitespace-nowrap rounded-md border font-medium",
         size === "sm" ? "px-2 py-0.5 text-[11px]" : "px-2.5 py-1 text-xs",
         SLUG_CLASS[insight.slug] ?? SLUG_CLASS.planned,
         className,
       )}
+      style={style}
     >
       {workflowStatusLabel(insight.slug)}
     </span>
@@ -82,12 +87,15 @@ export function WorkflowStatusRow({
   /** Em tabelas: badge à esquerda, ícone à direita da célula (ícones alinhados entre linhas). */
   tableCellLayout = false,
   badgeWidthClass,
+  /** Largura fixa (px) em células de tabela; use com `tableCellLayout` — aplica `style` inline. */
+  tableChipWidthPx,
 }: {
   insight?: WorkflowStatusInsight | null;
   size?: "sm" | "md";
   className?: string;
   tableCellLayout?: boolean;
   badgeWidthClass?: string;
+  tableChipWidthPx?: number;
 }) {
   if (!insight) {
     return (
@@ -102,21 +110,22 @@ export function WorkflowStatusRow({
     );
   }
   if (tableCellLayout) {
-    const hasFixedWidth = Boolean(badgeWidthClass);
+    const hasFixedWidth = typeof tableChipWidthPx === "number";
     return (
       <span className={cn("flex w-full min-w-0 items-center justify-between gap-1.5", className)}>
         <span
           className={cn(
             "flex justify-start overflow-hidden",
-            hasFixedWidth ? `flex-none ${badgeWidthClass}` : "min-w-0 shrink",
+            hasFixedWidth ? cn("shrink-0", badgeWidthClass) : "min-w-0 shrink",
           )}
+          style={hasFixedWidth ? tableChipBoxStyle(tableChipWidthPx) : undefined}
         >
           <WorkflowStatusBadge
             insight={insight}
             size={size}
             className={cn(
               "min-w-0 max-w-full truncate",
-              hasFixedWidth && "w-full min-w-full max-w-full justify-center text-center",
+              hasFixedWidth && "flex w-full min-w-0 max-w-full justify-center text-center",
             )}
           />
         </span>
@@ -131,7 +140,14 @@ export function WorkflowStatusRow({
       <WorkflowStatusBadge
         insight={insight}
         size={size}
-        className={cn(badgeWidthClass && "justify-center text-center", badgeWidthClass)}
+        className={cn(
+          typeof tableChipWidthPx === "number" &&
+            "flex w-full min-w-0 max-w-full justify-center text-center",
+          badgeWidthClass,
+        )}
+        style={
+          typeof tableChipWidthPx === "number" ? tableChipBoxStyle(tableChipWidthPx) : undefined
+        }
       />
       <WorkflowStatusHint insight={insight} />
     </span>

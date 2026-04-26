@@ -42,8 +42,11 @@ import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog"
 import { cn } from "@/lib/utils/cn";
 import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resizable-grid-columns";
 import {
+  TABLE_HEALTH_CHIP_PX,
   TABLE_HEALTH_CHIP_WIDTH_CLASS,
+  TABLE_PRIORITY_CHIP_PX,
   TABLE_PRIORITY_CHIP_WIDTH_CLASS,
+  TABLE_STATUS_CHIP_PX,
   TABLE_STATUS_CHIP_WIDTH_CLASS,
 } from "@/lib/ui/chip-width-tokens";
 
@@ -269,8 +272,9 @@ function ListView({
   onEditProject: (p: Project) => void;
 }) {
   const { widths, startResize } = useResizableGridColumns(
-    "hub:projects-list-cols-v3",
-    [232, 124, 124, 104, 108, 108, 48, 32],
+    "hub:projects-list-cols-v4",
+    [232, 172, 172, 120, 108, 108, 48, 32],
+    { mode: "push" },
   );
   const gridTpl = widths.map((w) => `${w}px`).join(" ");
 
@@ -360,6 +364,7 @@ function ListView({
               insight={project.workflowStatusInsight}
               tableCellLayout
               badgeWidthClass={TABLE_STATUS_CHIP_WIDTH_CLASS}
+              tableChipWidthPx={TABLE_STATUS_CHIP_PX}
             />
           </div>
           <div className="flex w-full min-w-0 items-center justify-start overflow-hidden pr-0.5">
@@ -367,12 +372,14 @@ function ListView({
               insight={project.healthInsight}
               tableCellLayout
               badgeWidthClass={TABLE_HEALTH_CHIP_WIDTH_CLASS}
+              tableChipWidthPx={TABLE_HEALTH_CHIP_PX}
             />
           </div>
           <div className="flex min-w-0 items-center justify-center overflow-hidden">
             <PriorityBadge
               priority={project.priority}
               className={cn("justify-center", TABLE_PRIORITY_CHIP_WIDTH_CLASS)}
+              tableChipWidthPx={TABLE_PRIORITY_CHIP_PX}
             />
           </div>
           <div className="flex min-w-0 items-center justify-center">

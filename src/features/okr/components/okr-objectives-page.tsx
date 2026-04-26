@@ -30,7 +30,9 @@ import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resiza
 import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
 import { cn } from "@/lib/utils/cn";
 import {
+  TABLE_HEALTH_CHIP_PX,
   TABLE_HEALTH_CHIP_WIDTH_CLASS,
+  TABLE_STATUS_CHIP_PX,
   TABLE_STATUS_CHIP_WIDTH_CLASS,
 } from "@/lib/ui/chip-width-tokens";
 
@@ -82,8 +84,8 @@ export function OkrObjectivesPage() {
   const [selectedKr, setSelectedKr] = useState<OkrKeyResult | null>(null);
 
   const { widths, startResize } = useResizableGridColumns(
-    "hub:okr-objectives-cols-v3",
-    [24, 300, 128, 140, 140, 64, 136, 48],
+    "hub:okr-objectives-cols-v4",
+    [24, 300, 128, 176, 176, 64, 136, 48],
     { mode: "push" },
   );
   const okrGridTpl = widths.map((w) => `${w}px`).join(" ");
@@ -449,6 +451,7 @@ function ObjectiveRow({
             insight={objective.workflowStatusInsight}
             tableCellLayout
             badgeWidthClass={TABLE_STATUS_CHIP_WIDTH_CLASS}
+            tableChipWidthPx={TABLE_STATUS_CHIP_PX}
           />
         </div>
         {/* Health */}
@@ -457,6 +460,7 @@ function ObjectiveRow({
             insight={objective.healthInsight}
             tableCellLayout
             badgeWidthClass={TABLE_HEALTH_CHIP_WIDTH_CLASS}
+            tableChipWidthPx={TABLE_HEALTH_CHIP_PX}
           />
         </div>
 
@@ -574,6 +578,7 @@ function KrSubRow({
           insight={kr.workflowStatusInsight}
           tableCellLayout
           badgeWidthClass={TABLE_STATUS_CHIP_WIDTH_CLASS}
+          tableChipWidthPx={TABLE_STATUS_CHIP_PX}
         />
       </div>
       <div className="flex w-full min-w-0 items-center justify-start overflow-hidden pr-0.5">
@@ -581,6 +586,7 @@ function KrSubRow({
           insight={kr.healthInsight}
           tableCellLayout
           badgeWidthClass={TABLE_HEALTH_CHIP_WIDTH_CLASS}
+          tableChipWidthPx={TABLE_HEALTH_CHIP_PX}
         />
       </div>
 
