@@ -15,6 +15,7 @@ import {
   TABLE_STATUS_CHIP_WIDTH_CLASS,
 } from "@/lib/ui/chip-width-tokens";
 import { deriveOkrWorkflowStatusInsight } from "@/features/okr/lib/okr-workflow-status";
+import { reconcileOkrHealthInsightForDisplay } from "@/features/okr/lib/okr-pace-health-local";
 
 type AnyStatus = OkrObjectiveStatus | OkrKeyResultStatus | OkrCycleStatus | string;
 
@@ -107,6 +108,7 @@ export function OkrEntityStatusRow({
     targetDate,
     progressPercent,
   });
+  const health = reconcileOkrHealthInsightForDisplay(healthInsight);
   return (
     <span
       className={cn("inline-flex min-w-0 max-w-full flex-nowrap items-center gap-1.5", className)}
@@ -117,14 +119,14 @@ export function OkrEntityStatusRow({
         badgeWidthClass={TABLE_STATUS_CHIP_WIDTH_CLASS}
         tableChipWidthPx={TABLE_STATUS_CHIP_PX}
       />
-      {healthInsight ? (
+      {health ? (
         <>
           <PaceHealthBadge
-            insight={healthInsight}
+            insight={health}
             className={cn("justify-center text-center", TABLE_HEALTH_CHIP_WIDTH_CLASS)}
             tableChipWidthPx={TABLE_HEALTH_CHIP_PX}
           />
-          <HealthInsightHint insight={healthInsight} />
+          <HealthInsightHint insight={health} />
         </>
       ) : null}
     </span>

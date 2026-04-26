@@ -1,14 +1,5 @@
 import type { WorkflowStatusInsight } from "@/lib/types/domain";
-
-function dayUtc(d: Date): number {
-  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
-}
-
-function parseDate(raw: string | null | undefined): Date | null {
-  if (!raw) return null;
-  const d = new Date(raw);
-  return Number.isNaN(d.getTime()) ? null : d;
-}
+import { parseCivilDateInput, startOfLocalDay } from "@/lib/date/civil-date";
 
 function hasReachedGoal(progressPercent: number | null | undefined): boolean {
   if (typeof progressPercent !== "number") return false;
@@ -26,6 +17,8 @@ export function isFinalOkrWorkflowStatus(
  * - Planejado: antes da data inicial
  * - Em progresso: dentro da janela
  * - Atingido / Não Atingido: após data final, conforme progresso
+ *
+ * Comparações por **dia civil** no fuso local (sem deslocar `yyyy-MM-dd` para UTC).
  */
 export function deriveOkrWorkflowStatusInsight(input: {
   workflowStatusInsight?: WorkflowStatusInsight | null;
@@ -38,13 +31,13 @@ export function deriveOkrWorkflowStatusInsight(input: {
   if (!base) return null;
 
   const now = input.now ?? new Date();
-  const nowDay = dayUtc(now);
+  const today = startOfLocalDay(now);
   const windowStartRaw = base.windowStart ?? input.startDate ?? null;
   const windowEndRaw = base.windowEnd ?? input.targetDate ?? null;
-  const start = parseDate(windowStartRaw);
-  const end = parseDate(windowEndRaw);
+  const start = parseCivilDateInput(windowStartRaw);
+  const end = parseCivilDateInput(windowEndRaw);
 
-  if (end && nowDay > dayUtc(end)) {
+  if (end && today.getTime() > startOfLocalDay(end).getTime()) {
     const achieved = hasReachedGoal(input.progressPercent);
     return {
       ...base,
@@ -59,7 +52,7 @@ export function deriveOkrWorkflowStatusInsight(input: {
     };
   }
 
-  if (start && nowDay < dayUtc(start)) {
+  if (start && today.getTime() < startOfLocalDay(start).getTime()) {
     return {
       ...base,
       slug: "planned",

@@ -13,6 +13,7 @@ import { UpdateKeyResultDialog } from "./update-key-result-dialog";
 import { EditKeyResultDialog } from "./edit-key-result-dialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatCivilDate } from "@/lib/date/civil-date";
 
 type ObjectiveWithKRs = OkrObjective & { keyResults: OkrKeyResult[] };
 
@@ -26,7 +27,7 @@ const METRIC_LABELS: Record<string, string> = {
 
 function formatDate(d: string | null | undefined) {
   if (!d) return "—";
-  return format(new Date(d), "dd MMM yyyy", { locale: ptBR });
+  return formatCivilDate(d, "dd MMM yyyy") || "—";
 }
 
 interface KeyResultDetailViewProps {

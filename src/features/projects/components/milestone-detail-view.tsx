@@ -11,8 +11,7 @@ import { Label } from "@/components/ui/label";
 import type { Milestone } from "@/lib/types/domain";
 import { WorkflowStatusRow } from "@/components/workflow-status-badge";
 import { MilestoneHealthRow, PriorityBadge } from "./project-badges";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { formatCivilDate } from "@/lib/date/civil-date";
 
 interface MilestoneDetailViewProps {
   paramsPromise: Promise<{ projectId: string; milestoneId: string }>;
@@ -116,7 +115,7 @@ export function MilestoneDetailView({ paramsPromise, embedded }: MilestoneDetail
                 <PriorityBadge priority={m.priority} />
                 {m.dueDate && (
                   <span className="text-xs text-muted-foreground">
-                    Prazo: {format(new Date(m.dueDate), "dd MMM yyyy", { locale: ptBR })}
+                    Prazo: {formatCivilDate(m.dueDate, "dd MMM yyyy")}
                   </span>
                 )}
               </div>

@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { format, isValid, parseISO } from "date-fns";
+import { format, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { parseCivilDateInput } from "@/lib/date/civil-date";
 import { Calendar } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { dateTriggerControlClassName } from "@/components/ui/form-control-classes";
@@ -24,8 +25,8 @@ const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
     const display =
       value && /^\d{4}-\d{2}-\d{2}$/.test(value)
         ? (() => {
-            const d = parseISO(value);
-            return isValid(d) ? format(d, "dd/MM/yyyy", { locale: ptBR }) : "";
+            const d = parseCivilDateInput(value);
+            return d && isValid(d) ? format(d, "dd/MM/yyyy", { locale: ptBR }) : "";
           })()
         : "";
 

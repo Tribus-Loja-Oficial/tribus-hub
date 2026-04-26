@@ -36,9 +36,9 @@ import { OkrEntityStatusRow, OkrStatusBadge } from "./okr-status-badge";
 import { OkrProgressBar } from "./okr-progress-bar";
 import { CreateCycleDialog } from "./create-cycle-dialog";
 import { UpdateCycleDialog } from "./update-cycle-dialog";
-import { differenceInDays, isAfter, isBefore, format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { differenceInDays, isAfter, isBefore } from "date-fns";
 import { cn } from "@/lib/utils/cn";
+import { formatCivilDate, parseCivilDateInput } from "@/lib/date/civil-date";
 
 type SortKey = "start_desc" | "start_asc" | "end_desc" | "end_asc";
 type StatusFilter = "all" | OkrCycle["status"];
@@ -62,19 +62,22 @@ function resolveCycleStats(cycle: { stats?: CycleCardStats }): CycleCardStats {
 
 function formatD(d: string | null | undefined) {
   if (!d) return "—";
-  return format(new Date(d), "dd MMM yyyy", { locale: ptBR });
+  return formatCivilDate(d, "dd MMM yyyy") || "—";
 }
 
 function formatShort(d: string | null | undefined) {
   if (!d) return "—";
-  return format(new Date(d), "dd MMM", { locale: ptBR });
+  return formatCivilDate(d, "dd MMM") || "—";
 }
 
 /** Progresso temporal 0–100 e texto contextual (independente do status administrativo). */
 function getTemporalLine(cycle: OkrCycle): { progress: number; caption: string } {
   const now = new Date();
-  const start = new Date(cycle.startDate);
-  const end = new Date(cycle.endDate);
+  const start = parseCivilDateInput(cycle.startDate);
+  const end = parseCivilDateInput(cycle.endDate);
+  if (!start || !end) {
+    return { progress: 0, caption: "—" };
+  }
   if (isBefore(now, start)) {
     const days = differenceInDays(start, now);
     return {
@@ -181,8 +184,17 @@ export function OkrCyclesPage() {
     const now = new Date();
     const planned = cycles
       .filter((c) => c.status === "planned")
-      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
-    return planned.find((c) => isAfter(new Date(c.startDate), now)) ?? planned[0];
+      .sort((a, b) => {
+        const at = parseCivilDateInput(a.startDate)?.getTime() ?? 0;
+        const bt = parseCivilDateInput(b.startDate)?.getTime() ?? 0;
+        return at - bt;
+      });
+    return (
+      planned.find((c) => {
+        const st = parseCivilDateInput(c.startDate);
+        return st != null && isAfter(st, now);
+      }) ?? planned[0]
+    );
   }, [cycles]);
 
   const filteredSorted = useMemo(() => {
@@ -194,10 +206,10 @@ export function OkrCyclesPage() {
     else if (statusFilter !== "all") list = list.filter((c) => c.status === statusFilter);
 
     const sortFn = (a: OkrCycleWithStats, b: OkrCycleWithStats) => {
-      const as = new Date(a.startDate).getTime();
-      const bs = new Date(b.startDate).getTime();
-      const ae = new Date(a.endDate).getTime();
-      const be = new Date(b.endDate).getTime();
+      const as = parseCivilDateInput(a.startDate)?.getTime() ?? 0;
+      const bs = parseCivilDateInput(b.startDate)?.getTime() ?? 0;
+      const ae = parseCivilDateInput(a.endDate)?.getTime() ?? 0;
+      const be = parseCivilDateInput(b.endDate)?.getTime() ?? 0;
       switch (sortKey) {
         case "start_asc":
           return as - bs;

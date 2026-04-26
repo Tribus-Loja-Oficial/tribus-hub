@@ -33,8 +33,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format, isBefore, startOfDay, formatDistanceToNow } from "date-fns";
+import { isBefore, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatCivilDate, parseCivilDateInput, startOfLocalDay } from "@/lib/date/civil-date";
 import { cn } from "@/lib/utils/cn";
 import { WorkflowStatusRow } from "@/components/workflow-status-badge";
 import { ProjectHealthRow, PriorityBadge, MilestoneHealthRow } from "./project-badges";
@@ -97,7 +98,9 @@ function formatBytes(n: number) {
 
 function isOverdue(dateStr: string | null | undefined, completedAt?: string | null) {
   if (!dateStr || completedAt) return false;
-  return isBefore(startOfDay(new Date(dateStr)), startOfDay(new Date()));
+  const d = parseCivilDateInput(dateStr);
+  if (!d) return false;
+  return isBefore(startOfLocalDay(d), startOfLocalDay(new Date()));
 }
 
 // ─── Create Milestone Dialog ──────────────────────────────────────────────────
@@ -619,7 +622,7 @@ export function ProjectDetailView({ paramsPromise, embedded }: ProjectDetailView
               {project.startDate && (
                 <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                   <Calendar className="h-3 w-3" />
-                  Início {format(new Date(project.startDate), "dd MMM yyyy", { locale: ptBR })}
+                  Início {formatCivilDate(project.startDate, "dd MMM yyyy")}
                 </span>
               )}
               {project.targetDate && (
@@ -632,7 +635,7 @@ export function ProjectDetailView({ paramsPromise, embedded }: ProjectDetailView
                   )}
                 >
                   <Target className="h-3 w-3" />
-                  Prazo {format(new Date(project.targetDate), "dd MMM yyyy", { locale: ptBR })}
+                  Prazo {formatCivilDate(project.targetDate, "dd MMM yyyy")}
                 </span>
               )}
             </div>
@@ -854,7 +857,7 @@ export function ProjectDetailView({ paramsPromise, embedded }: ProjectDetailView
                                 : "text-muted-foreground",
                             )}
                           >
-                            {format(new Date(m.dueDate), "dd MMM", { locale: ptBR })}
+                            {formatCivilDate(m.dueDate, "dd MMM")}
                           </span>
                         )}
                       </div>
@@ -916,7 +919,7 @@ export function ProjectDetailView({ paramsPromise, embedded }: ProjectDetailView
                             taskOverdue ? "font-medium text-red-500" : "text-muted-foreground",
                           )}
                         >
-                          {format(new Date(t.dueDate), "dd MMM", { locale: ptBR })}
+                          {formatCivilDate(t.dueDate, "dd MMM")}
                         </span>
                       )}
                     </div>
@@ -1037,9 +1040,7 @@ export function ProjectDetailView({ paramsPromise, embedded }: ProjectDetailView
                             : "text-muted-foreground",
                         )}
                       >
-                        {m.dueDate
-                          ? format(new Date(m.dueDate), "dd MMM yyyy", { locale: ptBR })
-                          : "—"}
+                        {m.dueDate ? formatCivilDate(m.dueDate, "dd MMM yyyy") : "—"}
                       </span>
                     </div>
                     <div className="hidden items-center text-xs tabular-nums text-muted-foreground sm:flex">
@@ -1167,7 +1168,7 @@ export function ProjectDetailView({ paramsPromise, embedded }: ProjectDetailView
                         taskOverdue ? "font-medium text-red-500" : "text-muted-foreground",
                       )}
                     >
-                      {t.dueDate ? format(new Date(t.dueDate), "dd MMM yy", { locale: ptBR }) : "—"}
+                      {t.dueDate ? formatCivilDate(t.dueDate, "dd MMM yy") || "—" : "—"}
                     </div>
                     <div className="hidden items-center justify-center sm:flex">
                       <Button

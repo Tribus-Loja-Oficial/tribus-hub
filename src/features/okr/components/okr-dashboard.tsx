@@ -33,14 +33,16 @@ import { OkrProgressBar, MiniProgressRing } from "./okr-progress-bar";
 import { CreateCycleDialog } from "./create-cycle-dialog";
 import { CreateObjectiveDialog } from "./create-objective-dialog";
 import { CreateKeyResultDialog } from "./create-key-result-dialog";
-import { format, differenceInDays, isAfter, isBefore, formatDistanceToNow } from "date-fns";
+import { differenceInDays, isAfter, isBefore, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatCivilDate, parseCivilDateInput, startOfLocalDay } from "@/lib/date/civil-date";
 import { cn } from "@/lib/utils/cn";
 
 function calcCycleTimeProgress(cycle: OkrCycle): number {
   const now = new Date();
-  const start = new Date(cycle.startDate);
-  const end = new Date(cycle.endDate);
+  const start = parseCivilDateInput(cycle.startDate);
+  const end = parseCivilDateInput(cycle.endDate);
+  if (!start || !end) return 0;
   if (isBefore(now, start)) return 0;
   if (isAfter(now, end)) return 100;
   const total = differenceInDays(end, start);
@@ -51,12 +53,12 @@ function calcCycleTimeProgress(cycle: OkrCycle): number {
 
 function formatDate(d: string | null | undefined) {
   if (!d) return "—";
-  return format(new Date(d), "dd MMM yyyy", { locale: ptBR });
+  return formatCivilDate(d, "dd MMM yyyy") || "—";
 }
 
 function formatShortDate(d: string | null | undefined) {
   if (!d) return "—";
-  return format(new Date(d), "dd MMM", { locale: ptBR });
+  return formatCivilDate(d, "dd MMM") || "—";
 }
 
 interface StatCardProps {
@@ -131,7 +133,12 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
 
   const cycleTimeProgress = activeCycle ? calcCycleTimeProgress(activeCycle) : null;
   const daysLeft = activeCycle
-    ? Math.max(0, differenceInDays(new Date(activeCycle.endDate), new Date()))
+    ? (() => {
+        const end = parseCivilDateInput(activeCycle.endDate);
+        return end != null
+          ? Math.max(0, differenceInDays(startOfLocalDay(end), startOfLocalDay(new Date())))
+          : null;
+      })()
     : null;
 
   return (

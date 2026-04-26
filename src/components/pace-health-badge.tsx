@@ -3,6 +3,7 @@
 import type { CSSProperties } from "react";
 import { Info } from "lucide-react";
 import type { HealthInsight, PaceHealthSlug } from "@/lib/types/domain";
+import { parseCivilDateInput } from "@/lib/date/civil-date";
 import { tableChipBoxStyle } from "@/lib/ui/chip-width-tokens";
 import { cn } from "@/lib/utils/cn";
 import { paceHealthBadgeToneSlug, paceHealthLabel } from "@/lib/pace-health-display";
@@ -39,9 +40,8 @@ const SLUG_CLASS: Record<PaceHealthSlug, string> = {
 };
 
 function fmtWindowDate(raw: string | null | undefined): string {
-  if (!raw) return "n/d";
-  const d = new Date(raw);
-  if (Number.isNaN(d.getTime())) return "n/d";
+  const d = parseCivilDateInput(raw);
+  if (!d) return "n/d";
   return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(d);
 }
 

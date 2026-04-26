@@ -33,8 +33,7 @@ import {
   normalizeProjectListStatusQueryParam,
   projectWorkflowSlug,
 } from "@/features/projects/lib/project-workflow-slug";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { formatCivilDate } from "@/lib/date/civil-date";
 import { ProjectHealthRow, PriorityBadge } from "./project-badges";
 import { ProjectHierarchyView } from "./project-hierarchy-view";
 import { EditProjectDialog } from "./edit-project-dialog";
@@ -402,9 +401,7 @@ function ListView({
             )}
           </div>
           <div className="flex items-center justify-center whitespace-nowrap text-xs text-muted-foreground">
-            {project.targetDate
-              ? format(new Date(project.targetDate), "dd MMM yy", { locale: ptBR })
-              : "—"}
+            {project.targetDate ? formatCivilDate(project.targetDate, "dd MMM yy") : "—"}
           </div>
           <div className="flex items-center justify-center gap-1.5">
             <EntityQuickViewEyeButton
@@ -504,7 +501,7 @@ function BoardView({
                   {project.targetDate && (
                     <p className="mt-2 flex items-center gap-1 text-[10px] text-muted-foreground/60">
                       <Calendar className="h-3 w-3" />
-                      {format(new Date(project.targetDate), "dd MMM yy", { locale: ptBR })}
+                      {formatCivilDate(project.targetDate, "dd MMM yy")}
                     </p>
                   )}
                   {(project.progressPercent ?? 0) > 0 && (

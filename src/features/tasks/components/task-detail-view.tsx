@@ -7,8 +7,7 @@ import { ArrowLeft, CheckSquare2, Loader2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Task, TaskColumn } from "@/lib/types/domain";
 import { TaskFormDialog } from "./task-form-dialog";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { formatCivilDate } from "@/lib/date/civil-date";
 import { PriorityBadge } from "@/features/projects/components/project-badges";
 
 type TaskWithLabels = Task & { labels?: Array<{ id: string; name: string }> };
@@ -114,7 +113,7 @@ export function TaskDetailView({ paramsPromise, embedded }: TaskDetailViewProps)
                 )}
                 {task.dueDate && (
                   <span className="text-xs text-muted-foreground">
-                    Prazo: {format(new Date(task.dueDate), "dd MMM yyyy", { locale: ptBR })}
+                    Prazo: {formatCivilDate(task.dueDate, "dd MMM yyyy")}
                   </span>
                 )}
               </div>

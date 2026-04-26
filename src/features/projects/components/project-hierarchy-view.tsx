@@ -25,8 +25,8 @@ import {
   Pencil,
   Eye,
 } from "lucide-react";
-import { format, isBefore, startOfDay } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { isBefore } from "date-fns";
+import { formatCivilDate, parseCivilDateInput, startOfLocalDay } from "@/lib/date/civil-date";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/components/ui/button";
 import { DateField } from "@/components/ui/date-field";
@@ -132,7 +132,9 @@ function isOverdue(
   completedAt: string | Date | null | undefined,
 ) {
   if (!dateStr || completedAt) return false;
-  return isBefore(startOfDay(new Date(dateStr)), startOfDay(new Date()));
+  const d = parseCivilDateInput(dateStr);
+  if (!d) return false;
+  return isBefore(startOfLocalDay(d), startOfLocalDay(new Date()));
 }
 
 function ProgressBar({
@@ -264,7 +266,7 @@ function TaskRow({
             )}
           >
             {overdue ? <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden /> : null}
-            {format(new Date(task.dueDate), "dd MMM", { locale: ptBR })}
+            {formatCivilDate(task.dueDate, "dd MMM")}
           </span>
         ) : (
           <span className="text-[10px] text-muted-foreground/40">—</span>
@@ -408,7 +410,7 @@ function MilestoneRow({
                 )}
               >
                 {overdue ? <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden /> : null}
-                {format(new Date(milestone.dueDate), "dd MMM", { locale: ptBR })}
+                {formatCivilDate(milestone.dueDate, "dd MMM")}
               </span>
             ) : (
               <span className="text-[10px] text-muted-foreground/40">—</span>
@@ -617,9 +619,7 @@ function ProjectRow({
                 )}
               >
                 <Calendar className="h-3 w-3 shrink-0" />
-                <span className="truncate">
-                  {format(new Date(project.targetDate), "dd MMM yy", { locale: ptBR })}
-                </span>
+                <span className="truncate">{formatCivilDate(project.targetDate, "dd MMM yy")}</span>
               </span>
             ) : (
               <span className="text-[10px] text-muted-foreground/40">—</span>

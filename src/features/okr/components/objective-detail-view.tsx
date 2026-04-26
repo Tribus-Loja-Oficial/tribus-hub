@@ -11,8 +11,7 @@ import { OkrProgressBar, MiniProgressRing } from "./okr-progress-bar";
 import { CreateKeyResultDialog } from "./create-key-result-dialog";
 import { UpdateKeyResultDialog } from "./update-key-result-dialog";
 import { UpdateObjectiveDialog } from "./update-objective-dialog";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { formatCivilDate } from "@/lib/date/civil-date";
 import {
   invalidateAfterKeyResultMutation,
   invalidateAfterObjectiveMutation,
@@ -22,7 +21,7 @@ type ObjectiveWithKRs = OkrObjective & { keyResults: OkrKeyResult[] };
 
 function formatDate(d: string | null | undefined) {
   if (!d) return "—";
-  return format(new Date(d), "dd MMM yyyy", { locale: ptBR });
+  return formatCivilDate(d, "dd MMM yyyy") || "—";
 }
 
 interface ObjectiveDetailViewProps {

@@ -24,8 +24,8 @@ import { ProjectHealthRow } from "@/features/projects/components/project-badges"
 import { OkrProgressBar } from "./okr-progress-bar";
 import { CreateObjectiveDialog } from "./create-objective-dialog";
 import { UpdateKeyResultDialog } from "./update-key-result-dialog";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { formatCivilDate } from "@/lib/date/civil-date";
+import { reconcileOkrHealthInsightForDisplay } from "@/features/okr/lib/okr-pace-health-local";
 import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resizable-grid-columns";
 import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
 import { cn } from "@/lib/utils/cn";
@@ -47,7 +47,7 @@ const OKR_WORKFLOW_STATUS_QUERY = new Set(["planned", "in_progress", "completed"
 
 function formatDate(d: string | null | undefined) {
   if (!d) return null;
-  return format(new Date(d), "dd MMM yy", { locale: ptBR });
+  return formatCivilDate(d, "dd MMM yy") || null;
 }
 
 function OkrTableHeaderCell({
@@ -464,7 +464,7 @@ function ObjectiveRow({
         {/* Health */}
         <div className="flex w-full min-w-0 items-center justify-start overflow-hidden pr-0.5">
           <ProjectHealthRow
-            insight={objective.healthInsight}
+            insight={reconcileOkrHealthInsightForDisplay(objective.healthInsight) ?? undefined}
             tableCellLayout
             badgeWidthClass={TABLE_HEALTH_CHIP_WIDTH_CLASS}
             tableChipWidthPx={TABLE_HEALTH_CHIP_PX}
@@ -596,7 +596,7 @@ function KrSubRow({
       </div>
       <div className="flex w-full min-w-0 items-center justify-start overflow-hidden pr-0.5">
         <ProjectHealthRow
-          insight={kr.healthInsight}
+          insight={reconcileOkrHealthInsightForDisplay(kr.healthInsight) ?? undefined}
           tableCellLayout
           badgeWidthClass={TABLE_HEALTH_CHIP_WIDTH_CLASS}
           tableChipWidthPx={TABLE_HEALTH_CHIP_PX}

@@ -19,8 +19,9 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageGuide, GuideSection, GuideList } from "@/components/ui/page-guide";
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatCivilDate } from "@/lib/date/civil-date";
 import { ProjectHealthRow, PriorityBadge } from "./project-badges";
 import type { Project, WorkflowStatusInsight } from "@/lib/types/domain";
 import { WorkflowStatusRow } from "@/components/workflow-status-badge";
@@ -299,7 +300,7 @@ export function PmDashboardPage() {
                       <PriorityBadge priority={project.priority} />
                       {project.targetDate && (
                         <span className="hidden text-[11px] text-muted-foreground md:block">
-                          {format(new Date(project.targetDate), "dd MMM", { locale: ptBR })}
+                          {formatCivilDate(project.targetDate, "dd MMM")}
                         </span>
                       )}
                       <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
@@ -334,7 +335,7 @@ export function PmDashboardPage() {
                       <WorkflowStatusRow insight={m.workflowStatusInsight} />
                       {m.dueDate && (
                         <span className="text-xs tabular-nums text-muted-foreground">
-                          {format(new Date(m.dueDate), "dd MMM", { locale: ptBR })}
+                          {formatCivilDate(m.dueDate, "dd MMM")}
                         </span>
                       )}
                     </div>

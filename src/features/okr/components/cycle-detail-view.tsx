@@ -10,15 +10,16 @@ import type { OkrCycle, OkrObjective, OkrKeyResult } from "@/lib/types/domain";
 import { OkrEntityStatusRow, OkrStatusBadge } from "./okr-status-badge";
 import { OkrProgressBar, MiniProgressRing } from "./okr-progress-bar";
 import { UpdateCycleDialog } from "./update-cycle-dialog";
-import { format, differenceInDays, isAfter, isBefore } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { differenceInDays, isAfter, isBefore } from "date-fns";
+import { formatCivilDate, parseCivilDateInput, startOfLocalDay } from "@/lib/date/civil-date";
 
 type ObjectiveWithKRs = OkrObjective & { keyResults: OkrKeyResult[] };
 
 function calcTimeProgress(cycle: OkrCycle): number {
   const now = new Date();
-  const start = new Date(cycle.startDate);
-  const end = new Date(cycle.endDate);
+  const start = parseCivilDateInput(cycle.startDate);
+  const end = parseCivilDateInput(cycle.endDate);
+  if (!start || !end) return 0;
   if (isBefore(now, start)) return 0;
   if (isAfter(now, end)) return 100;
   const total = differenceInDays(end, start);
@@ -87,7 +88,11 @@ export function CycleDetailView({ cycleId }: CycleDetailViewProps) {
 
   const objectives = objectivesRes?.data ?? [];
   const timeProgress = calcTimeProgress(cycle);
-  const daysLeft = Math.max(0, differenceInDays(new Date(cycle.endDate), new Date()));
+  const endCivil = parseCivilDateInput(cycle.endDate);
+  const daysLeft =
+    endCivil != null
+      ? Math.max(0, differenceInDays(startOfLocalDay(endCivil), startOfLocalDay(new Date())))
+      : 0;
   const totalKrs = objectives.reduce((s, o) => s + o.keyResults.length, 0);
   const completedKrs = objectives.reduce(
     (s, o) => s + o.keyResults.filter((kr) => kr.status === "completed").length,
@@ -123,8 +128,8 @@ export function CycleDetailView({ cycleId }: CycleDetailViewProps) {
               <OkrStatusBadge status={cycle.status} size="md" />
             </div>
             <p className="mt-1 text-sm text-muted-foreground">
-              {format(new Date(cycle.startDate), "dd MMM yyyy", { locale: ptBR })} →{" "}
-              {format(new Date(cycle.endDate), "dd MMM yyyy", { locale: ptBR })}
+              {formatCivilDate(cycle.startDate, "dd MMM yyyy")} →{" "}
+              {formatCivilDate(cycle.endDate, "dd MMM yyyy")}
               {cycle.status === "active" && daysLeft > 0 && (
                 <>
                   {" "}

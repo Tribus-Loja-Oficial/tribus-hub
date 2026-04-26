@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { addDays, isBefore, isWithinInterval, startOfDay, format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { addDays, isBefore, isWithinInterval, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils/cn";
+import { formatCivilDate, parseCivilDateInput, startOfLocalDay } from "@/lib/date/civil-date";
 import { CheckSquare, Eye, Kanban, LayoutList, Plus, Search } from "lucide-react";
 import type { TaskColumn } from "@/lib/types/domain";
 import type { BoardTask } from "@/lib/services/task-board.service";
@@ -55,7 +55,7 @@ function boardTaskTextHaystack(
     assignee?.email ?? "",
     ...(task.labels?.map((l) => `${l.name} ${l.slug}`) ?? []),
     task.dueDate
-      ? `${format(new Date(task.dueDate), "dd/MM/yyyy", { locale: ptBR })} ${String(task.dueDate).slice(0, 10)}`
+      ? `${formatCivilDate(task.dueDate, "dd/MM/yyyy")} ${String(task.dueDate).slice(0, 10)}`
       : "sem data prazo vencimento",
     task.completedAt ? "concluída feita completa done" : "aberta pendente ativa",
     task.startDate ? String(task.startDate) : "",
@@ -68,7 +68,9 @@ function matchesDueFilter(task: BoardTask, dueFilter: string): boolean {
   const today = startOfDay(new Date());
   if (dueFilter === "none") return !task.dueDate;
   if (!task.dueDate) return dueFilter === "none";
-  const d = startOfDay(new Date(task.dueDate));
+  const civil = parseCivilDateInput(task.dueDate);
+  if (!civil) return dueFilter === "none";
+  const d = startOfLocalDay(civil);
   if (dueFilter === "overdue") {
     return isBefore(d, today) && !task.completedAt;
   }
@@ -446,9 +448,10 @@ export function TaskBoardPage() {
               )}
               {flatRows.map(({ task, columnName }) => {
                 const taskProject = projects.find((p) => p.id === task.projectId);
+                const dueCivil = task.dueDate ? parseCivilDateInput(task.dueDate) : null;
                 const overdue =
-                  task.dueDate && !task.completedAt
-                    ? isBefore(startOfDay(new Date(task.dueDate)), startOfDay(new Date()))
+                  dueCivil && !task.completedAt
+                    ? isBefore(startOfLocalDay(dueCivil), startOfDay(new Date()))
                     : false;
                 return (
                   <tr
@@ -557,9 +560,7 @@ export function TaskBoardPage() {
                         overdue ? "font-medium text-red-500" : "text-muted-foreground",
                       )}
                     >
-                      {task.dueDate
-                        ? format(new Date(task.dueDate), "dd MMM yy", { locale: ptBR })
-                        : "—"}
+                      {task.dueDate ? formatCivilDate(task.dueDate, "dd MMM yy") || "—" : "—"}
                     </td>
                     <td className="px-2 py-2.5 text-center" onClick={(e) => e.stopPropagation()}>
                       <Button

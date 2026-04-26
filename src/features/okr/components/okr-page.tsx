@@ -41,8 +41,7 @@ import { OkrProgressBar } from "./okr-progress-bar";
 import { CreateObjectiveDialog } from "./create-objective-dialog";
 import { CreateKeyResultDialog } from "./create-key-result-dialog";
 import { UpdateKeyResultDialog } from "./update-key-result-dialog";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { formatCivilDate } from "@/lib/date/civil-date";
 import {
   okrObjectiveMatchesSearchQuery,
   type ObjectiveWithKRs,
@@ -52,6 +51,7 @@ import {
   type OkrListSortField,
 } from "@/features/okr/lib/okr-okrs-list-sort";
 import { deriveOkrWorkflowStatusInsight } from "@/features/okr/lib/okr-workflow-status";
+import { reconcileOkrHealthInsightForDisplay } from "@/features/okr/lib/okr-pace-health-local";
 import { cn } from "@/lib/utils/cn";
 import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resizable-grid-columns";
 import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
@@ -95,7 +95,7 @@ const STATUS_ACCENT: Record<string, string> = {
 
 function fmtDate(d: string | null | undefined) {
   if (!d) return null;
-  return format(new Date(d), "dd MMM", { locale: ptBR });
+  return formatCivilDate(d, "dd MMM") || null;
 }
 
 function fmtMetric(kr: OkrKeyResult): string {
@@ -1031,7 +1031,7 @@ function ObjectiveBlock({
 
         <div className="flex w-full min-w-0 items-center justify-start overflow-hidden px-1 pr-0.5">
           <ProjectHealthRow
-            insight={objective.healthInsight}
+            insight={reconcileOkrHealthInsightForDisplay(objective.healthInsight) ?? undefined}
             tableCellLayout
             badgeWidthClass={TABLE_HEALTH_CHIP_WIDTH_CLASS}
             tableChipWidthPx={TABLE_HEALTH_CHIP_PX}
@@ -1242,7 +1242,7 @@ function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete
 
       <div className="flex w-full min-w-0 items-center justify-start overflow-hidden px-1 pr-0.5">
         <ProjectHealthRow
-          insight={kr.healthInsight}
+          insight={reconcileOkrHealthInsightForDisplay(kr.healthInsight) ?? undefined}
           tableCellLayout
           badgeWidthClass={TABLE_HEALTH_CHIP_WIDTH_CLASS}
           tableChipWidthPx={TABLE_HEALTH_CHIP_PX}

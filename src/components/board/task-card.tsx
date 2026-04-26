@@ -5,8 +5,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { BoardTask } from "@/lib/services/task-board.service";
 import { cn } from "@/lib/utils/cn";
 import { CalendarDays, Eye, GripVertical } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { formatCivilDate } from "@/lib/date/civil-date";
 import { Button } from "@/components/ui/button";
 
 const priorityColors: Record<string, string> = {
@@ -85,7 +84,7 @@ export function TaskCard({ task, isDragging, onOpen }: TaskCardProps) {
             {task.dueDate && (
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <CalendarDays className="h-3 w-3" />
-                <span>{format(new Date(task.dueDate), "dd MMM", { locale: ptBR })}</span>
+                <span>{formatCivilDate(task.dueDate, "dd MMM")}</span>
               </div>
             )}
             {task.labels && task.labels.length > 0 && (
