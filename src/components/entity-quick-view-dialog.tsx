@@ -84,7 +84,7 @@ export function EntityQuickViewDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
       <DialogContent className="w-[96vw] max-w-[1200px] p-0">
         <DialogHeader>
           <DialogTitle className="px-6 pt-6">
