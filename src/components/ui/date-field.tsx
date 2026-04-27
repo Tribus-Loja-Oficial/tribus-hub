@@ -36,6 +36,11 @@ const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
       if (disabled) return;
       const el = innerRef.current;
       if (!el) return;
+      const ae = document.activeElement;
+      /* Com vários type=date no mesmo modal, o primeiro pode manter foco e impedir showPicker no segundo (Chrome). */
+      if (ae instanceof HTMLInputElement && ae.type === "date" && ae !== el) {
+        ae.blur();
+      }
       try {
         el.showPicker();
       } catch {
