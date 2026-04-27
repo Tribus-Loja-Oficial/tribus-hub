@@ -53,6 +53,33 @@ function safeJsonParse(value: string | null): unknown {
   }
 }
 
+function toIsoCivilDateOrNull(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const v = value.trim();
+  if (!v) return null;
+  return v;
+}
+
+function validateKrDatesWithinObjectiveWindow(
+  krStartDate: unknown,
+  krTargetDate: unknown,
+  objectiveStartDate: unknown,
+  objectiveTargetDate: unknown,
+): string | null {
+  const krStart = toIsoCivilDateOrNull(krStartDate);
+  const krTarget = toIsoCivilDateOrNull(krTargetDate);
+  const objStart = toIsoCivilDateOrNull(objectiveStartDate);
+  const objTarget = toIsoCivilDateOrNull(objectiveTargetDate);
+
+  if (krStart && objStart && krStart < objStart) {
+    return "KR startDate cannot be earlier than objective startDate";
+  }
+  if (krTarget && objTarget && krTarget > objTarget) {
+    return "KR targetDate cannot be later than objective targetDate";
+  }
+  return null;
+}
+
 function calcCycleElapsedPercentFromRow(cycle: Record<string, unknown>): number {
   const sd = cycle.start_date as string | undefined;
   const ed = cycle.end_date as string | undefined;
@@ -530,7 +557,22 @@ export async function handleV1OkrWriteRoutes(
           activeCycle: activeCycle ? mapCycle(activeCycle) : null,
           allCycles,
           stats,
-          attentionItems: buildAttention(objectives),
+          attentionItems: buildAttention(
+            objectives as Array<{
+              id: string;
+              title: string;
+              status: string;
+              progressPercent: number;
+              keyResults: Array<{
+                id: string;
+                title: string;
+                status: string;
+                progressPercent: number;
+                confidence: number | null;
+                updatedAt: string;
+              }>;
+            }>,
+          ),
           recentUpdates,
           objectives: objectivesForDashboard,
           cyclePace: activeCycle ? buildCyclePace(stats.avgKrProgress, activeCycle) : null,
@@ -611,7 +653,41 @@ export async function handleV1OkrWriteRoutes(
         .bind(id, workspaceId)
         .all<Record<string, unknown>>();
       if (!row.results?.[0]) return json({ error: { message: "Not found" } }, 404);
-      return json({ data: mapCycle(row.results[0]) });
+      const [objectivesRes, projectsRes] = await Promise.all([
+        db
+          .prepare(
+            `SELECT * FROM okr_objectives
+             WHERE workspace_id = ? AND cycle_id = ? AND deleted_at IS NULL
+             ORDER BY sort_order ASC`,
+          )
+          .bind(workspaceId, id)
+          .all<Record<string, unknown>>(),
+        db
+          .prepare(
+            `SELECT * FROM projects
+             WHERE workspace_id = ? AND cycle_id = ? AND deleted_at IS NULL
+             ORDER BY updated_at DESC`,
+          )
+          .bind(workspaceId, id)
+          .all<Record<string, unknown>>(),
+      ]);
+      return json({
+        data: {
+          ...mapCycle(row.results[0]),
+          objectives: (objectivesRes.results ?? []).map((o) => mapObjective(o)),
+          projects:
+            (projectsRes.results ?? []).map((p) => ({
+              id: p.id,
+              title: p.title,
+              slug: p.slug,
+              status: p.status,
+              progressPercent: Number(p.progress_percent ?? 0),
+              startDate: p.start_date ?? null,
+              targetDate: p.target_date ?? null,
+              ownerUserId: p.owner_user_id ?? null,
+            })) ?? [],
+        },
+      });
     }
     if (method === "PATCH") {
       const input = parseJson<Record<string, unknown>>(body);
@@ -919,6 +995,13 @@ export async function handleV1OkrWriteRoutes(
     const o = obj.results?.[0];
     if (!o || o.workspace_id !== workspaceId)
       return json({ error: { message: "Objective not found" } }, 404);
+    const dateWindowError = validateKrDatesWithinObjectiveWindow(
+      input.startDate ?? null,
+      input.targetDate ?? null,
+      o.start_date,
+      o.target_date,
+    );
+    if (dateWindowError) return json({ error: { message: dateWindowError } }, 400);
     const base = slugifyTitle(title);
     const slug = await uniqueSlug(db, "okr_key_results", "workspace_id", workspaceId!, base);
     const id = createId();
@@ -1096,10 +1179,21 @@ export async function handleV1OkrWriteRoutes(
         .bind(c.objective_id)
         .all<Record<string, unknown>>();
       const objective = obj.results?.[0] ?? {};
+      const dateWindowError = validateKrDatesWithinObjectiveWindow(
+        startDate,
+        targetDate,
+        objective.start_date,
+        objective.target_date,
+      );
+      if (dateWindowError) return json({ error: { message: dateWindowError } }, 400);
       const cid = (cycleId as string | null) ?? (objective.cycle_id as string | null);
       const cycle = await loadOkrCycleRow(db, workspaceId!, cid);
       const w = resolveOkrKrWindow(
-        { ...c, start_date: startDate, target_date: targetDate },
+        {
+          ...c,
+          start_date: (startDate as string | null | undefined) ?? null,
+          target_date: (targetDate as string | null | undefined) ?? null,
+        },
         objective,
         cycle,
       );

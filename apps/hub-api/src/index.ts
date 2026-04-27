@@ -1,5 +1,9 @@
 import { handleV1ExtraRoutes } from "./v1-extra-routes";
-import { computePaceHealth, resolveProjectWindow } from "./pace-health";
+import {
+  buildCompletionSnapshotFromPreCompleteRow,
+  computePaceHealth,
+  resolveProjectWindow,
+} from "./pace-health";
 import { workflowStatusForProjectRow } from "./pace-workflow-status";
 import { enrichObjectiveWithHealth, handleV1OkrWriteRoutes } from "./v1-okr-write";
 import {
@@ -49,6 +53,7 @@ type ProjectRow = {
   priority: "low" | "medium" | "high" | "urgent";
   progress_percent: number;
   owner_user_id: string | null;
+  cycle_id?: string | null;
   start_date: string | null;
   target_date: string | null;
   completed_at: string | null;
@@ -136,6 +141,7 @@ type CreateProjectInput = {
   healthStatus?: "on_track" | "at_risk" | "blocked" | "off_track" | null;
   priority?: "low" | "medium" | "high" | "urgent";
   ownerUserId?: string | null;
+  cycleId?: string | null;
   startDate?: string | null;
   targetDate?: string | null;
 };
@@ -422,7 +428,9 @@ async function getProjectsByWorkspace(db: D1DatabaseLike, workspaceId: string) {
       completedAt: row.completed_at ?? null,
       healthSnapshotJson: row.health_snapshot_json ?? null,
     });
-    const workflowStatusInsight = workflowStatusForProjectRow(row as unknown as Record<string, unknown>);
+    const workflowStatusInsight = workflowStatusForProjectRow(
+      row as unknown as Record<string, unknown>,
+    );
     return {
       id: row.id,
       externalRef: row.external_ref ?? null,
@@ -438,6 +446,7 @@ async function getProjectsByWorkspace(db: D1DatabaseLike, workspaceId: string) {
       priority: row.priority,
       progressPercent: Number(row.progress_percent ?? 0),
       ownerUserId: row.owner_user_id,
+      cycleId: (row.cycle_id as string | null | undefined) ?? null,
       startDate: row.start_date,
       targetDate: row.target_date,
       completedAt: row.completed_at,
@@ -482,6 +491,21 @@ async function resolveProjectSlug(db: D1DatabaseLike, workspaceId: string, title
   return base;
 }
 
+async function assertCycleBelongsWorkspace(
+  db: D1DatabaseLike,
+  workspaceId: string,
+  cycleId: string | null | undefined,
+) {
+  if (!cycleId) return;
+  const check = await db
+    .prepare(`SELECT id FROM okr_cycles WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`)
+    .bind(cycleId, workspaceId)
+    .all<{ id: string }>();
+  if (!check.success || !check.results?.[0]) {
+    throw new Error("cycleId is invalid for this workspace");
+  }
+}
+
 function mapProjectRowToDto(row: ProjectRow) {
   return {
     id: row.id,
@@ -498,6 +522,7 @@ function mapProjectRowToDto(row: ProjectRow) {
     priority: row.priority,
     progressPercent: Number(row.progress_percent ?? 0),
     ownerUserId: row.owner_user_id,
+    cycleId: row.cycle_id ?? null,
     startDate: row.start_date,
     targetDate: row.target_date,
     completedAt: row.completed_at,
@@ -527,6 +552,13 @@ async function createProject(
   if (!["low", "medium", "high", "urgent"].includes(priority)) {
     throw new Error("priority is invalid");
   }
+  const startDate = typeof input.startDate === "string" ? input.startDate : null;
+  const targetDate = typeof input.targetDate === "string" ? input.targetDate : null;
+  const cycleId = typeof input.cycleId === "string" ? input.cycleId : null;
+  await assertCycleBelongsWorkspace(db, workspaceId, cycleId);
+  if (startDate && targetDate && startDate > targetDate) {
+    throw new Error("project startDate cannot be later than targetDate");
+  }
   if (input.healthStatus != null && input.healthStatus !== undefined) {
     if (!["on_track", "at_risk", "blocked", "off_track"].includes(input.healthStatus)) {
       throw new Error("healthStatus is invalid");
@@ -537,6 +569,24 @@ async function createProject(
   const id = createId();
   const now = new Date().toISOString();
   const healthStatus = input.healthStatus ?? null;
+  let healthSnapshotJson: string | null = null;
+  let completedAt: string | null = null;
+  if (status === "completed") {
+    const w = resolveProjectWindow({
+      start_date: startDate,
+      target_date: targetDate,
+    } as Record<string, unknown>);
+    healthSnapshotJson = buildCompletionSnapshotFromPreCompleteRow({
+      kind: "project",
+      previousStatus: "active",
+      progressPercent: 0,
+      windowStart: w.start,
+      windowEnd: w.end,
+      dateSourcePt: w.dateSourcePt,
+      existingSnapshot: null,
+    });
+    completedAt = now;
+  }
 
   const insert = await db
     .prepare(
@@ -544,9 +594,9 @@ async function createProject(
       INSERT INTO projects (
         id, workspace_id, title, slug, summary, description_json, description_text,
         status, health_status, priority, progress_percent, owner_user_id,
-        start_date, target_date, completed_at, created_by, updated_by,
+        cycle_id, start_date, target_date, completed_at, health_snapshot_json, created_by, updated_by,
         created_at, updated_at, archived_at, deleted_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     )
     .bind(
@@ -562,9 +612,11 @@ async function createProject(
       priority,
       0,
       input.ownerUserId ?? null,
-      input.startDate ?? null,
-      input.targetDate ?? null,
-      null,
+      cycleId,
+      startDate,
+      targetDate,
+      completedAt,
+      healthSnapshotJson,
       actorUserId,
       actorUserId,
       now,
@@ -582,7 +634,7 @@ async function createProject(
       SELECT
         id, workspace_id, title, slug, summary, description_json, description_text,
         status, health_status, priority, progress_percent, owner_user_id,
-        start_date, target_date, completed_at, health_snapshot_json, created_by, updated_by,
+        cycle_id, start_date, target_date, completed_at, health_snapshot_json, created_by, updated_by,
         created_at, updated_at, archived_at, deleted_at
       FROM projects
       WHERE id = ?
@@ -612,7 +664,9 @@ async function createProject(
     completedAt: p.completed_at ?? null,
     healthSnapshotJson: p.health_snapshot_json ?? null,
   });
-  const workflowStatusInsight = workflowStatusForProjectRow(p as unknown as Record<string, unknown>);
+  const workflowStatusInsight = workflowStatusForProjectRow(
+    p as unknown as Record<string, unknown>,
+  );
   return { ...dto, externalRef, healthInsight, workflowStatusInsight };
 }
 

@@ -6,8 +6,8 @@ import { paceHealthLabel, workflowStatusLabel } from "@/lib/pace-health-display"
 /** Status operacional no cadastro (ainda pesquisável). */
 const STATUS_LABELS: Record<string, string> = {
   planned: "Planejado",
-  active: "Em andamento",
-  on_hold: "Em pausa",
+  active: "Em Progresso Em andamento",
+  on_hold: "Bloqueado Em pausa",
   completed: "Concluído",
   cancelled: "Cancelado",
 };
@@ -20,10 +20,10 @@ const PRIORITY_LABELS: Record<string, string> = {
 };
 
 const MILESTONE_STATUS_LABELS: Record<string, string> = {
-  planned: "Planejado",
-  in_progress: "Em andamento",
+  pending: "Planejado",
+  in_progress: "Em Progresso Em andamento",
   completed: "Concluído",
-  cancelled: "Cancelado",
+  missed: "Bloqueado",
 };
 
 function norm(s: string) {

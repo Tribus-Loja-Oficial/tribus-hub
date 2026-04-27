@@ -4,7 +4,15 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { invalidateAfterCycleMutation } from "@/lib/query/invalidate-hub-cache";
 import Link from "next/link";
-import { ArrowLeft, CalendarRange, Target, TrendingUp, CheckCircle, Pencil } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarRange,
+  Target,
+  TrendingUp,
+  CheckCircle,
+  Pencil,
+  ChevronRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { OkrCycle, OkrObjective, OkrKeyResult } from "@/lib/types/domain";
 import { OkrEntityStatusRow, OkrStatusBadge } from "./okr-status-badge";
@@ -14,6 +22,15 @@ import { differenceInDays, isAfter, isBefore } from "date-fns";
 import { formatCivilDate, parseCivilDateInput, startOfLocalDay } from "@/lib/date/civil-date";
 
 type ObjectiveWithKRs = OkrObjective & { keyResults: OkrKeyResult[] };
+type CycleProject = {
+  id: string;
+  title: string;
+  slug?: string | null;
+  status: string;
+  progressPercent: number;
+  startDate: string | null;
+  targetDate: string | null;
+};
 
 function calcTimeProgress(cycle: OkrCycle): number {
   const now = new Date();
@@ -36,7 +53,9 @@ export function CycleDetailView({ cycleId }: CycleDetailViewProps) {
   const queryClient = useQueryClient();
   const [editCycleOpen, setEditCycleOpen] = useState(false);
 
-  const { data: cycleRes, isLoading: cycleLoading } = useQuery<{ data: OkrCycle }>({
+  const { data: cycleRes, isLoading: cycleLoading } = useQuery<{
+    data: OkrCycle & { objectives?: ObjectiveWithKRs[]; projects?: CycleProject[] };
+  }>({
     queryKey: ["okr-cycle", cycleId],
     queryFn: () => fetch(`/api/okr/cycles/${cycleId}`).then((r) => r.json()),
   });
@@ -86,7 +105,9 @@ export function CycleDetailView({ cycleId }: CycleDetailViewProps) {
     );
   }
 
-  const objectives = objectivesRes?.data ?? [];
+  const objectives =
+    (cycleRes?.data?.objectives as ObjectiveWithKRs[] | undefined) ?? objectivesRes?.data ?? [];
+  const projects = cycleRes?.data?.projects ?? [];
   const timeProgress = calcTimeProgress(cycle);
   const endCivil = parseCivilDateInput(cycle.endDate);
   const daysLeft =
@@ -278,6 +299,51 @@ export function CycleDetailView({ cycleId }: CycleDetailViewProps) {
                     {Math.round(obj.progressPercent)}%
                   </span>
                 </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Projects */}
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium">Projetos do ciclo</span>
+            <span className="text-xs text-muted-foreground">({projects.length})</span>
+          </div>
+          <Link
+            href="/projects/list"
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Ver todos
+          </Link>
+        </div>
+        {projects.length === 0 ? (
+          <div className="py-10 text-center">
+            <p className="text-sm text-muted-foreground">Nenhum projeto vinculado a este ciclo.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-border">
+            {projects.map((p) => (
+              <Link
+                key={p.id}
+                href={`/projects/${encodeURIComponent(p.slug || p.id)}`}
+                className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/20"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-foreground">{p.title}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {p.startDate && p.targetDate
+                      ? `${formatCivilDate(p.startDate, "dd MMM")} → ${formatCivilDate(p.targetDate, "dd MMM")}`
+                      : "Sem janela própria"}
+                  </p>
+                </div>
+                <span className="text-xs tabular-nums text-muted-foreground">
+                  {Math.round(Number(p.progressPercent ?? 0))}%
+                </span>
+                <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
               </Link>
             ))}
           </div>

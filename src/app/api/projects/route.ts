@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/permissions";
 import * as auditService from "@/lib/services/audit.service";
 import { hubApiFetch } from "@/lib/integrations/hub-api/client";
@@ -19,6 +20,7 @@ type HubApiCreatedProject = {
   priority: string;
   progressPercent: number;
   ownerUserId: string | null;
+  cycleId?: string | null;
   startDate: string | null;
   targetDate: string | null;
   completedAt: string | null;
@@ -64,6 +66,7 @@ export async function POST(request: NextRequest) {
         healthStatus: input.healthStatus ?? null,
         priority: input.priority,
         ownerUserId: input.ownerUserId ?? null,
+        cycleId: input.cycleId ?? null,
         startDate: input.startDate ?? null,
         targetDate: input.targetDate ?? null,
       },

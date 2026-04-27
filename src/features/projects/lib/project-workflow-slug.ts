@@ -7,11 +7,15 @@ export function projectWorkflowSlug(p: {
 }): WorkflowStatusSlug {
   return (
     p.workflowStatusInsight?.slug ??
-    (p.status === "completed"
-      ? "completed"
-      : p.status === "planned" || p.status === "on_hold" || p.status === "cancelled"
-        ? "planned"
-        : "in_progress")
+    (p.status === "cancelled"
+      ? "cancelled"
+      : p.status === "on_hold"
+        ? "blocked"
+        : p.status === "completed"
+          ? "successful"
+          : p.status === "planned"
+            ? "planned"
+            : "in_progress")
   );
 }
 
@@ -20,9 +24,9 @@ export function normalizeProjectListStatusQueryParam(raw: string): string {
   const map: Record<string, string> = {
     planned: "planned",
     active: "in_progress",
-    on_hold: "planned",
-    completed: "completed",
-    cancelled: "planned",
+    on_hold: "blocked",
+    completed: "successful",
+    cancelled: "cancelled",
     in_progress: "in_progress",
   };
   return map[raw] ?? raw;

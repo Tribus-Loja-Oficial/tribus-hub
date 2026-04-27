@@ -9,7 +9,7 @@ import { DateField } from "@/components/ui/date-field";
 import { nativeSelectClassName } from "@/components/ui/form-control-classes";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { Project } from "@/lib/types/domain";
+import type { OkrCycle, Project } from "@/lib/types/domain";
 
 type MemberRow = { id: string; name: string; email: string };
 
@@ -25,6 +25,7 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
   const [summary, setSummary] = useState("");
   const [status, setStatus] = useState("planned");
   const [priority, setPriority] = useState("medium");
+  const [cycleId, setCycleId] = useState("");
   const [ownerUserId, setOwnerUserId] = useState("");
   const [startDate, setStartDate] = useState("");
   const [targetDate, setTargetDate] = useState("");
@@ -33,6 +34,12 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
     queryKey: ["workspace-members"],
     queryFn: () => fetch("/api/workspace/members").then((r) => r.json()),
     enabled: open,
+  });
+  const { data: cyclesRes } = useQuery<{ data: OkrCycle[] }>({
+    queryKey: ["okr-cycles"],
+    queryFn: () => fetch("/api/okr/cycles").then((r) => r.json()),
+    enabled: open,
+    staleTime: 60_000,
   });
 
   const mutation = useMutation({
@@ -60,6 +67,7 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
     setSummary(project.summary ?? "");
     setStatus(project.status);
     setPriority(project.priority);
+    setCycleId(project.cycleId ?? "");
     setOwnerUserId(project.ownerUserId ?? "");
     setStartDate(project.startDate ?? "");
     setTargetDate(project.targetDate ?? "");
@@ -85,6 +93,7 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
               summary: summary.trim() || undefined,
               status,
               priority,
+              cycleId: cycleId || undefined,
               ownerUserId: ownerUserId || undefined,
               startDate: startDate || undefined,
               targetDate: targetDate || undefined,
@@ -113,8 +122,9 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
               <option value="cancelled">Cancelado</option>
             </select>
             <p className="text-[11px] text-muted-foreground">
-              Na lista, o status exibido é o unificado (Planejado / Em Progresso / Concluído),
-              calculado a partir destes valores e das datas.
+              Na lista, o status exibido é o operacional (Planejado, Em Progresso, Bloqueado,
+              Bem/Parcialmente bem sucedido, Falhou ou Cancelado), calculado a partir destes
+              valores, progresso e datas.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -129,6 +139,21 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
                 <option value="medium">Média</option>
                 <option value="high">Alta</option>
                 <option value="urgent">Urgente</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Ciclo</Label>
+              <select
+                className={nativeSelectClassName}
+                value={cycleId}
+                onChange={(e) => setCycleId(e.target.value)}
+              >
+                <option value="">Sem ciclo</option>
+                {(cyclesRes?.data ?? []).map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.title}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="space-y-1.5">

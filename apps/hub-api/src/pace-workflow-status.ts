@@ -17,7 +17,15 @@ import {
 } from "./pace-civil-dates";
 import { effectiveOkrStatusForPaceAndWorkflow } from "./okr-pace-integrity";
 
-export type WorkflowStatusSlug = "planned" | "in_progress" | "completed";
+export type WorkflowStatusSlug =
+  | "planned"
+  | "in_progress"
+  | "blocked"
+  | "completed"
+  | "successful"
+  | "partially_successful"
+  | "failed"
+  | "cancelled";
 
 export type WorkflowStatusInsightDto = {
   slug: WorkflowStatusSlug;
@@ -40,14 +48,16 @@ function isStrictlyAfterEnd(windowEnd: string | null, now: Date): boolean {
 }
 
 function isDbCompleted(kind: PaceHealthKind, dbStatus: string): boolean {
-  if (kind === "project") return dbStatus === "completed";
-  if (kind === "milestone") return dbStatus === "completed";
+  if (kind === "project" || kind === "milestone") return false;
   return dbStatus === "completed";
 }
 
 export function computeWorkflowStatus(input: {
   kind: PaceHealthKind;
   dbStatus: string;
+  progressPercent?: number;
+  /** Projects: permite bloqueio manual via health_status = blocked. */
+  isManuallyBlocked?: boolean;
   /** OKR: draft uses Planejado + explanation */
   isDraft?: boolean;
   windowStart: string | null;
@@ -57,6 +67,7 @@ export function computeWorkflowStatus(input: {
 }): WorkflowStatusInsightDto {
   const now = input.now ?? new Date();
   const { kind, dbStatus } = input;
+  const progressPercent = Number(input.progressPercent ?? 0);
 
   if (isDbCompleted(kind, dbStatus)) {
     return {
@@ -86,44 +97,42 @@ export function computeWorkflowStatus(input: {
     };
   }
 
-  if (kind === "project") {
+  if (kind === "project" || kind === "milestone") {
+    if (dbStatus === "completed") {
+      return {
+        slug: "successful",
+        labelPt: "Bem Sucedido",
+        dateSourcePt: input.dateSourcePt,
+        windowStart: input.windowStart,
+        windowEnd: input.windowEnd,
+        locked: true,
+        explanationPt:
+          `${kind === "project" ? "Projeto" : "Marco"} marcado como concluido no cadastro. ` +
+          'No fluxo operacional de Projetos/Marcos, esse encerramento equivale a "Bem Sucedido".',
+      };
+    }
     if (dbStatus === "cancelled") {
       return {
-        slug: "planned",
-        labelPt: "Planejado",
+        slug: "cancelled",
+        labelPt: "Cancelado",
         dateSourcePt: input.dateSourcePt,
         windowStart: input.windowStart,
         windowEnd: input.windowEnd,
-        locked: false,
-        explanationPt:
-          'Projeto cancelado no cadastro. Na coluna de status unificado ele aparece como "Planejado"; o cancelamento continua registrado nos detalhes do projeto.',
+        locked: true,
+        explanationPt: `${kind === "project" ? "Projeto" : "Marco"} cancelado manualmente no cadastro. O status operacional permanece "Cancelado".`,
       };
     }
-    if (dbStatus === "on_hold") {
+    if (dbStatus === "blocked" || dbStatus === "on_hold" || input.isManuallyBlocked) {
       return {
-        slug: "planned",
-        labelPt: "Planejado",
+        slug: "blocked",
+        labelPt: "Bloqueado",
         dateSourcePt: input.dateSourcePt,
         windowStart: input.windowStart,
         windowEnd: input.windowEnd,
         locked: false,
-        explanationPt:
-          'Projeto em pausa no cadastro. O status unificado fica em "Planejado" até o projeto voltar a ficar ativo.',
+        explanationPt: `${kind === "project" ? "Projeto" : "Marco"} bloqueado manualmente. O status operacional fica em "Bloqueado" até desbloquear.`,
       };
     }
-  }
-
-  if (kind === "milestone" && dbStatus === "missed") {
-    return {
-      slug: "in_progress",
-      labelPt: "Em Progresso",
-      dateSourcePt: input.dateSourcePt,
-      windowStart: input.windowStart,
-      windowEnd: input.windowEnd,
-      locked: false,
-      explanationPt:
-        'Marco marcado como atrasado/perdido no cadastro. O status unificado segue "Em Progresso" até ser marcado como concluído (aí vai para "Concluído").',
-    };
   }
 
   if (!input.windowStart || !input.windowEnd) {
@@ -151,6 +160,40 @@ export function computeWorkflowStatus(input: {
   }
 
   const afterEnd = isStrictlyAfterEnd(input.windowEnd, now);
+  if (afterEnd && (kind === "project" || kind === "milestone")) {
+    if (progressPercent >= 100) {
+      return {
+        slug: "successful",
+        labelPt: "Bem Sucedido",
+        dateSourcePt: input.dateSourcePt,
+        windowStart: input.windowStart,
+        windowEnd: input.windowEnd,
+        locked: true,
+        explanationPt: `${input.dateSourcePt} O prazo encerrou e o progresso chegou a ${Math.round(progressPercent)}% (>=100%). Resultado final: "Bem Sucedido".`,
+      };
+    }
+    if (progressPercent >= 80) {
+      return {
+        slug: "partially_successful",
+        labelPt: "Parcialmente Bem Sucedido",
+        dateSourcePt: input.dateSourcePt,
+        windowStart: input.windowStart,
+        windowEnd: input.windowEnd,
+        locked: true,
+        explanationPt: `${input.dateSourcePt} O prazo encerrou com ${Math.round(progressPercent)}% (>=80% e <100%). Resultado final: "Parcialmente Bem Sucedido".`,
+      };
+    }
+    return {
+      slug: "failed",
+      labelPt: "Falhou",
+      dateSourcePt: input.dateSourcePt,
+      windowStart: input.windowStart,
+      windowEnd: input.windowEnd,
+      locked: true,
+      explanationPt: `${input.dateSourcePt} O prazo encerrou com ${Math.round(progressPercent)}% (<80%). Resultado final: "Falhou".`,
+    };
+  }
+
   return {
     slug: "in_progress",
     labelPt: "Em Progresso",
@@ -204,6 +247,9 @@ export function workflowStatusForProjectRow(raw: Record<string, unknown>) {
   return computeWorkflowStatus({
     kind: "project",
     dbStatus: String(raw.status ?? "planned"),
+    progressPercent: Number(raw.progress_percent ?? 0),
+    isManuallyBlocked:
+      String(raw.health_status ?? "") === "blocked" || String(raw.status ?? "") === "on_hold",
     windowStart: w.start,
     windowEnd: w.end,
     dateSourcePt: w.dateSourcePt,
@@ -213,11 +259,16 @@ export function workflowStatusForProjectRow(raw: Record<string, unknown>) {
 export function workflowStatusForMilestoneRow(
   milestone: Record<string, unknown>,
   projectRaw: Record<string, unknown>,
+  taskProgressPercent?: number,
 ) {
   const w = resolveMilestoneWindow(milestone, projectRaw);
+  const progress =
+    String(milestone.status ?? "") === "completed" ? 100 : Number(taskProgressPercent ?? 0);
   return computeWorkflowStatus({
     kind: "milestone",
     dbStatus: String(milestone.status ?? "pending"),
+    progressPercent: Math.max(0, Math.min(100, progress)),
+    isManuallyBlocked: String(milestone.status ?? "") === "missed",
     windowStart: w.start,
     windowEnd: w.end,
     dateSourcePt: w.dateSourcePt,

@@ -14,6 +14,7 @@ const migrations = [
   { id: "0008_external_refs_simple_sequence", file: "./migrations/0008_external_refs_simple_sequence.sql" },
   { id: "0009_health_snapshot_json", file: "./migrations/0009_health_snapshot_json.sql" },
   { id: "0010_okr_completed_progress_invariant", file: "./migrations/0010_okr_completed_progress_invariant.sql" },
+  { id: "0011_projects_cycle_id", file: "./migrations/0011_projects_cycle_id.sql" },
 ];
 
 function run(cmd) {

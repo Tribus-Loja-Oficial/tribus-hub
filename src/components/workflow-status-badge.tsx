@@ -13,9 +13,14 @@ const ring = "ring-1 ring-inset ring-black/[0.04] dark:ring-white/[0.06]";
 const SLUG_CLASS: Record<WorkflowStatusSlug, string> = {
   planned: `border-border/75 bg-muted/65 text-muted-foreground dark:bg-muted/35 dark:text-muted-foreground ${ring}`,
   in_progress: `border-primary/22 bg-primary/[0.08] text-primary dark:border-primary/28 dark:bg-primary/14 dark:text-blue-100 ${ring}`,
+  blocked: `border-amber-600/24 bg-amber-500/[0.10] text-amber-900/95 dark:border-amber-500/30 dark:bg-amber-500/14 dark:text-amber-100 ${ring}`,
   completed: `border-emerald-600/22 bg-emerald-600/[0.08] text-emerald-900/90 dark:border-emerald-500/25 dark:bg-emerald-500/12 dark:text-emerald-100 ${ring}`,
   achieved: `border-emerald-600/24 bg-emerald-500/[0.10] text-emerald-900/95 dark:border-emerald-500/30 dark:bg-emerald-500/14 dark:text-emerald-100 ${ring}`,
   not_achieved: `border-rose-600/24 bg-rose-500/[0.10] text-rose-900/95 dark:border-rose-500/30 dark:bg-rose-500/14 dark:text-rose-100 ${ring}`,
+  successful: `border-emerald-600/24 bg-emerald-500/[0.10] text-emerald-900/95 dark:border-emerald-500/30 dark:bg-emerald-500/14 dark:text-emerald-100 ${ring}`,
+  partially_successful: `border-sky-600/24 bg-sky-500/[0.10] text-sky-900/95 dark:border-sky-500/30 dark:bg-sky-500/14 dark:text-sky-100 ${ring}`,
+  failed: `border-rose-600/24 bg-rose-500/[0.10] text-rose-900/95 dark:border-rose-500/30 dark:bg-rose-500/14 dark:text-rose-100 ${ring}`,
+  cancelled: `border-zinc-500/24 bg-zinc-500/[0.10] text-zinc-900/95 dark:border-zinc-400/30 dark:bg-zinc-500/14 dark:text-zinc-100 ${ring}`,
 };
 
 function fmtWindowDate(raw: string | null | undefined): string {
@@ -28,9 +33,14 @@ function workflowStatusTooltip(insight: WorkflowStatusInsight): string {
   const slugLine: Record<WorkflowStatusSlug, string> = {
     planned: "Esta janela ainda nao começou.",
     in_progress: "Estamos dentro da janela planejada.",
+    blocked: "O andamento esta bloqueado manualmente.",
     completed: "A janela ja foi concluida/encerrada.",
     achieved: "A data final passou e a meta foi atingida.",
     not_achieved: "A data final passou e a meta nao foi atingida.",
+    successful: "A data final passou e o resultado foi bem sucedido.",
+    partially_successful: "A data final passou com sucesso parcial.",
+    failed: "A data final passou e o resultado falhou.",
+    cancelled: "O item foi cancelado manualmente.",
   };
 
   const bullets = [

@@ -141,6 +141,39 @@ function safeJsonParse(value: string | null): unknown {
   }
 }
 
+function normalizeIsoCivilDate(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const v = value.trim();
+  return v.length > 0 ? v : null;
+}
+
+function validateProjectDateRange(startDate: unknown, targetDate: unknown): string | null {
+  const start = normalizeIsoCivilDate(startDate);
+  const target = normalizeIsoCivilDate(targetDate);
+  if (start && target && start > target) {
+    return "project startDate cannot be later than targetDate";
+  }
+  return null;
+}
+
+function validateMilestoneDueWithinProjectRange(
+  dueDate: unknown,
+  projectStartDate: unknown,
+  projectTargetDate: unknown,
+): string | null {
+  const due = normalizeIsoCivilDate(dueDate);
+  if (!due) return null;
+  const pStart = normalizeIsoCivilDate(projectStartDate);
+  const pTarget = normalizeIsoCivilDate(projectTargetDate);
+  if (pStart && due < pStart) {
+    return "milestone dueDate cannot be earlier than project startDate";
+  }
+  if (pTarget && due > pTarget) {
+    return "milestone dueDate cannot be later than project targetDate";
+  }
+  return null;
+}
+
 async function getExternalRefMap(
   db: D1DatabaseLike,
   workspaceId: string,
@@ -494,7 +527,7 @@ export async function handleV1ExtraRoutes(
           const raw = m as Record<string, unknown>;
           const pid = m.project_id as string;
           const projectRaw = projectRowById.get(pid) ?? {};
-          const workflowStatusInsight = workflowStatusForMilestoneRow(raw, projectRaw);
+          const workflowStatusInsight = workflowStatusForMilestoneRow(raw, projectRaw, 0);
           return {
             ...mapMilestoneCamel(m),
             projectTitle: titles.get(pid) ?? "",
@@ -523,6 +556,123 @@ export async function handleV1ExtraRoutes(
       return json({ data: { count: Number(row.results?.[0]?.c ?? 0) } });
     } catch (e) {
       const message = e instanceof Error ? e.message : "overdue count failed";
+      return json({ error: { message } }, 500);
+    }
+  }
+
+  // --- GET /v1/workspace/cycles ---
+  if (method === "GET" && pathname === "/v1/workspace/cycles") {
+    const err = needWs();
+    if (err) return err;
+    try {
+      const cyclesRes = await db
+        .prepare(
+          `SELECT c.*, er.external_ref
+           FROM okr_cycles c
+           LEFT JOIN entity_external_refs er
+             ON er.workspace_id = c.workspace_id
+            AND er.entity_type = 'okr_cycle'
+            AND er.entity_id = c.id
+           WHERE c.workspace_id = ? AND c.deleted_at IS NULL
+           ORDER BY c.start_date DESC`,
+        )
+        .bind(workspaceId)
+        .all<Record<string, unknown>>();
+      if (!cyclesRes.success) throw new Error(cyclesRes.error ?? "cycles");
+      const cycles = cyclesRes.results ?? [];
+      if (cycles.length === 0) return json({ data: [] });
+      const ids = cycles.map((c) => String(c.id));
+      const ph = ids.map(() => "?").join(", ");
+      const [objectivesRes, projectsRes] = await Promise.all([
+        db
+          .prepare(
+            `SELECT id, cycle_id, title, status, progress_percent, start_date, target_date
+             FROM okr_objectives
+             WHERE workspace_id = ? AND deleted_at IS NULL AND cycle_id IN (${ph})
+             ORDER BY sort_order ASC`,
+          )
+          .bind(workspaceId, ...ids)
+          .all<Record<string, unknown>>(),
+        db
+          .prepare(
+            `SELECT id, cycle_id, title, slug, status, health_status, progress_percent, start_date, target_date, completed_at, health_snapshot_json
+             FROM projects
+             WHERE workspace_id = ? AND deleted_at IS NULL AND cycle_id IN (${ph})
+             ORDER BY updated_at DESC`,
+          )
+          .bind(workspaceId, ...ids)
+          .all<Record<string, unknown>>(),
+      ]);
+      const objectivesByCycle = new Map<string, Record<string, unknown>[]>();
+      for (const o of objectivesRes.results ?? []) {
+        const cid = String(o.cycle_id ?? "");
+        if (!cid) continue;
+        const list = objectivesByCycle.get(cid) ?? [];
+        list.push(o);
+        objectivesByCycle.set(cid, list);
+      }
+      const projectsByCycle = new Map<string, Record<string, unknown>[]>();
+      for (const p of projectsRes.results ?? []) {
+        const cid = String(p.cycle_id ?? "");
+        if (!cid) continue;
+        const list = projectsByCycle.get(cid) ?? [];
+        list.push(p);
+        projectsByCycle.set(cid, list);
+      }
+      return json({
+        data: cycles.map((c) => {
+          const cid = String(c.id);
+          const objectives = objectivesByCycle.get(cid) ?? [];
+          const projects = projectsByCycle.get(cid) ?? [];
+          return {
+            id: c.id,
+            externalRef: (c.external_ref as string | null | undefined) ?? null,
+            workspaceId: c.workspace_id,
+            title: c.title,
+            slug: c.slug,
+            description: c.description ?? null,
+            startDate: c.start_date,
+            endDate: c.end_date,
+            status: c.status,
+            createdBy: c.created_by,
+            updatedBy: c.updated_by,
+            createdAt: c.created_at,
+            updatedAt: c.updated_at,
+            archivedAt: c.archived_at ?? null,
+            deletedAt: c.deleted_at ?? null,
+            summary: {
+              objectiveCount: objectives.length,
+              objectiveCompleted: objectives.filter((o) => String(o.status) === "completed").length,
+              projectCount: projects.length,
+              projectBlocked: projects.filter(
+                (p) =>
+                  String(p.status) === "on_hold" || String(p.health_status ?? "") === "blocked",
+              ).length,
+            },
+            objectives: objectives.map((o) => ({
+              id: o.id,
+              title: o.title,
+              status: o.status,
+              progressPercent: Number(o.progress_percent ?? 0),
+              startDate: o.start_date ?? null,
+              targetDate: o.target_date ?? null,
+            })),
+            projects: projects.map((p) => ({
+              id: p.id,
+              title: p.title,
+              slug: p.slug,
+              status: p.status,
+              progressPercent: Number(p.progress_percent ?? 0),
+              startDate: p.start_date ?? null,
+              targetDate: p.target_date ?? null,
+              healthInsight: healthInsightForProjectRow(p),
+              workflowStatusInsight: workflowStatusForProjectRow(p),
+            })),
+          };
+        }),
+      });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "workspace cycles failed";
       return json({ error: { message } }, 500);
     }
   }
@@ -641,7 +791,7 @@ export async function handleV1ExtraRoutes(
               taskStats: { total: mTasks.length, done: mDone },
               taskProgressPercent: pct,
               healthInsight: healthInsightForMilestoneRow(milestone, raw, pct),
-              workflowStatusInsight: workflowStatusForMilestoneRow(milestone, raw),
+              workflowStatusInsight: workflowStatusForMilestoneRow(milestone, raw, pct),
             };
           }),
           externalRef: refMap.get(`project:${id}`) ?? null,
@@ -832,6 +982,25 @@ export async function handleV1ExtraRoutes(
         const cur = curRes.results[0];
         const prevStatus = String(cur.status ?? "planned");
         const nextStatus = input.status !== undefined ? String(input.status) : prevStatus;
+        const nextStartDate = input.startDate !== undefined ? input.startDate : cur.start_date;
+        const nextTargetDate = input.targetDate !== undefined ? input.targetDate : cur.target_date;
+        const dateError = validateProjectDateRange(nextStartDate, nextTargetDate);
+        if (dateError) return json({ error: { message: dateError } }, 400);
+        const nextCycleId =
+          input.cycleId !== undefined
+            ? (input.cycleId as string | null)
+            : (cur.cycle_id as string | null);
+        if (nextCycleId) {
+          const cycleCheck = await db
+            .prepare(
+              `SELECT id FROM okr_cycles WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL`,
+            )
+            .bind(nextCycleId, workspaceId)
+            .all<{ id: string }>();
+          if (!cycleCheck.success || !cycleCheck.results?.[0]) {
+            return json({ error: { message: "cycleId is invalid for this workspace" } }, 400);
+          }
+        }
         const nowIso = new Date().toISOString();
         const sets: string[] = [];
         const args: unknown[] = [];
@@ -842,6 +1011,7 @@ export async function handleV1ExtraRoutes(
           ["healthStatus", "health_status"],
           ["priority", "priority"],
           ["ownerUserId", "owner_user_id"],
+          ["cycleId", "cycle_id"],
           ["startDate", "start_date"],
           ["targetDate", "target_date"],
         ];
@@ -989,7 +1159,7 @@ export async function handleV1ExtraRoutes(
           ...mapMilestoneCamel(mm),
           taskProgressPercent: pct,
           healthInsight: healthInsightForMilestoneRow(mm, projectRaw, pct),
-          workflowStatusInsight: workflowStatusForMilestoneRow(mm, projectRaw),
+          workflowStatusInsight: workflowStatusForMilestoneRow(mm, projectRaw, pct),
         };
       });
       const projectRefMap = await getExternalRefMap(db, workspaceId, "project", [projectId]);
@@ -1104,7 +1274,7 @@ export async function handleV1ExtraRoutes(
               ...mapMilestoneCamel(mm),
               taskProgressPercent: pct,
               healthInsight: healthInsightForMilestoneRow(mm, projectRaw, pct),
-              workflowStatusInsight: workflowStatusForMilestoneRow(mm, projectRaw),
+              workflowStatusInsight: workflowStatusForMilestoneRow(mm, projectRaw, pct),
             };
           }),
         });
@@ -1113,22 +1283,59 @@ export async function handleV1ExtraRoutes(
         const aerr = needActor();
         if (aerr) return aerr;
         const input = parseJson<Record<string, unknown>>(body);
+        const projFull = await db
+          .prepare(`SELECT * FROM projects WHERE id = ? AND workspace_id = ?`)
+          .bind(projectId, workspaceId)
+          .all<Record<string, unknown>>();
+        const projectRaw = projFull.results?.[0] ?? {};
+        const dueDate = input.dueDate ?? null;
+        const dueError = validateMilestoneDueWithinProjectRange(
+          dueDate,
+          projectRaw.start_date,
+          projectRaw.target_date,
+        );
+        if (dueError) return json({ error: { message: dueError } }, 400);
         const id = createId();
         const now = new Date().toISOString();
+        const status = String(input.status ?? "pending");
+        const w = resolveMilestoneWindow(
+          { due_date: dueDate as string | null },
+          {
+            start_date: projectRaw.start_date as string | null,
+            target_date: projectRaw.target_date as string | null,
+            title: projectRaw.title as string | null,
+          },
+        );
+        let healthSnap: string | null = null;
+        let completedAt: string | null = null;
+        if (status === "completed") {
+          const snap = buildCompletionSnapshotFromPreCompleteRow({
+            kind: "milestone",
+            previousStatus: "pending",
+            progressPercent: 100,
+            windowStart: w.start,
+            windowEnd: w.end,
+            dateSourcePt: w.dateSourcePt,
+            existingSnapshot: null,
+          });
+          healthSnap = snap;
+          completedAt = now;
+        }
         const ins = await db
           .prepare(
-            `INSERT INTO milestones (id, project_id, title, description, status, priority, due_date, completed_at, owner_user_id, sort_order, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO milestones (id, project_id, title, description, status, priority, due_date, completed_at, health_snapshot_json, owner_user_id, sort_order, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           )
           .bind(
             id,
             projectId,
             input.title,
             input.description ?? null,
-            input.status ?? "pending",
+            status,
             input.priority ?? "medium",
-            input.dueDate ?? null,
-            null,
+            dueDate,
+            completedAt,
+            healthSnap,
             input.ownerUserId ?? null,
             input.sortOrder ?? 0,
             now,
@@ -1141,11 +1348,6 @@ export async function handleV1ExtraRoutes(
           .bind(id)
           .all<Record<string, unknown>>();
         const mm = row.results?.[0] ?? {};
-        const projFull = await db
-          .prepare(`SELECT * FROM projects WHERE id = ? AND workspace_id = ?`)
-          .bind(projectId, workspaceId)
-          .all<Record<string, unknown>>();
-        const projectRaw = projFull.results?.[0] ?? {};
         const progMap = await milestoneTaskProgressPercentByProject(db, projectId);
         const pct = progMap.get(String(id)) ?? 0;
         const externalRef = await ensureExternalRef(db, {
@@ -1160,7 +1362,7 @@ export async function handleV1ExtraRoutes(
               ...mapMilestoneCamel(mm),
               taskProgressPercent: pct,
               healthInsight: healthInsightForMilestoneRow(mm, projectRaw, pct),
-              workflowStatusInsight: workflowStatusForMilestoneRow(mm, projectRaw),
+              workflowStatusInsight: workflowStatusForMilestoneRow(mm, projectRaw, pct),
               externalRef,
             },
           },
@@ -1207,7 +1409,7 @@ export async function handleV1ExtraRoutes(
             ...mapMilestoneCamel(mm),
             taskProgressPercent: pct,
             healthInsight: healthInsightForMilestoneRow(mm, projectRaw, pct),
-            workflowStatusInsight: workflowStatusForMilestoneRow(mm, projectRaw),
+            workflowStatusInsight: workflowStatusForMilestoneRow(mm, projectRaw, pct),
             externalRef: mref.get(milestoneId) ?? null,
           },
         });
@@ -1229,8 +1431,14 @@ export async function handleV1ExtraRoutes(
           .all<Record<string, unknown>>();
         const projectRaw = projFull.results?.[0] ?? {};
         const prevStatus = String(cur.status ?? "pending");
-        const nextStatus =
-          input.status !== undefined ? String(input.status) : prevStatus;
+        const nextStatus = input.status !== undefined ? String(input.status) : prevStatus;
+        const nextDueDate = input.dueDate !== undefined ? input.dueDate : cur.due_date;
+        const dueError = validateMilestoneDueWithinProjectRange(
+          nextDueDate,
+          projectRaw.start_date,
+          projectRaw.target_date,
+        );
+        if (dueError) return json({ error: { message: dueError } }, 400);
         const nowIso = new Date().toISOString();
         const sets: string[] = [];
         const args: unknown[] = [];
@@ -1303,7 +1511,7 @@ export async function handleV1ExtraRoutes(
             ...mapMilestoneCamel(mm2),
             taskProgressPercent: pct,
             healthInsight: healthInsightForMilestoneRow(mm2, projectRaw, pct),
-            workflowStatusInsight: workflowStatusForMilestoneRow(mm2, projectRaw),
+            workflowStatusInsight: workflowStatusForMilestoneRow(mm2, projectRaw, pct),
           },
         });
       }
@@ -1510,6 +1718,7 @@ function mapProjectRowCamel(raw: Record<string, unknown>) {
     priority: raw.priority,
     progressPercent: Number(raw.progress_percent ?? 0),
     ownerUserId: raw.owner_user_id,
+    cycleId: (raw.cycle_id as string | null | undefined) ?? null,
     startDate: raw.start_date,
     targetDate: raw.target_date,
     completedAt: raw.completed_at,

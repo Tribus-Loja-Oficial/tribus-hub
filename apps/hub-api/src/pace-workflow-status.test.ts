@@ -13,14 +13,15 @@ describe("computeWorkflowStatus", () => {
   const base = {
     kind: "project" as const,
     dbStatus: "active",
+    progressPercent: 50,
     windowStart: "2026-01-01",
     windowEnd: "2026-12-31",
     dateSourcePt: "Projeto.",
   };
 
-  it("returns completed when dbStatus is completed", () => {
+  it("returns successful when project dbStatus is completed", () => {
     const result = computeWorkflowStatus({ ...base, dbStatus: "completed" });
-    expect(result.slug).toBe("completed");
+    expect(result.slug).toBe("successful");
     expect(result.locked).toBe(true);
   });
 
@@ -29,14 +30,14 @@ describe("computeWorkflowStatus", () => {
     expect(result.slug).toBe("planned");
   });
 
-  it("returns planned for cancelled project", () => {
+  it("returns cancelled for cancelled project", () => {
     const result = computeWorkflowStatus({ ...base, dbStatus: "cancelled" });
-    expect(result.slug).toBe("planned");
+    expect(result.slug).toBe("cancelled");
   });
 
-  it("returns planned for on_hold project", () => {
+  it("returns blocked for on_hold project", () => {
     const result = computeWorkflowStatus({ ...base, dbStatus: "on_hold" });
-    expect(result.slug).toBe("planned");
+    expect(result.slug).toBe("blocked");
   });
 
   it("returns planned when no window", () => {
@@ -63,23 +64,31 @@ describe("computeWorkflowStatus", () => {
     expect(result.locked).toBe(false);
   });
 
-  it("returns in_progress when past end but not completed", () => {
+  it("returns successful when past end and progress is 100%", () => {
     const result = computeWorkflowStatus({
       ...base,
+      progressPercent: 100,
       now: new Date("2027-01-15"),
     });
-    expect(result.slug).toBe("in_progress");
-    expect(result.explanationPt).toMatch(/passou/i);
+    expect(result.slug).toBe("successful");
   });
 
-  it("returns in_progress for missed milestone", () => {
+  it("returns partially_successful when past end and progress >=80", () => {
     const result = computeWorkflowStatus({
       ...base,
-      kind: "milestone",
-      dbStatus: "missed",
-      now: new Date("2026-06-01"),
+      progressPercent: 85,
+      now: new Date("2027-01-15"),
     });
-    expect(result.slug).toBe("in_progress");
+    expect(result.slug).toBe("partially_successful");
+  });
+
+  it("returns failed when past end and progress <80", () => {
+    const result = computeWorkflowStatus({
+      ...base,
+      progressPercent: 70,
+      now: new Date("2027-01-15"),
+    });
+    expect(result.slug).toBe("failed");
   });
 });
 
@@ -158,35 +167,43 @@ describe("workflowStatusForProjectRow", () => {
     expect(result.slug).toBe("planned");
   });
 
-  it("returns completed for completed project", () => {
+  it("returns blocked for on_hold project", () => {
     const result = workflowStatusForProjectRow({
-      status: "completed",
+      status: "on_hold",
       start_date: "2026-01-01",
       target_date: "2026-06-30",
     });
-    expect(result.slug).toBe("completed");
+    expect(result.slug).toBe("blocked");
+  });
+
+  it("returns successful for ended project with 100%", () => {
+    const result = workflowStatusForProjectRow({
+      status: "active",
+      progress_percent: 100,
+      start_date: "2020-01-01",
+      target_date: "2020-06-30",
+    });
+    expect(result.slug).toBe("successful");
   });
 });
 
 // ─── workflowStatusForMilestoneRow ────────────────────────────────────────────
 
 describe("workflowStatusForMilestoneRow", () => {
-  it("returns completed for completed milestone", () => {
+  it("returns successful for completed milestone", () => {
     const result = workflowStatusForMilestoneRow(
       { status: "completed", due_date: "2026-06-30" },
       { status: "active", start_date: "2026-01-01", target_date: "2026-12-31", title: "P" },
     );
-    expect(result.slug).toBe("completed");
+    expect(result.slug).toBe("successful");
   });
 
-  it("returns in_progress for missed milestone within inherited window", () => {
-    const now = new Date();
-    const start = new Date(now.getFullYear() - 1, 0, 1).toISOString().slice(0, 10);
-    const end = new Date(now.getFullYear() + 1, 11, 31).toISOString().slice(0, 10);
+  it("returns blocked for missed milestone", () => {
     const result = workflowStatusForMilestoneRow(
       { status: "missed", due_date: null },
-      { status: "active", start_date: start, target_date: end, title: "P" },
+      { status: "active", start_date: "2026-01-01", target_date: "2026-12-31", title: "P" },
+      40,
     );
-    expect(result.slug).toBe("in_progress");
+    expect(result.slug).toBe("blocked");
   });
 });

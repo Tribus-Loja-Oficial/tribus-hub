@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import {
@@ -16,8 +17,11 @@ import {
   Clock,
   GitBranch,
   Activity,
+  Layers3,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { PageGuide, GuideSection, GuideList } from "@/components/ui/page-guide";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -48,6 +52,23 @@ interface DashboardStats {
   upcomingMilestones: UpcomingMilestone[];
   overdueTasksCount: number;
 }
+
+type WorkspaceCycleRow = {
+  id: string;
+  title: string;
+  status: string;
+  startDate: string | null;
+  endDate: string | null;
+  summary: { objectiveCount: number; projectCount: number };
+  projects: Array<{
+    id: string;
+    title: string;
+    slug?: string | null;
+    status: string;
+    healthInsight?: Project["healthInsight"];
+    workflowStatusInsight?: Project["workflowStatusInsight"];
+  }>;
+};
 
 function StatCard({
   icon: Icon,
@@ -95,6 +116,14 @@ function StatCard({
 }
 
 export function PmDashboardPage() {
+  const [view, setView] = useState<"overview" | "cycles">("overview");
+  const [cycleSearch, setCycleSearch] = useState("");
+  const [cycleStatusFilter, setCycleStatusFilter] = useState<
+    "all" | "planned" | "active" | "closed" | "archived"
+  >("all");
+  const [cycleQualityFilter, setCycleQualityFilter] = useState<
+    "all" | "without_objectives" | "without_projects" | "without_active_projects"
+  >("all");
   const { data: statsData, isLoading: statsLoading } = useQuery<{ data: DashboardStats }>({
     queryKey: ["pm-dashboard-stats"],
     queryFn: () => fetch("/api/pm/dashboard").then((r) => r.json()),
@@ -105,6 +134,11 @@ export function PmDashboardPage() {
     queryKey: ["projects"],
     queryFn: () => fetch("/api/projects").then((r) => r.json()),
     staleTime: 30_000,
+  });
+  const { data: cyclesRes, isLoading: cyclesLoading } = useQuery<{ data: WorkspaceCycleRow[] }>({
+    queryKey: ["workspace-cycles"],
+    queryFn: () => fetch("/api/workspace/cycles").then((r) => r.json()),
+    staleTime: 60_000,
   });
 
   const stats = statsData?.data;
@@ -125,6 +159,52 @@ export function PmDashboardPage() {
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
     .slice(0, 5);
 
+  const cyclesWithProjects = useMemo(() => {
+    const cycles = cyclesRes?.data ?? [];
+    return [
+      ...cycles.map((c) => ({
+        id: c.id,
+        title: c.title,
+        status: c.status,
+        startDate: c.startDate,
+        endDate: c.endDate,
+        objectiveCount: Number(c.summary?.objectiveCount ?? 0),
+        projects: c.projects ?? [],
+      })),
+      {
+        id: "__without_cycle__",
+        title: "Sem ciclo",
+        status: "planned",
+        startDate: null,
+        endDate: null,
+        objectiveCount: 0,
+        projects: projects.filter((p) => !p.cycleId),
+      },
+    ];
+  }, [cyclesRes?.data, projects]);
+  const filteredCycles = useMemo(() => {
+    const q = cycleSearch.trim().toLowerCase();
+    return cyclesWithProjects.filter((c) => {
+      if (cycleStatusFilter !== "all" && c.status !== cycleStatusFilter) return false;
+      if (cycleQualityFilter === "without_projects" && c.projects.length > 0) return false;
+      if (cycleQualityFilter === "without_objectives" && c.objectiveCount > 0) return false;
+      if (
+        cycleQualityFilter === "without_active_projects" &&
+        c.projects.some((p) => p.status === "active")
+      ) {
+        return false;
+      }
+      if (!q) return true;
+      if (c.title.toLowerCase().includes(q)) return true;
+      return c.projects.some((p) => p.title.toLowerCase().includes(q));
+    });
+  }, [cycleQualityFilter, cycleSearch, cycleStatusFilter, cyclesWithProjects]);
+  const cycleIssuesCount = useMemo(
+    () =>
+      cyclesWithProjects.filter((c) => c.projects.length === 0 || c.objectiveCount === 0).length,
+    [cyclesWithProjects],
+  );
+
   return (
     <div className="max-w-[1200px] space-y-6">
       {/* Header */}
@@ -139,6 +219,22 @@ export function PmDashboardPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant={view === "overview" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setView("overview")}
+          >
+            <Activity className="h-3.5 w-3.5" />
+            Visão geral
+          </Button>
+          <Button
+            variant={view === "cycles" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setView("cycles")}
+          >
+            <Layers3 className="h-3.5 w-3.5" />
+            Ciclos
+          </Button>
           <Button variant="outline" size="sm" asChild>
             <Link href="/projects/list">
               <GitBranch className="h-3.5 w-3.5" />
@@ -172,13 +268,13 @@ export function PmDashboardPage() {
       </PageGuide>
 
       {/* Stats */}
-      {statsLoading ? (
+      {view === "overview" && statsLoading ? (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="h-20 animate-pulse rounded-xl bg-muted" />
           ))}
         </div>
-      ) : stats ? (
+      ) : view === "overview" && stats ? (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
           <StatCard
             icon={FolderKanban}
@@ -229,239 +325,345 @@ export function PmDashboardPage() {
       ) : null}
 
       {/* Main grid */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-        {/* Active projects — 2/3 width */}
-        <div className="space-y-4 lg:col-span-2">
-          {/* Active projects */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <Activity className="h-4 w-4 text-primary/70" />
-                Projetos ativos
-              </h2>
-              <Link
-                href="/projects/list?status=in_progress"
-                className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Ver todos <ChevronRight className="h-3 w-3" />
-              </Link>
+      {view === "overview" ? (
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+          {/* Active projects — 2/3 width */}
+          <div className="space-y-4 lg:col-span-2">
+            {/* Active projects */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Activity className="h-4 w-4 text-primary/70" />
+                  Projetos ativos
+                </h2>
+                <Link
+                  href="/projects/list?status=in_progress"
+                  className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Ver todos <ChevronRight className="h-3 w-3" />
+                </Link>
+              </div>
+
+              {projectsLoading ? (
+                <div className="space-y-2">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="h-14 animate-pulse rounded-xl bg-muted" />
+                  ))}
+                </div>
+              ) : activeProjects.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center">
+                  <FolderKanban className="mx-auto mb-2 h-7 w-7 text-muted-foreground/30" />
+                  <p className="text-sm text-muted-foreground">Nenhum projeto ativo</p>
+                  <Button size="sm" variant="outline" className="mt-3" asChild>
+                    <Link href="/projects/list">
+                      <Plus className="h-3.5 w-3.5" />
+                      Criar projeto
+                    </Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="overflow-hidden rounded-xl border border-border">
+                  {activeProjects.map((project) => (
+                    <Link
+                      key={project.id}
+                      href={`/projects/${project.id}`}
+                      className="flex items-center gap-3 border-b border-border/60 px-4 py-3 transition-colors last:border-b-0 hover:bg-muted/20"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-foreground">
+                          {project.title}
+                        </p>
+                        {project.summary && (
+                          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                            {project.summary}
+                          </p>
+                        )}
+                        {(project.progressPercent ?? 0) > 0 && (
+                          <div className="mt-1.5 flex items-center gap-2">
+                            <div className="h-1 flex-1 overflow-hidden rounded-full bg-muted">
+                              <div
+                                className="h-full rounded-full bg-primary/70"
+                                style={{ width: `${Math.min(100, project.progressPercent ?? 0)}%` }}
+                              />
+                            </div>
+                            <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground/60">
+                              {Math.round(project.progressPercent ?? 0)}%
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        <ProjectHealthRow insight={project.healthInsight} />
+                        <PriorityBadge priority={project.priority} />
+                        {project.targetDate && (
+                          <span className="hidden text-[11px] text-muted-foreground md:block">
+                            {formatCivilDate(project.targetDate, "dd MMM")}
+                          </span>
+                        )}
+                        <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {projectsLoading ? (
-              <div className="space-y-2">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="h-14 animate-pulse rounded-xl bg-muted" />
-                ))}
-              </div>
-            ) : activeProjects.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center">
-                <FolderKanban className="mx-auto mb-2 h-7 w-7 text-muted-foreground/30" />
-                <p className="text-sm text-muted-foreground">Nenhum projeto ativo</p>
-                <Button size="sm" variant="outline" className="mt-3" asChild>
-                  <Link href="/projects/list">
-                    <Plus className="h-3.5 w-3.5" />
-                    Criar projeto
-                  </Link>
-                </Button>
-              </div>
-            ) : (
-              <div className="overflow-hidden rounded-xl border border-border">
-                {activeProjects.map((project) => (
-                  <Link
-                    key={project.id}
-                    href={`/projects/${project.id}`}
-                    className="flex items-center gap-3 border-b border-border/60 px-4 py-3 transition-colors last:border-b-0 hover:bg-muted/20"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-foreground">
-                        {project.title}
-                      </p>
-                      {project.summary && (
-                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                          {project.summary}
+            {/* Upcoming milestones */}
+            {!statsLoading && stats && stats.upcomingMilestones.length > 0 && (
+              <div className="space-y-3">
+                <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Flag className="h-4 w-4 text-amber-500/80" />
+                  Próximos marcos{" "}
+                  <span className="text-xs font-normal text-muted-foreground">(14 dias)</span>
+                </h2>
+                <div className="overflow-hidden rounded-xl border border-border">
+                  {stats.upcomingMilestones.map((m) => (
+                    <Link
+                      key={m.id}
+                      href={`/projects/${m.projectId}`}
+                      className="flex items-center gap-3 border-b border-border/60 px-4 py-2.5 transition-colors last:border-b-0 hover:bg-muted/20"
+                    >
+                      <Flag className="h-3.5 w-3.5 shrink-0 text-amber-500/60" />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-foreground">{m.title}</p>
+                        <p className="truncate text-[11px] text-muted-foreground">
+                          {m.projectTitle}
                         </p>
-                      )}
-                      {(project.progressPercent ?? 0) > 0 && (
-                        <div className="mt-1.5 flex items-center gap-2">
-                          <div className="h-1 flex-1 overflow-hidden rounded-full bg-muted">
-                            <div
-                              className="h-full rounded-full bg-primary/70"
-                              style={{ width: `${Math.min(100, project.progressPercent ?? 0)}%` }}
-                            />
-                          </div>
-                          <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground/60">
-                            {Math.round(project.progressPercent ?? 0)}%
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        <WorkflowStatusRow insight={m.workflowStatusInsight} />
+                        {m.dueDate && (
+                          <span className="text-xs tabular-nums text-muted-foreground">
+                            {formatCivilDate(m.dueDate, "dd MMM")}
                           </span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1.5">
-                      <ProjectHealthRow insight={project.healthInsight} />
-                      <PriorityBadge priority={project.priority} />
-                      {project.targetDate && (
-                        <span className="hidden text-[11px] text-muted-foreground md:block">
-                          {formatCivilDate(project.targetDate, "dd MMM")}
-                        </span>
-                      )}
-                      <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
-                    </div>
-                  </Link>
-                ))}
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               </div>
             )}
           </div>
 
-          {/* Upcoming milestones */}
-          {!statsLoading && stats && stats.upcomingMilestones.length > 0 && (
+          {/* Right column — 1/3 */}
+          <div className="space-y-5">
+            {/* Attention needed */}
             <div className="space-y-3">
               <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <Flag className="h-4 w-4 text-amber-500/80" />
-                Próximos marcos{" "}
-                <span className="text-xs font-normal text-muted-foreground">(14 dias)</span>
+                <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                Precisam de atenção
               </h2>
-              <div className="overflow-hidden rounded-xl border border-border">
-                {stats.upcomingMilestones.map((m) => (
+              {projectsLoading ? (
+                <div className="space-y-2">
+                  {Array.from({ length: 2 }).map((_, i) => (
+                    <div key={i} className="h-12 animate-pulse rounded-xl bg-muted" />
+                  ))}
+                </div>
+              ) : attentionProjects.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border px-4 py-5 text-center">
+                  <CheckCircle2 className="mx-auto mb-1.5 h-6 w-6 text-emerald-500/60" />
+                  <p className="text-xs text-muted-foreground">Tudo no rumo!</p>
+                </div>
+              ) : (
+                <div className="overflow-hidden rounded-xl border border-border">
+                  {attentionProjects.slice(0, 6).map((project) => (
+                    <Link
+                      key={project.id}
+                      href={`/projects/${project.id}`}
+                      className="flex items-center gap-3 border-b border-border/60 px-3 py-2.5 transition-colors last:border-b-0 hover:bg-muted/20"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-semibold text-foreground">
+                          {project.title}
+                        </p>
+                      </div>
+                      <div className="shrink-0">
+                        <ProjectHealthRow insight={project.healthInsight} />
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Overdue alerts */}
+            {!statsLoading && stats && (
+              <div className="space-y-2">
+                {stats.overdueMilestones > 0 && (
                   <Link
-                    key={m.id}
-                    href={`/projects/${m.projectId}`}
-                    className="flex items-center gap-3 border-b border-border/60 px-4 py-2.5 transition-colors last:border-b-0 hover:bg-muted/20"
+                    href="/projects/list"
+                    className="block rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 transition-colors hover:bg-orange-100/60"
                   >
-                    <Flag className="h-3.5 w-3.5 shrink-0 text-amber-500/60" />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-foreground">{m.title}</p>
-                      <p className="truncate text-[11px] text-muted-foreground">{m.projectTitle}</p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1.5">
-                      <WorkflowStatusRow insight={m.workflowStatusInsight} />
-                      {m.dueDate && (
-                        <span className="text-xs tabular-nums text-muted-foreground">
-                          {formatCivilDate(m.dueDate, "dd MMM")}
-                        </span>
-                      )}
+                    <div className="flex items-center gap-3">
+                      <Flag className="h-4 w-4 shrink-0 text-orange-500" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-orange-700">
+                          {stats.overdueMilestones} marco{stats.overdueMilestones !== 1 ? "s" : ""}{" "}
+                          atrasado{stats.overdueMilestones !== 1 ? "s" : ""}
+                        </p>
+                        <p className="mt-0.5 text-xs text-orange-600/80">
+                          Clique para ver projetos
+                        </p>
+                      </div>
                     </div>
                   </Link>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Right column — 1/3 */}
-        <div className="space-y-5">
-          {/* Attention needed */}
-          <div className="space-y-3">
-            <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <AlertTriangle className="h-4 w-4 text-yellow-500" />
-              Precisam de atenção
-            </h2>
-            {projectsLoading ? (
-              <div className="space-y-2">
-                {Array.from({ length: 2 }).map((_, i) => (
-                  <div key={i} className="h-12 animate-pulse rounded-xl bg-muted" />
-                ))}
-              </div>
-            ) : attentionProjects.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-border px-4 py-5 text-center">
-                <CheckCircle2 className="mx-auto mb-1.5 h-6 w-6 text-emerald-500/60" />
-                <p className="text-xs text-muted-foreground">Tudo no rumo!</p>
-              </div>
-            ) : (
-              <div className="overflow-hidden rounded-xl border border-border">
-                {attentionProjects.slice(0, 6).map((project) => (
+                )}
+                {stats.overdueTasksCount > 0 && (
                   <Link
-                    key={project.id}
-                    href={`/projects/${project.id}`}
-                    className="flex items-center gap-3 border-b border-border/60 px-3 py-2.5 transition-colors last:border-b-0 hover:bg-muted/20"
+                    href="/tasks"
+                    className="block rounded-xl border border-red-200 bg-red-50 px-4 py-3"
                   >
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-semibold text-foreground">
+                    <div className="flex items-center gap-3">
+                      <CalendarX className="h-4 w-4 shrink-0 text-red-500" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-red-700">
+                          {stats.overdueTasksCount} task{stats.overdueTasksCount !== 1 ? "s" : ""}{" "}
+                          atrasada{stats.overdueTasksCount !== 1 ? "s" : ""}
+                        </p>
+                        <p className="mt-0.5 text-xs text-red-600/80">Clique para ver no board</p>
+                      </div>
+                    </div>
+                  </Link>
+                )}
+              </div>
+            )}
+
+            {/* Recent activity */}
+            <div className="space-y-3 rounded-xl border border-border bg-card p-4">
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Clock className="h-4 w-4 text-muted-foreground/60" />
+                Atualizados recentemente
+              </h2>
+              {projectsLoading ? (
+                <div className="space-y-2">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="h-10 animate-pulse rounded-lg bg-muted" />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {recentProjects.map((project) => (
+                    <Link
+                      key={project.id}
+                      href={`/projects/${project.id}`}
+                      className="flex items-center gap-2.5 rounded-lg px-3 py-2 transition-colors hover:bg-muted/30"
+                    >
+                      <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary/40" />
+                      <span className="flex-1 truncate text-xs text-foreground">
                         {project.title}
-                      </p>
-                    </div>
-                    <div className="shrink-0">
-                      <ProjectHealthRow insight={project.healthInsight} />
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Overdue alerts */}
-          {!statsLoading && stats && (
-            <div className="space-y-2">
-              {stats.overdueMilestones > 0 && (
-                <Link
-                  href="/projects/list"
-                  className="block rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 transition-colors hover:bg-orange-100/60"
-                >
-                  <div className="flex items-center gap-3">
-                    <Flag className="h-4 w-4 shrink-0 text-orange-500" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-orange-700">
-                        {stats.overdueMilestones} marco{stats.overdueMilestones !== 1 ? "s" : ""}{" "}
-                        atrasado{stats.overdueMilestones !== 1 ? "s" : ""}
-                      </p>
-                      <p className="mt-0.5 text-xs text-orange-600/80">Clique para ver projetos</p>
-                    </div>
-                  </div>
-                </Link>
-              )}
-              {stats.overdueTasksCount > 0 && (
-                <Link
-                  href="/tasks"
-                  className="block rounded-xl border border-red-200 bg-red-50 px-4 py-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <CalendarX className="h-4 w-4 shrink-0 text-red-500" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-red-700">
-                        {stats.overdueTasksCount} task{stats.overdueTasksCount !== 1 ? "s" : ""}{" "}
-                        atrasada{stats.overdueTasksCount !== 1 ? "s" : ""}
-                      </p>
-                      <p className="mt-0.5 text-xs text-red-600/80">Clique para ver no board</p>
-                    </div>
-                  </div>
-                </Link>
+                      </span>
+                      <span className="hidden shrink-0 text-[10px] text-muted-foreground/60 sm:block">
+                        {formatDistanceToNow(new Date(project.updatedAt), {
+                          addSuffix: true,
+                          locale: ptBR,
+                        })}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
               )}
             </div>
-          )}
-
-          {/* Recent activity */}
-          <div className="space-y-3 rounded-xl border border-border bg-card p-4">
-            <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <Clock className="h-4 w-4 text-muted-foreground/60" />
-              Atualizados recentemente
-            </h2>
-            {projectsLoading ? (
-              <div className="space-y-2">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="h-10 animate-pulse rounded-lg bg-muted" />
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-1">
-                {recentProjects.map((project) => (
-                  <Link
-                    key={project.id}
-                    href={`/projects/${project.id}`}
-                    className="flex items-center gap-2.5 rounded-lg px-3 py-2 transition-colors hover:bg-muted/30"
-                  >
-                    <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary/40" />
-                    <span className="flex-1 truncate text-xs text-foreground">{project.title}</span>
-                    <span className="hidden shrink-0 text-[10px] text-muted-foreground/60 sm:block">
-                      {formatDistanceToNow(new Date(project.updatedAt), {
-                        addSuffix: true,
-                        locale: ptBR,
-                      })}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            )}
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="grid gap-2 sm:grid-cols-3">
+            <div className="relative sm:col-span-2">
+              <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/60" />
+              <Input
+                value={cycleSearch}
+                onChange={(e) => setCycleSearch(e.target.value)}
+                placeholder="Buscar ciclo ou projeto"
+                className="h-9 pl-8"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <select
+                className="h-9 rounded-md border border-input bg-background px-2 text-xs"
+                value={cycleStatusFilter}
+                onChange={(e) => setCycleStatusFilter(e.target.value as typeof cycleStatusFilter)}
+              >
+                <option value="all">Todos status</option>
+                <option value="planned">Planejado</option>
+                <option value="active">Ativo</option>
+                <option value="closed">Encerrado</option>
+                <option value="archived">Arquivado</option>
+              </select>
+              <select
+                className="h-9 rounded-md border border-input bg-background px-2 text-xs"
+                value={cycleQualityFilter}
+                onChange={(e) => setCycleQualityFilter(e.target.value as typeof cycleQualityFilter)}
+              >
+                <option value="all">Qualidade</option>
+                <option value="without_objectives">Sem objetivos</option>
+                <option value="without_projects">Sem projetos</option>
+                <option value="without_active_projects">Sem ativos</option>
+              </select>
+            </div>
+          </div>
+          {cycleIssuesCount > 0 && (
+            <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-100">
+              {cycleIssuesCount} ciclo(s) com lacuna (sem projetos e/ou sem objetivos).
+            </div>
+          )}
+          {(projectsLoading || cyclesLoading) && (
+            <div className="space-y-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-16 animate-pulse rounded-xl bg-muted" />
+              ))}
+            </div>
+          )}
+          {!projectsLoading &&
+            !cyclesLoading &&
+            filteredCycles.map((c) => (
+              <div key={c.id} className="rounded-xl border border-border bg-card">
+                <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-foreground">{c.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {c.startDate && c.endDate
+                        ? `${formatCivilDate(c.startDate, "dd MMM yyyy")} → ${formatCivilDate(c.endDate, "dd MMM yyyy")}`
+                        : "Sem janela definida"}
+                    </p>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {c.projects.length} projeto{c.projects.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+                {c.projects.length === 0 ? (
+                  <div className="px-4 py-4 text-xs text-muted-foreground">
+                    Sem projetos neste ciclo.
+                  </div>
+                ) : (
+                  <div className="divide-y divide-border">
+                    {c.projects.slice(0, 8).map((p) => (
+                      <Link
+                        key={p.id}
+                        href={`/projects/${encodeURIComponent(p.slug || p.id)}`}
+                        className="flex items-center gap-3 px-4 py-3 hover:bg-muted/20"
+                      >
+                        <span className="min-w-0 flex-1 truncate text-sm text-foreground">
+                          {p.title}
+                        </span>
+                        {p.workflowStatusInsight ? (
+                          <WorkflowStatusRow insight={p.workflowStatusInsight} />
+                        ) : (
+                          <span className="text-xs text-muted-foreground">{p.status}</span>
+                        )}
+                        <ProjectHealthRow insight={p.healthInsight} />
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          {!projectsLoading && !cyclesLoading && filteredCycles.length === 0 && (
+            <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
+              Nenhum ciclo encontrado com os filtros atuais.
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

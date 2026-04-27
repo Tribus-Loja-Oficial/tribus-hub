@@ -25,7 +25,7 @@ import { DateField } from "@/components/ui/date-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import type { Project, WorkflowStatusSlug } from "@/lib/types/domain";
+import type { OkrCycle, Project, WorkflowStatusSlug } from "@/lib/types/domain";
 import { paceHealthBadgeToneSlug } from "@/lib/pace-health-display";
 import { healthRowAccentClass } from "@/components/pace-health-badge";
 import { WorkflowStatusRow } from "@/components/workflow-status-badge";
@@ -55,7 +55,11 @@ const STATUS_OPTIONS = [
   { value: "", label: "Todos os status" },
   { value: "planned", label: "Planejado" },
   { value: "in_progress", label: "Em Progresso" },
-  { value: "completed", label: "Concluído" },
+  { value: "blocked", label: "Bloqueado" },
+  { value: "successful", label: "Bem Sucedido" },
+  { value: "partially_successful", label: "Parcialmente Bem Sucedido" },
+  { value: "failed", label: "Falhou" },
+  { value: "cancelled", label: "Cancelado" },
 ];
 
 const HEALTH_OPTIONS = [
@@ -88,11 +92,16 @@ const SORT_OPTIONS = [
 
 const PRIORITY_ORDER: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
 const WORKFLOW_STATUS_ORDER: Record<WorkflowStatusSlug, number> = {
-  in_progress: 0,
-  planned: 1,
-  completed: 2,
-  achieved: 3,
-  not_achieved: 4,
+  planned: 0,
+  in_progress: 1,
+  blocked: 2,
+  successful: 3,
+  partially_successful: 4,
+  failed: 5,
+  cancelled: 6,
+  completed: 7,
+  achieved: 8,
+  not_achieved: 9,
 };
 
 function projectHref(project: Project) {
@@ -123,7 +132,11 @@ function ProjectsListHeaderCell({
 const BOARD_COLUMNS = [
   { key: "planned" as const, label: "Planejado" },
   { key: "in_progress" as const, label: "Em Progresso" },
-  { key: "completed" as const, label: "Concluído" },
+  { key: "blocked" as const, label: "Bloqueado" },
+  { key: "successful" as const, label: "Bem Sucedido" },
+  { key: "partially_successful" as const, label: "Parcialmente Bem Sucedido" },
+  { key: "failed" as const, label: "Falhou" },
+  { key: "cancelled" as const, label: "Cancelado" },
 ] as const;
 
 // ─── Create Project Dialog ─────────────────────────────────────────────────────
@@ -139,8 +152,15 @@ function CreateProjectDialog({ open, onOpenChange, onCreated }: CreateProjectDia
   const [summary, setSummary] = useState("");
   const [status, setStatus] = useState("planned");
   const [priority, setPriority] = useState("medium");
+  const [cycleId, setCycleId] = useState("");
   const [startDate, setStartDate] = useState("");
   const [targetDate, setTargetDate] = useState("");
+  const { data: cyclesRes } = useQuery<{ data: OkrCycle[] }>({
+    queryKey: ["okr-cycles"],
+    queryFn: () => fetch("/api/okr/cycles").then((r) => r.json()),
+    enabled: open,
+    staleTime: 60_000,
+  });
 
   const createMutation = useMutation({
     mutationFn: async (payload: Record<string, unknown>) => {
@@ -159,6 +179,7 @@ function CreateProjectDialog({ open, onOpenChange, onCreated }: CreateProjectDia
       setSummary("");
       setStatus("planned");
       setPriority("medium");
+      setCycleId("");
       setStartDate("");
       setTargetDate("");
     },
@@ -179,6 +200,7 @@ function CreateProjectDialog({ open, onOpenChange, onCreated }: CreateProjectDia
               summary: summary.trim() || undefined,
               status,
               priority,
+              cycleId: cycleId || undefined,
               startDate: startDate || undefined,
               targetDate: targetDate || undefined,
             });
@@ -213,10 +235,24 @@ function CreateProjectDialog({ open, onOpenChange, onCreated }: CreateProjectDia
                 onChange={(e) => setStatus(e.target.value)}
               >
                 <option value="planned">Planejado</option>
-                <option value="active">Ativo</option>
-                <option value="on_hold">Em espera</option>
-                <option value="completed">Concluído</option>
+                <option value="active">Em progresso</option>
+                <option value="on_hold">Bloqueado</option>
                 <option value="cancelled">Cancelado</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Ciclo</Label>
+              <select
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={cycleId}
+                onChange={(e) => setCycleId(e.target.value)}
+              >
+                <option value="">Sem ciclo</option>
+                {(cyclesRes?.data ?? []).map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.title}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="space-y-1.5">
@@ -635,7 +671,7 @@ export function ProjectsListPage() {
           <GuideList
             items={[
               "a visão Hierarquia mostra projetos → milestones → tasks de forma expandível;",
-              "a visão Board agrupa projetos por status operacional (Planejado / Em progresso / Concluído);",
+              "a visão Board agrupa projetos por status operacional e resultados finais (planejado, em progresso, bloqueado, bem sucedido, parcial, falhou, cancelado);",
               "use os filtros de status, prioridade e saúde para encontrar projetos específicos;",
               "clique em um projeto para ver seus detalhes completos.",
             ]}

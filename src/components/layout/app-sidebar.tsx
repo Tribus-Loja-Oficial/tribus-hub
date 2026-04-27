@@ -112,6 +112,7 @@ const okrSubItems = [
 const pmSubItems = [
   { href: "/projects", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/projects/list", label: "Projects", icon: List },
+  { href: "/workspace/cycles", label: "Ciclos Workspace", icon: CalendarRange },
 ];
 
 const bottomNavItems = [
@@ -144,7 +145,7 @@ export function AppSidebar() {
   };
 
   const isOkrActive = pathname.startsWith("/okr");
-  const isPmActive = pathname.startsWith("/projects");
+  const isPmActive = pathname.startsWith("/projects") || pathname.startsWith("/workspace/cycles");
   const isKnowledgeActive = pathname.startsWith("/knowledge");
 
   const [okrOpen, setOkrOpen] = useState(isOkrActive);

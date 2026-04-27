@@ -7,6 +7,7 @@ export const createProjectSchema = z.object({
   healthStatus: z.enum(["on_track", "at_risk", "blocked", "off_track"]).optional(),
   priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
   ownerUserId: z.string().optional(),
+  cycleId: z.string().optional(),
   startDate: z.string().date().optional(),
   targetDate: z.string().date().optional(),
 });

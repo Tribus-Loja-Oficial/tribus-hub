@@ -65,9 +65,14 @@ export interface HealthInsight {
 export type WorkflowStatusSlug =
   | "planned"
   | "in_progress"
+  | "blocked"
   | "completed"
   | "achieved"
-  | "not_achieved";
+  | "not_achieved"
+  | "successful"
+  | "partially_successful"
+  | "failed"
+  | "cancelled";
 
 export interface WorkflowStatusInsight {
   slug: WorkflowStatusSlug;
@@ -189,6 +194,7 @@ export interface Project {
   priority: ProjectPriority;
   progressPercent: number;
   ownerUserId: string | null;
+  cycleId?: string | null;
   startDate: string | null;
   targetDate: string | null;
   completedAt: string | null;

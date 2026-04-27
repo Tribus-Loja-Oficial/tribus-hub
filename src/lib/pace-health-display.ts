@@ -7,9 +7,14 @@ import type { PaceHealthSlug, WorkflowStatusSlug } from "@/lib/types/domain";
 export const WORKFLOW_STATUS_LABELS: Record<WorkflowStatusSlug, string> = {
   planned: "Planejado",
   in_progress: "Em Progresso",
+  blocked: "Bloqueado",
   completed: "Concluído",
   achieved: "Atingido",
   not_achieved: "Não Atingido",
+  successful: "Bem Sucedido",
+  partially_successful: "Parcialmente Bem Sucedido",
+  failed: "Falhou",
+  cancelled: "Cancelado",
 };
 
 /** Cinco estados de saúde por ritmo exibidos na UI (slug interno pode variar). */

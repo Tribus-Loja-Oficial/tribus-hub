@@ -26,7 +26,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { PageGuide, GuideSection, GuideList } from "@/components/ui/page-guide";
 import { Input } from "@/components/ui/input";
-import type { OkrCycle } from "@/lib/types/domain";
+import type { OkrCycle, Project } from "@/lib/types/domain";
 import type {
   CycleCardStats,
   OkrCycleWithStats,
@@ -133,6 +133,11 @@ export function OkrCyclesPage() {
     queryKey: ["okr-cycles"],
     queryFn: () => fetch("/api/okr/cycles").then((r) => r.json()),
   });
+  const { data: projectsRes } = useQuery<{ data: Project[] }>({
+    queryKey: ["projects"],
+    queryFn: () => fetch("/api/projects").then((r) => r.json()),
+    staleTime: 30_000,
+  });
 
   useEffect(() => {
     function closeMenu(e: MouseEvent) {
@@ -172,6 +177,15 @@ export function OkrCyclesPage() {
   });
 
   const cycles = data?.data ?? [];
+  const projectCountByCycleId = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const p of projectsRes?.data ?? []) {
+      const cid = p.cycleId;
+      if (!cid) continue;
+      m.set(cid, (m.get(cid) ?? 0) + 1);
+    }
+    return m;
+  }, [projectsRes?.data]);
 
   const activeCycle = useMemo(() => cycles.find((c) => c.status === "active"), [cycles]);
 
@@ -644,6 +658,7 @@ export function OkrCyclesPage() {
                         value={riskObj + riskKr > 0 ? `${riskObj}o · ${riskKr}kr` : "0"}
                         warn={riskObj + riskKr > 0}
                       />
+                      <StatChip label="Projetos" value={projectCountByCycleId.get(cycle.id) ?? 0} />
                       <StatChip label="Média KRs" value={`${s.avgKrProgress}%`} />
                     </div>
                   </div>
