@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import {
@@ -116,7 +117,10 @@ function StatCard({
 }
 
 export function PmDashboardPage() {
-  const [view, setView] = useState<"overview" | "cycles">("overview");
+  const pathname = usePathname();
+  const view: "overview" | "cycles" = pathname.startsWith("/projects/cycles")
+    ? "cycles"
+    : "overview";
   const [cycleSearch, setCycleSearch] = useState("");
   const [cycleStatusFilter, setCycleStatusFilter] = useState<
     "all" | "planned" | "active" | "closed" | "archived"
@@ -219,21 +223,17 @@ export function PmDashboardPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant={view === "overview" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setView("overview")}
-          >
-            <Activity className="h-3.5 w-3.5" />
-            Visão geral
+          <Button variant={view === "overview" ? "default" : "outline"} size="sm" asChild>
+            <Link href="/projects">
+              <Activity className="h-3.5 w-3.5" />
+              Visão geral
+            </Link>
           </Button>
-          <Button
-            variant={view === "cycles" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setView("cycles")}
-          >
-            <Layers3 className="h-3.5 w-3.5" />
-            Ciclos
+          <Button variant={view === "cycles" ? "default" : "outline"} size="sm" asChild>
+            <Link href="/projects/cycles">
+              <Layers3 className="h-3.5 w-3.5" />
+              Ciclos
+            </Link>
           </Button>
           <Button variant="outline" size="sm" asChild>
             <Link href="/projects/list">

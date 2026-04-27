@@ -8,6 +8,7 @@ import { useNavigationState } from "./navigation-context";
 
 const SEGMENT_LABELS: Record<string, string> = {
   knowledge: "Knowledge",
+  workspace: "Workspace",
   projects: "Project Manager",
   list: "Projects",
   tasks: "Tasks",

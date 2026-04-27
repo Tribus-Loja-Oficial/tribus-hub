@@ -112,8 +112,16 @@ const okrSubItems = [
 const pmSubItems = [
   { href: "/projects", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/projects/list", label: "Projects", icon: List },
-  { href: "/workspace/cycles", label: "Ciclos Workspace", icon: CalendarRange },
+  /** Projetos por ciclo (mesmo papel que OKR Manager → Ciclos para OKRs). */
+  { href: "/projects/cycles", label: "Ciclos", icon: CalendarRange },
 ];
+
+/** Visão global: objetivos + projetos por ciclo (workspace). */
+const workspaceCyclesNav = {
+  href: "/workspace/cycles",
+  label: "Ciclos",
+  icon: CalendarRange,
+} as const;
 
 const bottomNavItems = [
   { href: "/tasks", label: "Tasks", icon: CheckSquare },
@@ -126,6 +134,11 @@ const bottomItems = [{ href: "/settings", label: "Configurações", icon: Settin
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const {
+    href: workspaceCyclesHref,
+    label: workspaceCyclesLabel,
+    icon: WorkspaceCyclesNavIcon,
+  } = workspaceCyclesNav;
   const [sidebarWidth, setSidebarWidth] = useState(232);
   const dragging = useRef(false);
   const lastX = useRef(0);
@@ -145,7 +158,8 @@ export function AppSidebar() {
   };
 
   const isOkrActive = pathname.startsWith("/okr");
-  const isPmActive = pathname.startsWith("/projects") || pathname.startsWith("/workspace/cycles");
+  const isPmActive = pathname.startsWith("/projects");
+  const isWorkspaceCyclesActive = pathname.startsWith(workspaceCyclesHref);
   const isKnowledgeActive = pathname.startsWith("/knowledge");
 
   const [okrOpen, setOkrOpen] = useState(isOkrActive);
@@ -303,6 +317,18 @@ export function AppSidebar() {
                 })}
               </div>
             )}
+          </div>
+
+          {/* Ciclos (workspace) — visão global; ciclos só de projetos ficam em Project Manager → Ciclos */}
+          <div className="pt-1">
+            <Link
+              href={workspaceCyclesHref}
+              title="Objetivos e projetos por ciclo (visão do workspace)"
+              className={navItemClass(isWorkspaceCyclesActive)}
+            >
+              <WorkspaceCyclesNavIcon className={iconClass(isWorkspaceCyclesActive)} />
+              {workspaceCyclesLabel}
+            </Link>
           </div>
 
           {/* Tasks */}
