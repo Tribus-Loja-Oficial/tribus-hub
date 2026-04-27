@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,8 @@ interface EditProjectDialogProps {
 
 export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDialogProps) {
   const queryClient = useQueryClient();
+  /** Evita reaplicar `project` a cada refetch do hub enquanto o modal está aberto (apagava datas não salvas e travava com o date picker nativo). */
+  const seededThisOpen = useRef(false);
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
   const [status, setStatus] = useState("planned");
@@ -62,7 +64,12 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
   });
 
   useEffect(() => {
-    if (!open || !project) return;
+    if (!open) {
+      seededThisOpen.current = false;
+      return;
+    }
+    if (!project || seededThisOpen.current) return;
+    seededThisOpen.current = true;
     setTitle(project.title);
     setSummary(project.summary ?? "");
     setStatus(project.status);
@@ -78,7 +85,7 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
   if (!project) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
       <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar projeto</DialogTitle>
