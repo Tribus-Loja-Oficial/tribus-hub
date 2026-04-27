@@ -85,7 +85,12 @@ export function EntityQuickViewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
-      <DialogContent className="w-[96vw] max-w-[1200px] p-0">
+      <DialogContent
+        className="w-[96vw] max-w-[1200px] p-0"
+        /* Dois Dialog em portais irmãos: cliques no modal por cima (ex.: Editar projeto) contam como “fora” deste painel e o Radix reagia — selects fechavam e o fundo parecia recarregar. */
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle className="px-6 pt-6">
             {entity ? dialogTitle(entity) : "Detalhes"}
