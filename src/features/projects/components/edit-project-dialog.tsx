@@ -85,8 +85,13 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
   if (!project) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
-      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        className="max-h-[90vh] max-w-lg overflow-y-auto"
+        /* Calendário nativo (type=date) fica fora do DOM do modal; sem isto o Radix fecha o dialog ao abrir o picker. */
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onFocusOutside={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>Editar projeto</DialogTitle>
         </DialogHeader>
