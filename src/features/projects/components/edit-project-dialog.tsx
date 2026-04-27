@@ -86,11 +86,7 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="max-h-[90vh] max-w-lg overflow-y-auto"
-        /* Só pointer: evita fechar o modal ao abrir o calendário nativo. Não use onFocusOutside+preventDefault — bloqueia o 2º type=date. */
-        onPointerDownOutside={(e) => e.preventDefault()}
-      >
+      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar projeto</DialogTitle>
         </DialogHeader>

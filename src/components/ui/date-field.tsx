@@ -1,98 +1,38 @@
 "use client";
 
 import * as React from "react";
-import { format, isValid } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { parseCivilDateInput } from "@/lib/date/civil-date";
-import { Calendar } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
-import { dateTriggerControlClassName } from "@/components/ui/form-control-classes";
+import { inputControlClassName } from "@/components/ui/form-control-classes";
 
+/**
+ * Campo de data civil (`yyyy-MM-dd` no estado/API).
+ *
+ * Implementação **nativa visível** (`input type="date"`): o padrão anterior
+ * (botão + `input` sr-only + `showPicker()`) quebrava de forma inconsistente
+ * dentro de `Dialog` (Radix: foco, “outside pointer”, vários campos no mesmo modal).
+ */
 export interface DateFieldProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
   "type" | "size"
 > {
-  /** yyyy-MM-dd */
   value?: string;
 }
 
 const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
-  ({ className, value, onChange, disabled, id, name, min, max, required, ...props }, ref) => {
-    const innerRef = React.useRef<HTMLInputElement>(null);
+  ({ className, id, ...props }, ref) => {
     const autoId = React.useId();
-    React.useImperativeHandle(ref, () => innerRef.current as HTMLInputElement);
-
-    const display =
-      value && /^\d{4}-\d{2}-\d{2}$/.test(value)
-        ? (() => {
-            const d = parseCivilDateInput(value);
-            return d && isValid(d) ? format(d, "dd/MM/yyyy", { locale: ptBR }) : "";
-          })()
-        : "";
-
-    const fieldId = id ?? autoId;
-
-    function openPicker() {
-      if (disabled) return;
-      const el = innerRef.current;
-      if (!el) return;
-      const ae = document.activeElement;
-      /* Com vários type=date no mesmo modal, o primeiro pode manter foco e impedir showPicker no segundo (Chrome). */
-      if (ae instanceof HTMLInputElement && ae.type === "date" && ae !== el) {
-        ae.blur();
-      }
-      try {
-        el.showPicker();
-      } catch {
-        el.focus();
-        el.click();
-      }
-    }
-
     return (
-      <div className={cn("relative w-full", className)}>
-        <input
-          id={fieldId}
-          name={name}
-          ref={innerRef}
-          type="date"
-          value={value ?? ""}
-          onChange={onChange}
-          disabled={disabled}
-          min={min}
-          max={max}
-          required={required}
-          tabIndex={-1}
-          className="sr-only"
-          {...props}
-        />
-        <button
-          type="button"
-          disabled={disabled}
-          aria-label={display ? `Data: ${display}` : "Abrir calendário"}
-          onClick={openPicker}
-          onKeyDown={(e) => {
-            if (e.key === " " || e.key === "Enter") {
-              e.preventDefault();
-              openPicker();
-            }
-          }}
-          className={cn(
-            dateTriggerControlClassName,
-            disabled && "pointer-events-none cursor-not-allowed opacity-50",
-          )}
-        >
-          <span
-            className={cn(
-              "min-w-0 flex-1 truncate tabular-nums text-foreground",
-              !display && "text-muted-foreground",
-            )}
-          >
-            {display || "dd/mm/aaaa"}
-          </span>
-          <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-        </button>
-      </div>
+      <input
+        id={id ?? autoId}
+        ref={ref}
+        type="date"
+        className={cn(
+          inputControlClassName,
+          "min-w-0 tabular-nums [color-scheme:light] dark:[color-scheme:dark]",
+          className,
+        )}
+        {...props}
+      />
     );
   },
 );

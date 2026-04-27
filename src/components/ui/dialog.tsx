@@ -28,7 +28,7 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+>(({ className, children, onPointerDownOutside, ...rest }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
@@ -37,7 +37,12 @@ const DialogContent = React.forwardRef<
         "fixed left-[50%] top-[50%] z-50 grid max-h-[calc(100vh-2rem)] w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 overflow-y-auto rounded-xl border border-border bg-card p-6 shadow-dialog duration-200 data-[state=open]:animate-fade-in",
         className,
       )}
-      {...props}
+      {...rest}
+      onPointerDownOutside={(e) => {
+        onPointerDownOutside?.(e);
+        /* Calendário nativo, color pickers, etc. disparam “outside” no painel do modal; sem isto o Radix fecha o dialog. */
+        e.preventDefault();
+      }}
     >
       {children}
       <DialogPrimitive.Close className="absolute right-4 top-4 rounded-md opacity-70 ring-offset-background transition-opacity hover:bg-muted/60 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-foreground/15 focus:ring-offset-1 disabled:pointer-events-none">
