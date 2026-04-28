@@ -488,19 +488,6 @@ export function ProjectDetailView({
 
   const membersMap = new Map((membersRes?.data ?? []).map((m) => [m.id, m]));
 
-  const patchMutation = useMutation({
-    mutationFn: async (body: Record<string, unknown>) => {
-      const res = await fetch(`/api/projects/${projectId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error("Falha ao atualizar");
-      return res.json();
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["project-hub", projectId] }),
-  });
-
   const deleteMilestoneMutation = useMutation({
     mutationFn: async (milestoneId: string) => {
       await fetch(`/api/projects/${projectId}/milestones/${milestoneId}`, { method: "DELETE" });
@@ -663,17 +650,6 @@ export function ProjectDetailView({
             <Pencil className="h-3.5 w-3.5" />
             Editar projeto
           </Button>
-          <select
-            className="h-8 rounded-md border border-input bg-background px-2.5 text-xs"
-            value={project.status}
-            onChange={(e) => patchMutation.mutate({ status: e.target.value })}
-          >
-            <option value="planned">Planejado</option>
-            <option value="active">Ativo</option>
-            <option value="on_hold">Em espera</option>
-            <option value="completed">Concluído</option>
-            <option value="cancelled">Cancelado</option>
-          </select>
         </div>
       </div>
 
@@ -697,7 +673,7 @@ export function ProjectDetailView({
       {overdueMilestones > 0 && (
         <div className="flex items-center gap-2.5 rounded-lg border border-orange-200 bg-orange-50 px-4 py-2.5 text-sm text-orange-700">
           <AlertTriangle className="h-4 w-4 shrink-0" />
-          {overdueMilestones} marco{overdueMilestones > 1 ? "s" : ""} com prazo vencido neste
+          {overdueMilestones} milestone{overdueMilestones > 1 ? "s" : ""} com prazo vencido neste
           projeto.
         </div>
       )}
@@ -793,7 +769,7 @@ export function ProjectDetailView({
               )}
             >
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Marcos atrasados
+                Milestones atrasados
               </p>
               <p
                 className={cn(
@@ -806,7 +782,7 @@ export function ProjectDetailView({
               {overdueMilestones > 0 && (
                 <p className="mt-1 flex items-center gap-1 text-xs text-orange-500/80">
                   <AlertTriangle className="h-3 w-3" />
-                  Verifique os marcos
+                  Verifique os milestones
                 </p>
               )}
             </div>
@@ -816,7 +792,7 @@ export function ProjectDetailView({
           {milestones.length > 0 && (
             <section>
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-foreground">Marcos do projeto</h2>
+                <h2 className="text-sm font-semibold text-foreground">Milestones do projeto</h2>
                 <span className="text-xs text-muted-foreground">
                   {completedMilestones}/{milestones.length} concluídos
                 </span>

@@ -9,6 +9,7 @@ import {
   format,
   isSameDay,
   isSameMonth,
+  isToday,
   isValid,
   startOfMonth,
   startOfWeek,
@@ -113,6 +114,7 @@ function CivilMiniCalendar({
           const outside = !isSameMonth(day, monthCursor);
           const disabled = isDayDisabled(ymd, min, max);
           const sel = selected && isValid(selected) && isSameDay(day, selected);
+          const today = isToday(day);
           return (
             <button
               key={ymd}
@@ -127,6 +129,10 @@ function CivilMiniCalendar({
                 outside && "text-muted-foreground/45",
                 !outside && !disabled && "text-foreground hover:bg-muted/80",
                 disabled && "cursor-not-allowed opacity-30",
+                today &&
+                  !sel &&
+                  !disabled &&
+                  "bg-primary/[0.08] font-medium ring-1 ring-primary/45",
                 sel &&
                   "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
               )}

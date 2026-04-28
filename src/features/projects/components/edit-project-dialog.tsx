@@ -130,31 +130,11 @@ export function EditProjectFormFields({
       </div>
       <div className="space-y-1.5">
         <Label>Resumo</Label>
-        <Input value={summary} onChange={(e) => setSummary(e.target.value)} />
-      </div>
-      <div className="space-y-1.5">
-        <Label>Status no cadastro</Label>
-        <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger aria-label="Status no cadastro">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent
-            position="popper"
-            sideOffset={4}
-            onCloseAutoFocus={(e) => e.preventDefault()}
-          >
-            <SelectItem value="planned">Planejado</SelectItem>
-            <SelectItem value="active">Ativo</SelectItem>
-            <SelectItem value="on_hold">Em espera</SelectItem>
-            <SelectItem value="completed">Concluído</SelectItem>
-            <SelectItem value="cancelled">Cancelado</SelectItem>
-          </SelectContent>
-        </Select>
-        <p className="text-[11px] text-muted-foreground">
-          Na lista, o status exibido é o operacional (Planejado, Em Progresso, Bloqueado,
-          Bem/Parcialmente bem sucedido, Falhou ou Cancelado), calculado a partir destes valores,
-          progresso e datas.
-        </p>
+        <textarea
+          className="min-h-[5.5rem] w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm"
+          value={summary}
+          onChange={(e) => setSummary(e.target.value)}
+        />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">

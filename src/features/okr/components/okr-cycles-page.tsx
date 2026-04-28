@@ -39,6 +39,7 @@ import { UpdateCycleDialog } from "./update-cycle-dialog";
 import { differenceInDays, isAfter, isBefore } from "date-fns";
 import { cn } from "@/lib/utils/cn";
 import { formatCivilDate, parseCivilDateInput } from "@/lib/date/civil-date";
+import { cyclePhaseLabel, getCyclePhase } from "@/lib/cycles/cycle-phase";
 
 type SortKey = "start_desc" | "start_asc" | "end_desc" | "end_asc";
 type StatusFilter = "all" | OkrCycle["status"];
@@ -316,6 +317,7 @@ export function OkrCyclesPage() {
             items={[
               "cada ciclo agrupa objetivos e KRs de um período específico;",
               "apenas um ciclo pode estar ativo por vez — ele define o contexto padrão do OKR Manager;",
+              "além do status administrativo, cada ciclo tem fase temporal automática: por vir, em andamento ou encerrado;",
               "ciclos encerrados ficam arquivados para consulta histórica;",
               "ao clicar em um ciclo você vê seus OKRs detalhados.",
             ]}
@@ -599,6 +601,9 @@ export function OkrCyclesPage() {
                             </span>
                           )}
                           <CycleStatusBadge status={cycle.status} />
+                          <span className="inline-flex items-center rounded-full border border-border/80 bg-muted/30 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                            {cyclePhaseLabel(getCyclePhase(cycle.startDate, cycle.endDate))}
+                          </span>
                           {cycle.status === "active" && (
                             <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
                               Ciclo em foco

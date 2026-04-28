@@ -20,6 +20,7 @@ import { OkrProgressBar, MiniProgressRing } from "./okr-progress-bar";
 import { UpdateCycleDialog } from "./update-cycle-dialog";
 import { differenceInDays, isAfter, isBefore } from "date-fns";
 import { formatCivilDate, parseCivilDateInput, startOfLocalDay } from "@/lib/date/civil-date";
+import { cyclePhaseLabel, getCyclePhase } from "@/lib/cycles/cycle-phase";
 
 type ObjectiveWithKRs = OkrObjective & { keyResults: OkrKeyResult[] };
 type CycleProject = {
@@ -147,6 +148,9 @@ export function CycleDetailView({ cycleId }: CycleDetailViewProps) {
               <CalendarRange className="h-5 w-5 text-primary" />
               <h1 className="text-xl font-bold text-foreground">{cycle.title}</h1>
               <OkrStatusBadge status={cycle.status} size="md" />
+              <span className="inline-flex items-center rounded-full border border-border/80 bg-muted/30 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                {cyclePhaseLabel(getCyclePhase(cycle.startDate, cycle.endDate))}
+              </span>
             </div>
             <p className="mt-1 text-sm text-muted-foreground">
               {formatCivilDate(cycle.startDate, "dd MMM yyyy")} →{" "}

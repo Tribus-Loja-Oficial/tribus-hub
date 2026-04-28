@@ -7,7 +7,6 @@ import {
   Plus,
   FolderKanban,
   Search,
-  List,
   LayoutGrid,
   Calendar,
   ChevronRight,
@@ -220,7 +219,8 @@ function CreateProjectDialog({ open, onOpenChange, onCreated }: CreateProjectDia
             <Label>
               Resumo <span className="text-xs text-muted-foreground">(opcional)</span>
             </Label>
-            <Input
+            <textarea
+              className="min-h-[5.5rem] w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm"
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
               placeholder="Breve descrição do projeto"
@@ -638,7 +638,6 @@ export function ProjectsListPage() {
 
   const viewButtons: { key: ViewMode; icon: React.ReactNode; label: string }[] = [
     { key: "hierarchy", icon: <GitBranch className="h-3.5 w-3.5" />, label: "Hierarquia" },
-    { key: "list", icon: <List className="h-3.5 w-3.5" />, label: "Lista" },
     { key: "board", icon: <LayoutGrid className="h-3.5 w-3.5" />, label: "Quadro" },
   ];
 
@@ -666,14 +665,14 @@ export function ProjectsListPage() {
       </div>
 
       <PageGuide title="Como funciona a lista de projetos?">
-        <p>Gerencie todos os projetos do workspace com filtros, hierarquia e visão em board.</p>
+        <p>Gerencie os projetos do workspace pela hierarquia e pela visão de quadro.</p>
         <GuideSection title="Nesta tela:">
           <GuideList
             items={[
               "a visão Hierarquia mostra projetos → milestones → tasks de forma expandível;",
               "a visão Board agrupa projetos por status operacional e resultados finais (planejado, em progresso, bloqueado, bem sucedido, parcial, falhou, cancelado);",
               "use os filtros de status, prioridade e saúde para encontrar projetos específicos;",
-              "clique em um projeto para ver seus detalhes completos.",
+              "use o ícone de olho para quick view e o lápis para edição.",
             ]}
           />
         </GuideSection>

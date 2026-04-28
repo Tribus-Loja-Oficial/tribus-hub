@@ -263,7 +263,7 @@ export const INGESTION_TYPE_REFERENCES: IngestionTypeReference[] = [
   },
   {
     type: "milestone",
-    summary: "Marco dentro de um projeto.",
+    summary: "Milestone dentro de um projeto.",
     envelope: envCommon,
     dataFields: [
       { key: "title", requirement: "required", valueType: "string", maxLength: 500 },

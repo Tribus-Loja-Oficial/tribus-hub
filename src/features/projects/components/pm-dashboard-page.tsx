@@ -16,7 +16,6 @@ import {
   TrendingUp,
   Flag,
   Clock,
-  GitBranch,
   Activity,
   Layers3,
   Search,
@@ -31,6 +30,7 @@ import { ProjectHealthRow, PriorityBadge } from "./project-badges";
 import type { Project, WorkflowStatusInsight } from "@/lib/types/domain";
 import { WorkflowStatusRow } from "@/components/workflow-status-badge";
 import { cn } from "@/lib/utils/cn";
+import { cyclePhaseLabel, getCyclePhase, type CyclePhase } from "@/lib/cycles/cycle-phase";
 
 interface UpcomingMilestone {
   id: string;
@@ -70,6 +70,36 @@ type WorkspaceCycleRow = {
     workflowStatusInsight?: Project["workflowStatusInsight"];
   }>;
 };
+
+const CYCLE_PHASE_OPTIONS: Array<{ value: "all" | CyclePhase; label: string }> = [
+  { value: "all", label: "Todas as fases" },
+  { value: "upcoming", label: "Por vir" },
+  { value: "running", label: "Em andamento" },
+  { value: "ended", label: "Encerrado" },
+];
+
+const CYCLE_GOVERNANCE_OPTIONS = [
+  { value: "all", label: "Todos administrativos" },
+  { value: "planned", label: "Planejado" },
+  { value: "active", label: "Ativo" },
+  { value: "closed", label: "Fechado" },
+  { value: "archived", label: "Arquivado" },
+] as const;
+
+function cycleAdminLabel(status: string): string {
+  switch (status) {
+    case "planned":
+      return "Planejado";
+    case "active":
+      return "Ativo";
+    case "closed":
+      return "Fechado";
+    case "archived":
+      return "Arquivado";
+    default:
+      return status;
+  }
+}
 
 function StatCard({
   icon: Icon,
@@ -122,11 +152,18 @@ export function PmDashboardPage() {
     ? "cycles"
     : "overview";
   const [cycleSearch, setCycleSearch] = useState("");
-  const [cycleStatusFilter, setCycleStatusFilter] = useState<
+  const [cyclePhaseFilter, setCyclePhaseFilter] = useState<"all" | CyclePhase>("all");
+  const [cycleGovernanceFilter, setCycleGovernanceFilter] = useState<
     "all" | "planned" | "active" | "closed" | "archived"
   >("all");
   const [cycleQualityFilter, setCycleQualityFilter] = useState<
     "all" | "without_objectives" | "without_projects" | "without_active_projects"
+  >("all");
+  const [projectStatusFilter, setProjectStatusFilter] = useState<"all" | "active" | "blocked">(
+    "all",
+  );
+  const [projectHealthFilter, setProjectHealthFilter] = useState<
+    "all" | "at_risk" | "off_track" | "on_track"
   >("all");
   const { data: statsData, isLoading: statsLoading } = useQuery<{ data: DashboardStats }>({
     queryKey: ["pm-dashboard-stats"],
@@ -170,6 +207,7 @@ export function PmDashboardPage() {
         id: c.id,
         title: c.title,
         status: c.status,
+        phase: getCyclePhase(c.startDate, c.endDate),
         startDate: c.startDate,
         endDate: c.endDate,
         objectiveCount: Number(c.summary?.objectiveCount ?? 0),
@@ -179,6 +217,7 @@ export function PmDashboardPage() {
         id: "__without_cycle__",
         title: "Sem ciclo",
         status: "planned",
+        phase: "undated" as const,
         startDate: null,
         endDate: null,
         objectiveCount: 0,
@@ -189,7 +228,8 @@ export function PmDashboardPage() {
   const filteredCycles = useMemo(() => {
     const q = cycleSearch.trim().toLowerCase();
     return cyclesWithProjects.filter((c) => {
-      if (cycleStatusFilter !== "all" && c.status !== cycleStatusFilter) return false;
+      if (cyclePhaseFilter !== "all" && c.phase !== cyclePhaseFilter) return false;
+      if (cycleGovernanceFilter !== "all" && c.status !== cycleGovernanceFilter) return false;
       if (cycleQualityFilter === "without_projects" && c.projects.length > 0) return false;
       if (cycleQualityFilter === "without_objectives" && c.objectiveCount > 0) return false;
       if (
@@ -198,11 +238,32 @@ export function PmDashboardPage() {
       ) {
         return false;
       }
+      if (projectStatusFilter !== "all") {
+        const hasProjectByStatus =
+          projectStatusFilter === "active"
+            ? c.projects.some((p) => p.status === "active")
+            : c.projects.some((p) => p.status === "on_hold" || p.status === "blocked");
+        if (!hasProjectByStatus) return false;
+      }
+      if (projectHealthFilter !== "all") {
+        const hasProjectByHealth = c.projects.some(
+          (p) => p.healthInsight?.slug === projectHealthFilter,
+        );
+        if (!hasProjectByHealth) return false;
+      }
       if (!q) return true;
       if (c.title.toLowerCase().includes(q)) return true;
       return c.projects.some((p) => p.title.toLowerCase().includes(q));
     });
-  }, [cycleQualityFilter, cycleSearch, cycleStatusFilter, cyclesWithProjects]);
+  }, [
+    cycleGovernanceFilter,
+    cyclePhaseFilter,
+    cycleQualityFilter,
+    cycleSearch,
+    cyclesWithProjects,
+    projectHealthFilter,
+    projectStatusFilter,
+  ]);
   const cycleIssuesCount = useMemo(
     () =>
       cyclesWithProjects.filter((c) => c.projects.length === 0 || c.objectiveCount === 0).length,
@@ -218,8 +279,14 @@ export function PmDashboardPage() {
             <FolderKanban className="h-[18px] w-[18px] text-primary" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold leading-tight text-foreground">Projetos</h1>
-            <p className="mt-0.5 text-xs text-muted-foreground">Visão executiva do portfólio</p>
+            <h1 className="text-lg font-semibold leading-tight text-foreground">
+              {view === "cycles" ? "Ciclos de projetos" : "Projetos"}
+            </h1>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {view === "cycles"
+                ? "Organização temporal do portfólio por ciclos"
+                : "Visão executiva do portfólio"}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -229,22 +296,16 @@ export function PmDashboardPage() {
               Visão geral
             </Link>
           </Button>
-          <Button variant={view === "cycles" ? "default" : "outline"} size="sm" asChild>
-            <Link href="/projects/cycles">
-              <Layers3 className="h-3.5 w-3.5" />
-              Ciclos
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" asChild>
-            <Link href="/projects/list">
-              <GitBranch className="h-3.5 w-3.5" />
-              Hierarquia
-            </Link>
-          </Button>
           <Button size="sm" asChild>
             <Link href="/projects/list">
               <List className="h-3.5 w-3.5" />
               Todos os projetos
+            </Link>
+          </Button>
+          <Button variant={view === "cycles" ? "default" : "outline"} size="sm" asChild>
+            <Link href="/projects/cycles">
+              <Layers3 className="h-3.5 w-3.5" />
+              Ciclos
             </Link>
           </Button>
         </div>
@@ -253,7 +314,7 @@ export function PmDashboardPage() {
       <PageGuide title="O que é o Project Manager?">
         <p>
           Visão executiva do portfólio de projetos. Acompanhe o status, saúde e progresso de todos
-          os projetos em um só lugar.
+          os projetos em um só lugar, organizados por ciclos.
         </p>
         <GuideSection title="Nesta tela:">
           <GuideList
@@ -261,7 +322,8 @@ export function PmDashboardPage() {
               "cartões de saúde mostram projetos em risco, bloqueados e no prazo;",
               "milestones próximas do vencimento são destacadas com alertas;",
               "clique em qualquer card para filtrar a lista de projetos correspondente;",
-              "acesse 'Todos os projetos' para ver a hierarquia completa com milestones e tasks.",
+              "ciclos possuem duas leituras: status administrativo (planejado, ativo, fechado, arquivado) e fase temporal (por vir, em andamento, encerrado);",
+              "a fase temporal é calculada automaticamente pelas datas de início/fim e aplicada nas telas de ciclos do hub.",
             ]}
           />
         </GuideSection>
@@ -413,7 +475,7 @@ export function PmDashboardPage() {
               <div className="space-y-3">
                 <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
                   <Flag className="h-4 w-4 text-amber-500/80" />
-                  Próximos marcos{" "}
+                  Próximos milestones{" "}
                   <span className="text-xs font-normal text-muted-foreground">(14 dias)</span>
                 </h2>
                 <div className="overflow-hidden rounded-xl border border-border">
@@ -498,8 +560,9 @@ export function PmDashboardPage() {
                       <Flag className="h-4 w-4 shrink-0 text-orange-500" />
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-orange-700">
-                          {stats.overdueMilestones} marco{stats.overdueMilestones !== 1 ? "s" : ""}{" "}
-                          atrasado{stats.overdueMilestones !== 1 ? "s" : ""}
+                          {stats.overdueMilestones} milestone
+                          {stats.overdueMilestones !== 1 ? "s" : ""} atrasado
+                          {stats.overdueMilestones !== 1 ? "s" : ""}
                         </p>
                         <p className="mt-0.5 text-xs text-orange-600/80">
                           Clique para ver projetos
@@ -567,8 +630,8 @@ export function PmDashboardPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="grid gap-2 sm:grid-cols-3">
-            <div className="relative sm:col-span-2">
+          <div className="space-y-3 rounded-xl border border-border bg-card p-3">
+            <div className="relative">
               <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/60" />
               <Input
                 value={cycleSearch}
@@ -577,29 +640,101 @@ export function PmDashboardPage() {
                 className="h-9 pl-8"
               />
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <select
-                className="h-9 rounded-md border border-input bg-background px-2 text-xs"
-                value={cycleStatusFilter}
-                onChange={(e) => setCycleStatusFilter(e.target.value as typeof cycleStatusFilter)}
-              >
-                <option value="all">Todos status</option>
-                <option value="planned">Planejado</option>
-                <option value="active">Ativo</option>
-                <option value="closed">Encerrado</option>
-                <option value="archived">Arquivado</option>
-              </select>
-              <select
-                className="h-9 rounded-md border border-input bg-background px-2 text-xs"
-                value={cycleQualityFilter}
-                onChange={(e) => setCycleQualityFilter(e.target.value as typeof cycleQualityFilter)}
-              >
-                <option value="all">Qualidade</option>
-                <option value="without_objectives">Sem objetivos</option>
-                <option value="without_projects">Sem projetos</option>
-                <option value="without_active_projects">Sem ativos</option>
-              </select>
+            <div className="grid gap-3 lg:grid-cols-2">
+              <div className="space-y-1.5">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Filtros de ciclo
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  <select
+                    className="h-9 rounded-md border border-input bg-background px-2 text-xs"
+                    value={cyclePhaseFilter}
+                    onChange={(e) => setCyclePhaseFilter(e.target.value as typeof cyclePhaseFilter)}
+                  >
+                    {CYCLE_PHASE_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    className="h-9 rounded-md border border-input bg-background px-2 text-xs"
+                    value={cycleGovernanceFilter}
+                    onChange={(e) =>
+                      setCycleGovernanceFilter(e.target.value as typeof cycleGovernanceFilter)
+                    }
+                  >
+                    {CYCLE_GOVERNANCE_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    className="h-9 rounded-md border border-input bg-background px-2 text-xs"
+                    value={cycleQualityFilter}
+                    onChange={(e) =>
+                      setCycleQualityFilter(e.target.value as typeof cycleQualityFilter)
+                    }
+                  >
+                    <option value="all">Qualidade</option>
+                    <option value="without_objectives">Sem objetivos</option>
+                    <option value="without_projects">Sem projetos</option>
+                    <option value="without_active_projects">Sem ativos</option>
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Filtros de projeto (dentro dos ciclos)
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <select
+                    className="h-9 rounded-md border border-input bg-background px-2 text-xs"
+                    value={projectStatusFilter}
+                    onChange={(e) =>
+                      setProjectStatusFilter(e.target.value as typeof projectStatusFilter)
+                    }
+                  >
+                    <option value="all">Qualquer status de projeto</option>
+                    <option value="active">Com projeto ativo</option>
+                    <option value="blocked">Com projeto bloqueado</option>
+                  </select>
+                  <select
+                    className="h-9 rounded-md border border-input bg-background px-2 text-xs"
+                    value={projectHealthFilter}
+                    onChange={(e) =>
+                      setProjectHealthFilter(e.target.value as typeof projectHealthFilter)
+                    }
+                  >
+                    <option value="all">Qualquer saúde de projeto</option>
+                    <option value="on_track">No rumo</option>
+                    <option value="at_risk">Em risco</option>
+                    <option value="off_track">Fora do rumo</option>
+                  </select>
+                </div>
+              </div>
             </div>
+            {(cycleSearch ||
+              cyclePhaseFilter !== "all" ||
+              cycleGovernanceFilter !== "all" ||
+              cycleQualityFilter !== "all" ||
+              projectStatusFilter !== "all" ||
+              projectHealthFilter !== "all") && (
+              <button
+                className="text-left text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => {
+                  setCycleSearch("");
+                  setCyclePhaseFilter("all");
+                  setCycleGovernanceFilter("all");
+                  setCycleQualityFilter("all");
+                  setProjectStatusFilter("all");
+                  setProjectHealthFilter("all");
+                }}
+              >
+                Limpar todos os filtros
+              </button>
+            )}
           </div>
           {cycleIssuesCount > 0 && (
             <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-100">
@@ -619,7 +754,29 @@ export function PmDashboardPage() {
               <div key={c.id} className="rounded-xl border border-border bg-card">
                 <div className="flex items-center justify-between border-b border-border px-4 py-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-foreground">{c.title}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="truncate text-sm font-semibold text-foreground">{c.title}</p>
+                      <span
+                        className={cn(
+                          "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold",
+                          c.phase === "running" &&
+                            "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200",
+                          c.phase === "upcoming" &&
+                            "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-200",
+                          c.phase === "ended" &&
+                            "border-slate-500/30 bg-slate-500/10 text-slate-700 dark:text-slate-200",
+                          c.phase === "undated" &&
+                            "border-border bg-muted/40 text-muted-foreground",
+                        )}
+                      >
+                        {cyclePhaseLabel(c.phase)}
+                      </span>
+                      {c.id !== "__without_cycle__" && (
+                        <span className="inline-flex items-center rounded-full border border-border/80 bg-muted/30 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                          {cycleAdminLabel(c.status)}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       {c.startDate && c.endDate
                         ? `${formatCivilDate(c.startDate, "dd MMM yyyy")} → ${formatCivilDate(c.endDate, "dd MMM yyyy")}`

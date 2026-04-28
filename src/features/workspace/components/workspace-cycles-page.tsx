@@ -6,6 +6,7 @@ import Link from "next/link";
 import { AlertTriangle, CalendarRange, FolderKanban, Search, Target } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils/cn";
+import { cyclePhaseLabel, getCyclePhase, type CyclePhase } from "@/lib/cycles/cycle-phase";
 
 type WorkspaceCycle = {
   id: string;
@@ -31,6 +32,7 @@ type WorkspaceCycle = {
 
 export function WorkspaceCyclesPage() {
   const [search, setSearch] = useState("");
+  const [phaseFilter, setPhaseFilter] = useState<"all" | CyclePhase>("all");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "planned" | "active" | "closed" | "archived"
   >("all");
@@ -47,6 +49,8 @@ export function WorkspaceCyclesPage() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return cycles.filter((c) => {
+      if (phaseFilter !== "all" && getCyclePhase(c.startDate, c.endDate) !== phaseFilter)
+        return false;
       if (statusFilter !== "all" && c.status !== statusFilter) return false;
       if (qualityFilter === "without_objectives" && c.summary.objectiveCount > 0) return false;
       if (qualityFilter === "without_projects" && c.summary.projectCount > 0) return false;
@@ -62,7 +66,7 @@ export function WorkspaceCyclesPage() {
       const inProjects = c.projects.some((p) => p.title.toLowerCase().includes(q));
       return inCycle || inObjectives || inProjects;
     });
-  }, [cycles, qualityFilter, search, statusFilter]);
+  }, [cycles, phaseFilter, qualityFilter, search, statusFilter]);
 
   const qualityIssues = useMemo(
     () =>
@@ -93,6 +97,17 @@ export function WorkspaceCyclesPage() {
             />
           </div>
           <div className="grid grid-cols-2 gap-2">
+            <select
+              className="h-9 rounded-md border border-input bg-background px-2 text-xs"
+              value={phaseFilter}
+              onChange={(e) => setPhaseFilter(e.target.value as typeof phaseFilter)}
+            >
+              <option value="all">Todas as fases</option>
+              <option value="upcoming">Por vir</option>
+              <option value="running">Em andamento</option>
+              <option value="ended">Encerrado</option>
+              <option value="undated">Sem janela</option>
+            </select>
             <select
               className="h-9 rounded-md border border-input bg-background px-2 text-xs"
               value={statusFilter}
@@ -143,7 +158,12 @@ export function WorkspaceCyclesPage() {
             >
               <div className="flex items-center justify-between border-b border-border px-4 py-3">
                 <div>
-                  <p className="text-sm font-semibold text-foreground">{c.title}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-semibold text-foreground">{c.title}</p>
+                    <span className="inline-flex items-center rounded-full border border-border/80 bg-muted/30 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                      {cyclePhaseLabel(getCyclePhase(c.startDate, c.endDate))}
+                    </span>
+                  </div>
                   <p className="text-xs text-muted-foreground">
                     {c.startDate} → {c.endDate}
                   </p>
