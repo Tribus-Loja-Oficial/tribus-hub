@@ -86,12 +86,7 @@ export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="z-[100] max-h-[90vh] max-w-lg overflow-y-auto"
-        /* `<select>` nativo e UI do SO ficam fora do nó do Content; sem isto o dialog interpreta como outside e derruba o menu. */
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onInteractOutside={(e) => e.preventDefault()}
-      >
+      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar projeto</DialogTitle>
         </DialogHeader>
