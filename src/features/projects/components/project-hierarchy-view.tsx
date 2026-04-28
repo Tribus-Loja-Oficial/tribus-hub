@@ -673,7 +673,7 @@ function ProjectRow({
               <span className="text-[10px] text-muted-foreground/40">—</span>
             )}
           </div>
-          <div className="flex min-w-0 items-center justify-end gap-1.5">
+          <div className="flex min-w-0 items-center justify-start gap-1.5">
             {owner && (
               <span className="mr-0.5 flex min-w-0 items-center gap-0.5 text-[10px] text-muted-foreground">
                 <User className="h-3 w-3 shrink-0" />

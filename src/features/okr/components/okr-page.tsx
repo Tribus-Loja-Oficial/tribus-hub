@@ -1064,7 +1064,7 @@ function ObjectiveBlock({
 
         <div
           data-menu
-          className="relative z-30 flex min-w-0 shrink-0 items-center justify-end gap-1.5 overflow-visible"
+          className="relative z-30 flex min-w-0 shrink-0 items-center justify-start gap-1.5 overflow-visible"
           onClick={(e) => e.stopPropagation()}
         >
           <Button
@@ -1288,7 +1288,7 @@ function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete
 
       <div
         data-menu
-        className="relative z-30 flex min-w-0 shrink-0 items-center justify-end gap-1.5 overflow-visible"
+        className="relative z-30 flex min-w-0 shrink-0 items-center justify-start gap-1.5 overflow-visible"
       >
         <Button
           size="sm"
