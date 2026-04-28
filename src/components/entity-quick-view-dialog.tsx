@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils/cn";
+import type { Project } from "@/lib/types/domain";
 import { ObjectiveDetailView } from "@/features/okr/components/objective-detail-view";
 import { KeyResultDetailView } from "@/features/okr/components/key-result-detail-view";
+import { EditProjectDialog } from "@/features/projects/components/edit-project-dialog";
 import { ProjectDetailView } from "@/features/projects/components/project-detail-view";
 import { MilestoneDetailView } from "@/features/projects/components/milestone-detail-view";
 import { TaskDetailView } from "@/features/tasks/components/task-detail-view";
@@ -57,6 +59,12 @@ export function EntityQuickViewDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
+
+  useEffect(() => {
+    if (!open) setProjectToEdit(null);
+  }, [open]);
+
   function renderDetailContent() {
     if (!entity) return null;
     switch (entity.kind) {
@@ -66,7 +74,11 @@ export function EntityQuickViewDialog({
         return <KeyResultDetailView keyResultId={entity.id} embedded />;
       case "project":
         return (
-          <ProjectDetailView paramsPromise={Promise.resolve({ projectId: entity.id })} embedded />
+          <ProjectDetailView
+            paramsPromise={Promise.resolve({ projectId: entity.id })}
+            embedded
+            onRequestEditProject={(project) => setProjectToEdit(project)}
+          />
         );
       case "milestone":
         return (
@@ -84,18 +96,31 @@ export function EntityQuickViewDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[96vw] max-w-[1200px] p-0">
-        <DialogHeader>
-          <DialogTitle className="px-6 pt-6">
-            {entity ? dialogTitle(entity) : "Detalhes"}
-          </DialogTitle>
-        </DialogHeader>
-        <div className="max-h-[82vh] w-full min-w-0 overflow-y-auto px-4 pb-4">
-          {renderDetailContent()}
-        </div>
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog open={open && !projectToEdit} onOpenChange={onOpenChange}>
+        <DialogContent className="w-[96vw] max-w-[1200px] p-0">
+          <DialogHeader>
+            <DialogTitle className="px-6 pt-6">
+              {entity ? dialogTitle(entity) : "Detalhes"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[82vh] w-full min-w-0 overflow-y-auto px-4 pb-4">
+            {renderDetailContent()}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <EditProjectDialog
+        open={open && !!projectToEdit}
+        project={projectToEdit}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            setProjectToEdit(null);
+            onOpenChange(false);
+          }
+        }}
+      />
+    </>
   );
 }
 

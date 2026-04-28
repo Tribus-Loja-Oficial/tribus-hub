@@ -84,6 +84,8 @@ interface ProjectDetailViewProps {
   paramsPromise: Promise<{ projectId: string }>;
   /** Full width inside quick-view dialog (no max-w-5xl cap). */
   embedded?: boolean;
+  /** No quick-view, permite trocar detalhe por popup dedicado de edição. */
+  onRequestEditProject?: (project: Project) => void;
 }
 
 type MemberRow = { id: string; name: string; email: string };
@@ -447,7 +449,11 @@ function OkrLinksTab({ projectId }: { projectId: string }) {
 
 // ─── Main View ────────────────────────────────────────────────────────────────
 
-export function ProjectDetailView({ paramsPromise, embedded }: ProjectDetailViewProps) {
+export function ProjectDetailView({
+  paramsPromise,
+  embedded,
+  onRequestEditProject,
+}: ProjectDetailViewProps) {
   const { projectId } = use(paramsPromise);
   const queryClient = useQueryClient();
   const [createMilestoneOpen, setCreateMilestoneOpen] = useState(false);
@@ -645,7 +651,13 @@ export function ProjectDetailView({ paramsPromise, embedded }: ProjectDetailView
           <Button
             size="sm"
             variant="outline"
-            onClick={() => setEditProjectOpen(true)}
+            onClick={() => {
+              if (embedded && onRequestEditProject) {
+                onRequestEditProject(project);
+                return;
+              }
+              setEditProjectOpen(true);
+            }}
             className="gap-1.5"
           >
             <Pencil className="h-3.5 w-3.5" />
