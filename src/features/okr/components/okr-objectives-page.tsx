@@ -147,7 +147,16 @@ export function OkrObjectivesPage() {
 
   const filtered = allObjectives.filter((o) => {
     if (search && !o.title.toLowerCase().includes(search.toLowerCase())) return false;
-    if (filterStatus && (o.workflowStatusInsight?.slug ?? "planned") !== filterStatus) return false;
+    if (filterStatus) {
+      const derived = deriveOkrWorkflowStatusInsight({
+        workflowStatusInsight: o.workflowStatusInsight,
+        startDate: o.startDate,
+        targetDate: o.targetDate,
+        progressPercent: o.progressPercent,
+      });
+      const slug = derived?.slug ?? o.workflowStatusInsight?.slug ?? "planned";
+      if (slug !== filterStatus) return false;
+    }
     if (filterHealth) {
       const health = reconcileOkrHealthInsightForDisplay(o.healthInsight, o) ?? o.healthInsight;
       if ((health?.slug ?? "") !== filterHealth) return false;

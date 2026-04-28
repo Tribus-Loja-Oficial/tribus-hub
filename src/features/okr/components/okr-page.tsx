@@ -255,7 +255,13 @@ export function OkrPage() {
     let list = allObjectives;
     if (filterStatuses.size > 0) {
       list = list.filter((o) => {
-        const slug = o.workflowStatusInsight?.slug ?? "planned";
+        const derived = deriveOkrWorkflowStatusInsight({
+          workflowStatusInsight: o.workflowStatusInsight,
+          startDate: o.startDate,
+          targetDate: o.targetDate,
+          progressPercent: o.progressPercent,
+        });
+        const slug = derived?.slug ?? o.workflowStatusInsight?.slug ?? "planned";
         return filterStatuses.has(slug);
       });
     }
