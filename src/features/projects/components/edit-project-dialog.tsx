@@ -64,13 +64,21 @@ export function EditProjectFormFields({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error("Falha ao salvar projeto");
-      return res.json();
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const message =
+          typeof json?.error?.message === "string" ? json.error.message : "Falha ao salvar projeto";
+        throw new Error(message);
+      }
+      return json;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["project-hub"] });
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      queryClient.invalidateQueries({ queryKey: ["project-hierarchy"] });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["project-hub", project.id] }),
+        queryClient.invalidateQueries({ queryKey: ["project-hub"] }),
+        queryClient.invalidateQueries({ queryKey: ["projects"] }),
+        queryClient.invalidateQueries({ queryKey: ["project-hierarchy"] }),
+      ]);
       onSaved();
     },
   });
@@ -233,6 +241,9 @@ export function EditProjectFormFields({
           {mutation.isPending ? "Salvando…" : "Salvar"}
         </Button>
       </div>
+      {mutation.error instanceof Error && (
+        <p className="text-sm text-destructive">{mutation.error.message}</p>
+      )}
     </form>
   );
 }
