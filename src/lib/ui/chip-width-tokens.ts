@@ -2,7 +2,7 @@
  * Largura fixa do chip por coluna (status / health / prioridade), ponto base nos rótulos de
  * `pace-health-display` + `px-2` + borda. **sem** alterar colunas do grid.
  */
-export const TABLE_STATUS_CHIP_PX = 122;
+export const TABLE_STATUS_CHIP_PX = 165;
 export const TABLE_HEALTH_CHIP_PX = 94;
 export const TABLE_PRIORITY_CHIP_PX = 58;
 

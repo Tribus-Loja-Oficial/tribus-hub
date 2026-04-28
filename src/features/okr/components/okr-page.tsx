@@ -959,7 +959,7 @@ function ObjectiveBlock({
       <div
         className={cn(
           OKR_LIST_GRID_BASE,
-          "cursor-pointer select-none rounded-xl px-4 py-3 transition-colors",
+          "cursor-pointer select-none overflow-visible rounded-xl px-4 py-3 transition-colors",
           isExpanded ? "rounded-b-none bg-muted/30" : "bg-card hover:bg-muted/20",
         )}
         style={{
@@ -1064,7 +1064,7 @@ function ObjectiveBlock({
 
         <div
           data-menu
-          className="relative z-20 flex min-w-0 shrink-0 items-center justify-end gap-1.5 overflow-visible"
+          className="relative z-30 flex min-w-0 shrink-0 items-center justify-end gap-1.5 overflow-visible"
           onClick={(e) => e.stopPropagation()}
         >
           <Button
@@ -1082,7 +1082,7 @@ function ObjectiveBlock({
           {objMenuOpen && (
             <div
               data-menu
-              className="absolute right-0 top-8 z-[120] w-44 rounded-lg border border-border bg-popover py-1 shadow-lg"
+              className="absolute right-0 top-8 z-[220] w-44 rounded-lg border border-border bg-popover py-1 shadow-lg"
             >
               <Link
                 href={`/okr/objectives/${objective.id}`}
@@ -1199,7 +1199,7 @@ function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete
     <div
       className={cn(
         OKR_LIST_GRID_BASE,
-        "bg-muted/5 py-2.5 transition-colors hover:bg-muted/15",
+        "overflow-visible bg-muted/5 py-2.5 transition-colors hover:bg-muted/15",
         !isLast ? "border-b border-border/30" : "",
       )}
       style={{ gridTemplateColumns: gridTpl }}
@@ -1210,19 +1210,25 @@ function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete
         </div>
       </div>
 
-      <div className="flex min-w-0 flex-col justify-center gap-0.5 overflow-hidden border-l border-border/50 px-1 pl-3">
-        <Link
-          href={`/okr/key-results/${kr.id}`}
-          className="line-clamp-2 min-w-0 break-words text-sm leading-snug text-foreground/80 transition-colors hover:text-primary"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {kr.title}
-        </Link>
-        {kr.externalRef && (
-          <p className="font-mono text-[10px] leading-tight text-muted-foreground">
-            Ref: {kr.externalRef}
-          </p>
-        )}
+      <div className="flex min-w-0 items-center gap-2 overflow-hidden border-l border-border/50 px-1 pl-3">
+        <EntityQuickViewEyeButton
+          entity={{ kind: "keyResult", id: kr.id }}
+          className="h-6 w-6 shrink-0"
+        />
+        <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 overflow-hidden">
+          <Link
+            href={`/okr/key-results/${kr.id}`}
+            className="line-clamp-2 min-w-0 break-words text-sm leading-snug text-foreground/80 transition-colors hover:text-primary"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {kr.title}
+          </Link>
+          {kr.externalRef && (
+            <p className="font-mono text-[10px] leading-tight text-muted-foreground">
+              Ref: {kr.externalRef}
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center justify-start px-1" aria-hidden />
@@ -1282,9 +1288,8 @@ function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete
 
       <div
         data-menu
-        className="relative z-20 flex min-w-0 shrink-0 items-center justify-end gap-1.5 overflow-visible"
+        className="relative z-30 flex min-w-0 shrink-0 items-center justify-end gap-1.5 overflow-visible"
       >
-        <EntityQuickViewEyeButton entity={{ kind: "keyResult", id: kr.id }} />
         <Button
           size="sm"
           variant="ghost"
@@ -1300,7 +1305,7 @@ function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete
         {menuOpen && (
           <div
             data-menu
-            className="absolute right-0 top-8 z-[120] w-44 rounded-lg border border-border bg-popover py-1 shadow-lg"
+            className="absolute right-0 top-8 z-[220] w-44 rounded-lg border border-border bg-popover py-1 shadow-lg"
           >
             <Link
               href={`/okr/key-results/${kr.id}`}
