@@ -164,7 +164,7 @@ const DateField = React.forwardRef<HTMLButtonElement, DateFieldProps>(
         : "";
 
     return (
-      <Popover modal={false} open={open} onOpenChange={setOpen}>
+      <Popover modal open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button
             id={fieldId}
@@ -190,7 +190,13 @@ const DateField = React.forwardRef<HTMLButtonElement, DateFieldProps>(
             <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
           </button>
         </PopoverTrigger>
-        <PopoverContent side="bottom" align="start" className="p-0">
+        <PopoverContent
+          side="bottom"
+          align="start"
+          className="p-0"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          onCloseAutoFocus={(e) => e.preventDefault()}
+        >
           <CivilMiniCalendar
             value={value}
             min={min}

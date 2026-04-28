@@ -30,10 +30,15 @@ type DialogContentProps = React.ComponentPropsWithoutRef<typeof DialogPrimitive.
   nested?: boolean;
 };
 
+/** Portais Radix (Popover, Select, …) não são filhos do painel do Dialog — evita fechar ao clicar neles. */
+function isTribusOverlapPortalTarget(target: EventTarget | null): boolean {
+  return target instanceof Element && target.closest("[data-tribus-overlap-safe]") !== null;
+}
+
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   DialogContentProps
->(({ className, children, nested, ...props }, ref) => (
+>(({ className, children, nested, onPointerDownOutside, onInteractOutside, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay className={nested ? "z-[110]" : undefined} />
     <DialogPrimitive.Content
@@ -43,6 +48,16 @@ const DialogContent = React.forwardRef<
         nested && "z-[110]",
         className,
       )}
+      onPointerDownOutside={(event) => {
+        const t = event.detail.originalEvent.target;
+        if (isTribusOverlapPortalTarget(t)) event.preventDefault();
+        onPointerDownOutside?.(event);
+      }}
+      onInteractOutside={(event) => {
+        const t = event.detail.originalEvent.target;
+        if (isTribusOverlapPortalTarget(t)) event.preventDefault();
+        onInteractOutside?.(event);
+      }}
       {...props}
     >
       {children}

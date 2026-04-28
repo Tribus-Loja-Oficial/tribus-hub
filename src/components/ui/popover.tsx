@@ -18,6 +18,7 @@ const PopoverContent = React.forwardRef<
       align={align}
       sideOffset={sideOffset}
       collisionPadding={collisionPadding}
+      data-tribus-overlap-safe=""
       className={cn(
         "z-[400] w-max rounded-lg border border-border bg-card p-0 text-foreground shadow-lg outline-none",
         className,
