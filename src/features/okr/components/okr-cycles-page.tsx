@@ -339,7 +339,7 @@ export function OkrCyclesPage() {
               <>
                 <p className="truncate font-semibold text-foreground">{activeCycle.title}</p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  {formatShort(activeCycle.startDate)} → {formatShort(activeCycle.endDate)}
+                  {formatD(activeCycle.startDate)} → {formatD(activeCycle.endDate)}
                 </p>
                 <div className="mt-2">
                   <OkrStatusBadge status={activeCycle.status} />
@@ -943,7 +943,7 @@ function CycleExpandedObjectives({
                 <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
                   {obj.title}
                 </span>
-                <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
+                <div className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 sm:justify-end">
                   <OkrEntityStatusRow
                     status={obj.status}
                     workflowStatusInsight={obj.workflowStatusInsight}
@@ -952,7 +952,7 @@ function CycleExpandedObjectives({
                     targetDate={obj.targetDate}
                     progressPercent={obj.progressPercent}
                   />
-                  <span className="text-xs tabular-nums text-muted-foreground">
+                  <span className="inline-block w-[7.25rem] text-right text-xs tabular-nums tracking-tight text-muted-foreground">
                     {Math.round(obj.progressPercent)}% · {obj.keyResults.length} KR
                     {obj.keyResults.length !== 1 ? "s" : ""}
                   </span>

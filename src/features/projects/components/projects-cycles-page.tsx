@@ -29,13 +29,14 @@ import { PageGuide, GuideSection, GuideList } from "@/components/ui/page-guide";
 import { OkrProgressBar } from "@/features/okr/components/okr-progress-bar";
 import { CreateCycleDialog } from "@/features/okr/components/create-cycle-dialog";
 import { UpdateCycleDialog } from "@/features/okr/components/update-cycle-dialog";
+import { OkrStatusBadge } from "@/features/okr/components/okr-status-badge";
 import { ProjectHealthRow } from "./project-badges";
 import { WorkflowStatusRow } from "@/components/workflow-status-badge";
 import { cyclePhaseLabel, getCyclePhase } from "@/lib/cycles/cycle-phase";
 import { cn } from "@/lib/utils/cn";
 import { formatCivilDate, parseCivilDateInput } from "@/lib/date/civil-date";
 import { differenceInDays, isAfter, isBefore } from "date-fns";
-import type { OkrCycle, Project } from "@/lib/types/domain";
+import type { OkrCycle, Project, ProjectStatus } from "@/lib/types/domain";
 
 type SortKey = "start_desc" | "start_asc" | "end_desc" | "end_asc";
 type StatusFilter = "all" | OkrCycle["status"];
@@ -46,12 +47,17 @@ type WorkspaceCycleRow = {
   status: string;
   startDate: string | null;
   endDate: string | null;
-  summary: { objectiveCount: number; projectCount: number };
+  summary: {
+    objectiveCount: number;
+    projectCount: number;
+    /** Alinhado ao GET /workspace/cycles (on_hold ou health_status bloqueado). */
+    projectBlocked?: number;
+  };
   projects: Array<{
     id: string;
     title: string;
     slug?: string | null;
-    status: string;
+    status: ProjectStatus;
     progressPercent?: number;
     healthInsight?: Project["healthInsight"];
     workflowStatusInsight?: Project["workflowStatusInsight"];
@@ -191,6 +197,44 @@ export function ProjectsCyclesPage() {
     return m;
   }, [projectsRes?.data]);
   const activeCycle = useMemo(() => cycles.find((c) => c.status === "active"), [cycles]);
+  /** Mesma base do card “Execução no ciclo ativo”: prioriza workspace-cycles, depois lista de projetos. */
+  const activeCycleExecutionStats = useMemo(() => {
+    if (!activeCycle) return null;
+    type ExecProject = {
+      status: ProjectStatus;
+      progressPercent?: number;
+      healthInsight?: Project["healthInsight"];
+    };
+    const metrics = (projects: ExecProject[], declaredTotal?: number) => {
+      const total = declaredTotal ?? projects.length;
+      const activeCount = projects.filter((p) => p.status === "active").length;
+      const atRiskCount = projects.filter((p) => {
+        const slug = p.healthInsight?.slug;
+        return slug === "at_risk" || slug === "off_track";
+      }).length;
+      const progresses = projects.map((p) => Number(p.progressPercent ?? 0));
+      const avgProgress =
+        progresses.length > 0
+          ? Math.round((progresses.reduce((a, b) => a + b, 0) / progresses.length) * 10) / 10
+          : 0;
+      return { total, activeCount, atRiskCount, avgProgress };
+    };
+    const row = workspaceByCycle.get(activeCycle.id);
+    if (row) {
+      const projects = row.projects ?? [];
+      return metrics(projects, row.summary.projectCount ?? projects.length);
+    }
+    const list = (projectsRes?.data ?? []).filter((p) => p.cycleId === activeCycle.id);
+    if (list.length === 0) {
+      return {
+        total: projectCountByCycleId.get(activeCycle.id) ?? 0,
+        activeCount: 0,
+        atRiskCount: 0,
+        avgProgress: 0,
+      };
+    }
+    return metrics(list, list.length);
+  }, [activeCycle, projectCountByCycleId, projectsRes?.data, workspaceByCycle]);
   const nextPlanned = useMemo(() => {
     const now = new Date();
     const planned = cycles
@@ -254,7 +298,8 @@ export function ProjectsCyclesPage() {
                 Ciclos de projetos
               </h1>
               <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted-foreground">
-                Mesma governanca de ciclos do OKR Manager, agora com foco no portfolio de projetos.
+                Gerencie os períodos estratégicos que organizam o portfólio de projetos. Um ciclo
+                ativo define o foco temporal e os filtros desta área.
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/80 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
@@ -287,7 +332,7 @@ export function ProjectsCyclesPage() {
         <GuideSection title="Nesta tela:">
           <GuideList
             items={[
-              "filtros e ordenacao iguais aos ciclos de OKR;",
+              "busca, filtro de status e ordenacao por datas de inicio e fim;",
               "cada card mostra fase temporal, status e resumo de execucao;",
               "expanda o ciclo para ver os projetos vinculados;",
               "acoes de ciclo: ativar, encerrar, arquivar, editar e remover.",
@@ -298,37 +343,91 @@ export function ProjectsCyclesPage() {
 
       {!isLoading && cycles.length > 0 && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <SummaryCard title="Ciclo ativo" icon={CheckCircle} iconClass="text-emerald-600">
-            {activeCycle ? (
+          <SummaryCard
+            title="Ciclo ativo"
+            icon={CheckCircle}
+            iconClass="text-emerald-600 dark:text-emerald-400"
+            empty={!activeCycle}
+            emptyLabel="Nenhum ciclo ativo"
+          >
+            {activeCycle && (
               <>
                 <p className="truncate font-semibold text-foreground">{activeCycle.title}</p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  {formatD(activeCycle.startDate)} {"->"} {formatD(activeCycle.endDate)}
+                  {formatD(activeCycle.startDate)} → {formatD(activeCycle.endDate)}
                 </p>
+                <div className="mt-2">
+                  <OkrStatusBadge status={activeCycle.status} />
+                </div>
+                <div className="mt-2 text-[11px] text-muted-foreground">
+                  Tempo: {getTemporalLine(activeCycle).progress}%
+                </div>
               </>
-            ) : (
-              <p className="text-sm text-muted-foreground">Nenhum ciclo ativo</p>
             )}
           </SummaryCard>
-          <SummaryCard title="Total de ciclos" icon={CalendarRange} iconClass="text-sky-600">
+          <SummaryCard
+            title="Total de ciclos"
+            icon={CalendarRange}
+            iconClass="text-sky-600 dark:text-sky-400"
+          >
             <p className="text-2xl font-bold tabular-nums text-foreground">{cycles.length}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Inclui planejados, ativos e encerrados
+            </p>
           </SummaryCard>
-          <SummaryCard title="Proximo planejado" icon={Clock} iconClass="text-amber-600">
-            {nextPlanned ? (
+          <SummaryCard
+            title="Próximo planejado"
+            icon={Clock}
+            iconClass="text-amber-600 dark:text-amber-400"
+            empty={!nextPlanned}
+            emptyLabel="Nenhum ciclo planejado"
+          >
+            {nextPlanned && (
               <>
                 <p className="truncate font-semibold text-foreground">{nextPlanned.title}</p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Inicio previsto {formatD(nextPlanned.startDate)}
+                  Início previsto {formatD(nextPlanned.startDate)}
                 </p>
               </>
-            ) : (
-              <p className="text-sm text-muted-foreground">Nenhum ciclo planejado</p>
             )}
           </SummaryCard>
-          <SummaryCard title="Projetos no ciclo ativo" icon={Target} iconClass="text-violet-600">
-            <p className="text-2xl font-bold tabular-nums text-foreground">
-              {activeCycle ? (projectCountByCycleId.get(activeCycle.id) ?? 0) : 0}
-            </p>
+          <SummaryCard
+            title="Execução no ciclo ativo"
+            icon={Target}
+            iconClass="text-violet-600 dark:text-violet-400"
+            empty={!activeCycle}
+            emptyLabel="Sem ciclo ativo"
+          >
+            {activeCycle && activeCycleExecutionStats && (
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <p className="text-muted-foreground">Projetos</p>
+                  <p className="font-semibold tabular-nums text-foreground">
+                    {activeCycleExecutionStats.total}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Ativos</p>
+                  <p className="font-semibold tabular-nums text-foreground">
+                    {activeCycleExecutionStats.activeCount}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Em risco</p>
+                  <p className="font-semibold tabular-nums text-amber-700 dark:text-amber-300">
+                    {activeCycleExecutionStats.atRiskCount > 0
+                      ? `${activeCycleExecutionStats.atRiskCount} proj.`
+                      : "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Média progresso</p>
+                  <p className="font-semibold tabular-nums text-foreground">
+                    {`${activeCycleExecutionStats.avgProgress}%`}
+                  </p>
+                </div>
+              </div>
+            )}
           </SummaryCard>
         </div>
       )}
@@ -407,8 +506,11 @@ export function ProjectsCyclesPage() {
             const row = workspaceByCycle.get(cycle.id);
             const projectCount = row?.projects?.length ?? projectCountByCycleId.get(cycle.id) ?? 0;
             const blockedCount =
-              row?.projects?.filter((p) => p.status === "on_hold" || p.status === "blocked")
-                .length ?? 0;
+              row?.summary.projectBlocked ??
+              row?.projects?.filter(
+                (p) => p.status === "on_hold" || p.workflowStatusInsight?.slug === "blocked",
+              ).length ??
+              0;
             const temporal = getTemporalLine(cycle);
             const isPatchingThis =
               patchMutation.isPending &&
@@ -725,11 +827,15 @@ function SummaryCard({
   icon: Icon,
   iconClass,
   children,
+  empty,
+  emptyLabel,
 }: {
   title: string;
   icon: React.ElementType;
   iconClass?: string;
   children?: React.ReactNode;
+  empty?: boolean;
+  emptyLabel?: string;
 }) {
   return (
     <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
@@ -737,7 +843,9 @@ function SummaryCard({
         <Icon className={cn("h-4 w-4", iconClass)} />
         <span className="text-[11px] font-semibold uppercase tracking-wide">{title}</span>
       </div>
-      <div className="mt-3">{children}</div>
+      <div className="mt-3">
+        {empty ? <p className="text-sm text-muted-foreground">{emptyLabel}</p> : children}
+      </div>
     </div>
   );
 }
