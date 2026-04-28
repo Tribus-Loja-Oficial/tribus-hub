@@ -140,15 +140,22 @@ function isOverdue(
 function ProgressBar({
   done,
   total,
+  percent,
   className,
   showFraction = true,
 }: {
   done: number;
   total: number;
+  percent?: number;
   className?: string;
   showFraction?: boolean;
 }) {
-  const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+  const pct =
+    typeof percent === "number"
+      ? Math.max(0, Math.min(100, Math.round(percent)))
+      : total === 0
+        ? 0
+        : Math.round((done / total) * 100);
   return (
     <div className={cn("flex items-center gap-3", className)}>
       <div className="h-1.5 min-w-[48px] flex-1 overflow-hidden rounded-full bg-muted">
@@ -179,7 +186,7 @@ function TaskRow({
   onEditTask: (taskId: string) => void;
   hierarchyGridTpl: string;
 }) {
-  const done = !!task.completedAt;
+  const done = !!task.completedAt || String(task.columnSlug ?? "").toLowerCase() === "done";
   const overdue = isOverdue(task.dueDate, task.completedAt);
   const assignee = task.assigneeUserId ? members.get(task.assigneeUserId) : null;
 
@@ -406,8 +413,9 @@ function MilestoneRow({
           </div>
           <div className="flex min-w-0 items-center justify-start overflow-hidden opacity-90 transition-opacity group-hover:opacity-100">
             <ProgressBar
-              done={milestone.taskStats.done}
-              total={milestone.taskStats.total}
+              done={0}
+              total={100}
+              percent={milestone.taskProgressPercent ?? 0}
               className="w-full min-w-0"
               showFraction={false}
             />
@@ -620,8 +628,9 @@ function ProjectRow({
           </div>
           <div className="flex min-w-0 items-center justify-start overflow-hidden">
             <ProgressBar
-              done={project.projectStats.doneTasks}
-              total={project.projectStats.totalTasks}
+              done={0}
+              total={100}
+              percent={project.progressPercent ?? 0}
               className="w-full min-w-0"
               showFraction={false}
             />

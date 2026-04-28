@@ -831,8 +831,15 @@ export async function handleV1ExtraRoutes(
       const data = plist.map((raw) => {
         const id = raw.id as string;
         const projMilestones = milestonesByProject.get(id) ?? [];
-        const projTasks = tasksByProject.get(id) ?? [];
-        const doneTasks = projTasks.filter((x: { completedAt: unknown }) => !!x.completedAt).length;
+        const projTasks = (tasksByProject.get(id) ?? []) as Array<{
+          completedAt: unknown;
+          columnSlug?: unknown;
+        }>;
+        const doneTasks = projTasks.filter((x) => {
+          const doneByCompletion = Boolean(x.completedAt);
+          const doneByColumn = String(x.columnSlug ?? "").toLowerCase() === "done";
+          return doneByCompletion || doneByColumn;
+        }).length;
         const progress = progCache.get(id);
         const progressPercent =
           progress && progress.total > 0
@@ -851,7 +858,12 @@ export async function handleV1ExtraRoutes(
             const mTasks = (tasksByMilestone.get(mid) ?? []) as {
               completedAt: unknown;
             }[];
-            const mDone = mTasks.filter((t) => !!t.completedAt).length;
+            const mDone = mTasks.filter((t) => {
+              const doneByCompletion = Boolean(t.completedAt);
+              const doneByColumn =
+                String((t as { columnSlug?: unknown }).columnSlug ?? "").toLowerCase() === "done";
+              return doneByCompletion || doneByColumn;
+            }).length;
             const pct = progress?.milestoneProgressPercent.get(mid) ?? 0;
             return {
               ...mapMilestoneCamel(milestone),
