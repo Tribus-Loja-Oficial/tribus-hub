@@ -121,7 +121,7 @@ const observatorySubItems = [
   /** Visão global: objetivos OKR + projetos por ciclo (workspace). */
   {
     href: "/observatory/cycles",
-    label: "Ciclos gerais",
+    label: "Ciclos",
     icon: CalendarRange,
     exact: false as const,
   },
