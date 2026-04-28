@@ -1,8 +1,6 @@
-import type { Metadata } from "next";
-import { WorkspaceCyclesPage } from "@/features/workspace/components/workspace-cycles-page";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Workspace Cycles" };
-
-export default function Page() {
-  return <WorkspaceCyclesPage />;
+/** URL antiga: ciclos gerais passaram para /observatory/cycles */
+export default function WorkspaceCyclesRedirectPage() {
+  redirect("/observatory/cycles");
 }

@@ -6,7 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Home,
+  Telescope,
   BookOpen,
   Target,
   CheckSquare,
@@ -116,12 +116,16 @@ const pmSubItems = [
   { href: "/projects/cycles", label: "Ciclos", icon: CalendarRange },
 ];
 
-/** Visão global: objetivos + projetos por ciclo (workspace). */
-const workspaceCyclesNav = {
-  href: "/workspace/cycles",
-  label: "Ciclos",
-  icon: CalendarRange,
-} as const;
+const observatorySubItems = [
+  { href: "/observatory", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  /** Visão global: objetivos OKR + projetos por ciclo (workspace). */
+  {
+    href: "/observatory/cycles",
+    label: "Ciclos gerais",
+    icon: CalendarRange,
+    exact: false as const,
+  },
+] as const;
 
 const bottomNavItems = [
   { href: "/tasks", label: "Tasks", icon: CheckSquare },
@@ -157,15 +161,17 @@ export function AppSidebar() {
     dragging.current = false;
   };
 
+  const isObservatoryActive = pathname.startsWith("/observatory");
   const isOkrActive = pathname.startsWith("/okr");
   const isPmActive = pathname.startsWith("/projects");
-  const isWorkspaceCyclesActive = pathname.startsWith(workspaceCyclesHref);
   const isKnowledgeActive = pathname.startsWith("/knowledge");
 
+  const [observatoryOpen, setObservatoryOpen] = useState(isObservatoryActive);
   const [okrOpen, setOkrOpen] = useState(isOkrActive);
   const [pmOpen, setPmOpen] = useState(isPmActive);
   const [knowledgeOpen, setKnowledgeOpen] = useState(isKnowledgeActive);
 
+  const showObservatorySub = isObservatoryActive || observatoryOpen;
   const showOkrSub = isOkrActive || okrOpen;
   const showPmSub = isPmActive || pmOpen;
   const showKnowledgeSub = isKnowledgeActive || knowledgeOpen;
@@ -238,11 +244,40 @@ export function AppSidebar() {
             Navegação
           </p>
 
-          {/* Home */}
-          <Link href="/" className={navItemClass(pathname === "/")}>
-            <Home className={iconClass(pathname === "/")} />
-            Home
-          </Link>
+          {/* Observatory — dashboard + workspace cycles */}
+          <div className="pt-1">
+            <div className={cn(navItemClass(isObservatoryActive), "pr-1")}>
+              <Link href="/observatory" className="flex min-w-0 flex-1 items-center gap-3">
+                <Telescope className={iconClass(isObservatoryActive)} />
+                <span className="flex-1 truncate">Observatory</span>
+              </Link>
+              <button
+                type="button"
+                onClick={() => setObservatoryOpen((v) => !v)}
+                className="shrink-0 rounded p-1 transition-colors hover:bg-sidebar-accent/60"
+              >
+                <ChevronRight
+                  className={cn(
+                    "h-3.5 w-3.5 text-muted-foreground/50 transition-transform duration-150",
+                    showObservatorySub && "rotate-90",
+                  )}
+                />
+              </button>
+            </div>
+            {showObservatorySub && (
+              <div className="ml-4 mt-0.5 space-y-0.5 border-l border-sidebar-border pl-3">
+                {observatorySubItems.map(({ href, label, icon: Icon, exact }) => {
+                  const isActive = exact ? pathname === href : pathname.startsWith(href);
+                  return (
+                    <Link key={href} href={href} className={subItemClass(isActive)}>
+                      <Icon className={subIconClass(isActive)} />
+                      {label}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
           {/* OKR Manager */}
           <div className="pt-1">
@@ -317,18 +352,6 @@ export function AppSidebar() {
                 })}
               </div>
             )}
-          </div>
-
-          {/* Ciclos (workspace) — visão global; ciclos só de projetos ficam em Project Manager → Ciclos */}
-          <div className="pt-1">
-            <Link
-              href={workspaceCyclesHref}
-              title="Objetivos e projetos por ciclo (visão do workspace)"
-              className={navItemClass(isWorkspaceCyclesActive)}
-            >
-              <WorkspaceCyclesNavIcon className={iconClass(isWorkspaceCyclesActive)} />
-              {workspaceCyclesLabel}
-            </Link>
           </div>
 
           {/* Tasks */}

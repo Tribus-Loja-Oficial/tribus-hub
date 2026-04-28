@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils/cn";
 import { useNavigationState } from "./navigation-context";
 
 const SEGMENT_LABELS: Record<string, string> = {
+  observatory: "Observatory",
   knowledge: "Knowledge",
   workspace: "Workspace",
   projects: "Project Manager",
