@@ -148,9 +148,9 @@ export function OkrPage() {
   const [krMenu, setKrMenu] = useState<string | null>(null);
 
   const { widths, startResize } = useResizableGridColumns(
-    "hub:okr-page-list-cols-v7",
+    "hub:okr-page-list-cols-v8",
     /** Título/status/health mais largos; scroll horizontal quando necessário (minWidth abaixo). */
-    [24, 300, 136, 176, 176, 152, 196, 108, 124],
+    [24, 300, 136, 220, 176, 152, 196, 108, 124],
     { mode: "push" },
   );
   const okrListGridTpl = widths.map((w) => `${w}px`).join(" ");

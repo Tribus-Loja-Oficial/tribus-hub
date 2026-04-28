@@ -95,9 +95,9 @@ function hierarchyGridColumnsStyle(gridTpl: string): CSSProperties {
   return { gridTemplateColumns: gridTpl };
 }
 
-/** Larguras default (px); coluna de ações maior para evitar corte de contadores e botões. */
-const HIERARCHY_COL_DEFAULTS = [24, 44, 300, 176, 176, 116, 116, 148, 108, 210] as const;
-const HIERARCHY_COL_STORAGE_KEY = "hub:project-hierarchy-cols-v8";
+/** Larguras default (px); status mais largo para comportar chip + tooltip sem corte. */
+const HIERARCHY_COL_DEFAULTS = [24, 44, 300, 220, 176, 116, 116, 148, 108, 210] as const;
+const HIERARCHY_COL_STORAGE_KEY = "hub:project-hierarchy-cols-v9";
 
 function HierarchyHeaderCell({
   children,
@@ -585,39 +585,41 @@ function ProjectRow({
               <FolderKanban className="h-4 w-4 text-primary" />
             </div>
           </div>
-          <div className="flex min-h-0 w-full min-w-0 flex-col justify-center gap-1 overflow-hidden">
-            <div className="flex min-w-0 items-start gap-2 overflow-hidden">
-              <EntityQuickViewEyeButton
-                entity={{ kind: "project", id: project.slug || project.id }}
-                className="h-6 w-6 shrink-0"
-              />
-              <div className="min-w-0 flex-1 overflow-hidden">
-                <Link
-                  href={projectPath(project)}
-                  onClick={(e) => e.stopPropagation()}
-                  className="line-clamp-2 min-w-0 break-words text-sm font-semibold leading-snug text-foreground transition-colors hover:text-primary"
-                >
-                  {project.title}
-                </Link>
+          <div className="flex min-h-0 w-full min-w-0 items-center gap-2 overflow-hidden">
+            <EntityQuickViewEyeButton
+              entity={{ kind: "project", id: project.slug || project.id }}
+              className="h-6 w-6 shrink-0"
+            />
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col justify-center gap-1 overflow-hidden">
+              <div className="flex min-w-0 items-start gap-2 overflow-hidden">
+                <div className="min-w-0 flex-1 overflow-hidden">
+                  <Link
+                    href={projectPath(project)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="line-clamp-2 min-w-0 break-words text-sm font-semibold leading-snug text-foreground transition-colors hover:text-primary"
+                  >
+                    {project.title}
+                  </Link>
+                </div>
+                {project.projectStats.overdueMilestones > 0 ? (
+                  <span className="flex shrink-0 items-center gap-0.5 whitespace-nowrap text-[10px] font-medium text-red-500">
+                    <AlertTriangle className="h-3 w-3 shrink-0" />
+                    {project.projectStats.overdueMilestones} atrasado
+                    {project.projectStats.overdueMilestones > 1 ? "s" : ""}
+                  </span>
+                ) : null}
               </div>
-              {project.projectStats.overdueMilestones > 0 ? (
-                <span className="flex shrink-0 items-center gap-0.5 whitespace-nowrap text-[10px] font-medium text-red-500">
-                  <AlertTriangle className="h-3 w-3 shrink-0" />
-                  {project.projectStats.overdueMilestones} atrasado
-                  {project.projectStats.overdueMilestones > 1 ? "s" : ""}
+              {project.externalRef ? (
+                <span className="block min-w-0 break-all font-mono text-[10px] leading-tight text-muted-foreground">
+                  Ref: {project.externalRef}
                 </span>
               ) : null}
+              {project.summary ? (
+                <p className="line-clamp-2 min-h-0 min-w-0 break-words text-xs leading-snug text-muted-foreground">
+                  {project.summary}
+                </p>
+              ) : null}
             </div>
-            {project.externalRef ? (
-              <span className="block min-w-0 break-all font-mono text-[10px] leading-tight text-muted-foreground">
-                Ref: {project.externalRef}
-              </span>
-            ) : null}
-            {project.summary ? (
-              <p className="line-clamp-2 min-h-0 min-w-0 break-words text-xs leading-snug text-muted-foreground">
-                {project.summary}
-              </p>
-            ) : null}
           </div>
           <div className="flex min-w-0 items-center justify-start overflow-hidden">
             <div className="w-full min-w-0">{projectStatusCell(project)}</div>
