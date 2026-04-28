@@ -980,24 +980,30 @@ function ObjectiveBlock({
           />
         </div>
 
-        <div className="flex min-w-0 flex-col justify-center gap-0.5 overflow-hidden px-1">
-          <Link
-            href={`/okr/objectives/${objective.id}`}
-            onClick={(e) => e.stopPropagation()}
-            className="line-clamp-2 min-w-0 break-words text-left text-sm font-semibold leading-snug text-foreground transition-colors hover:text-primary"
-          >
-            {objective.title}
-          </Link>
-          {objective.externalRef && (
-            <p className="font-mono text-[10px] leading-tight text-muted-foreground">
-              Ref: {objective.externalRef}
-            </p>
-          )}
-          {objective.descriptionText && (
-            <p className="line-clamp-2 min-w-0 break-words text-xs leading-snug text-muted-foreground">
-              {objective.descriptionText}
-            </p>
-          )}
+        <div className="flex min-w-0 items-center gap-2 overflow-hidden px-1">
+          <EntityQuickViewEyeButton
+            entity={{ kind: "objective", id: objective.id }}
+            className="h-6 w-6 shrink-0"
+          />
+          <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 overflow-hidden">
+            <Link
+              href={`/okr/objectives/${objective.id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="line-clamp-2 min-w-0 break-words text-left text-sm font-semibold leading-snug text-foreground transition-colors hover:text-primary"
+            >
+              {objective.title}
+            </Link>
+            {objective.externalRef && (
+              <p className="font-mono text-[10px] leading-tight text-muted-foreground">
+                Ref: {objective.externalRef}
+              </p>
+            )}
+            {objective.descriptionText && (
+              <p className="line-clamp-2 min-w-0 break-words text-xs leading-snug text-muted-foreground">
+                {objective.descriptionText}
+              </p>
+            )}
+          </div>
         </div>
 
         <div className="flex min-w-0 items-center justify-start px-1">
@@ -1058,10 +1064,9 @@ function ObjectiveBlock({
 
         <div
           data-menu
-          className="relative flex min-w-0 shrink-0 items-center justify-end gap-1.5 overflow-hidden"
+          className="relative z-20 flex min-w-0 shrink-0 items-center justify-end gap-1.5 overflow-visible"
           onClick={(e) => e.stopPropagation()}
         >
-          <EntityQuickViewEyeButton entity={{ kind: "objective", id: objective.id }} />
           <Button
             size="sm"
             variant="ghost"
@@ -1077,7 +1082,7 @@ function ObjectiveBlock({
           {objMenuOpen && (
             <div
               data-menu
-              className="absolute right-0 top-8 z-20 w-44 rounded-lg border border-border bg-popover py-1 shadow-lg"
+              className="absolute right-0 top-8 z-[120] w-44 rounded-lg border border-border bg-popover py-1 shadow-lg"
             >
               <Link
                 href={`/okr/objectives/${objective.id}`}
@@ -1108,7 +1113,7 @@ function ObjectiveBlock({
 
       {/* KR rows (expanded) */}
       {isExpanded && (
-        <div className="overflow-hidden rounded-b-xl border-t border-border/60">
+        <div className="overflow-visible rounded-b-xl border-t border-border/60">
           {krs.length === 0 ? (
             <div className="flex items-center gap-3 bg-muted/10 px-4 py-4 pl-12">
               <TrendingUp className="h-4 w-4 shrink-0 text-muted-foreground/40" />
@@ -1277,7 +1282,7 @@ function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete
 
       <div
         data-menu
-        className="relative flex min-w-0 shrink-0 items-center justify-end gap-1.5 overflow-hidden"
+        className="relative z-20 flex min-w-0 shrink-0 items-center justify-end gap-1.5 overflow-visible"
       >
         <EntityQuickViewEyeButton entity={{ kind: "keyResult", id: kr.id }} />
         <Button
@@ -1295,7 +1300,7 @@ function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete
         {menuOpen && (
           <div
             data-menu
-            className="absolute right-0 top-8 z-20 w-44 rounded-lg border border-border bg-popover py-1 shadow-lg"
+            className="absolute right-0 top-8 z-[120] w-44 rounded-lg border border-border bg-popover py-1 shadow-lg"
           >
             <Link
               href={`/okr/key-results/${kr.id}`}

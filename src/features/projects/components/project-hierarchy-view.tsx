@@ -587,6 +587,10 @@ function ProjectRow({
           </div>
           <div className="flex min-h-0 w-full min-w-0 flex-col justify-center gap-1 overflow-hidden">
             <div className="flex min-w-0 items-start gap-2 overflow-hidden">
+              <EntityQuickViewEyeButton
+                entity={{ kind: "project", id: project.slug || project.id }}
+                className="h-6 w-6 shrink-0"
+              />
               <div className="min-w-0 flex-1 overflow-hidden">
                 <Link
                   href={projectPath(project)}
@@ -677,10 +681,6 @@ function ProjectRow({
             <span className="shrink-0 whitespace-nowrap text-[10px] tabular-nums text-muted-foreground">
               {project.projectStats.totalMilestones}m · {project.projectStats.totalTasks}t
             </span>
-            <EntityQuickViewEyeButton
-              entity={{ kind: "project", id: project.slug || project.id }}
-              className="h-6 w-6 shrink-0"
-            />
             <button
               onClick={(e) => {
                 e.stopPropagation();
