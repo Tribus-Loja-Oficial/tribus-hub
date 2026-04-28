@@ -43,7 +43,7 @@ type ObjectiveWithKRs = OkrObjective & { keyResults: OkrKeyResult[] };
 const OKR_OBJECTIVES_TABLE_GRID =
   "grid w-full min-w-0 items-stretch gap-x-0 overflow-hidden [&>*]:min-h-0 [&>*]:min-w-0 [&>*]:border-r [&>*]:border-border/60 [&>*]:px-2 [&>*]:py-2 [&>*:last-child]:border-r-0";
 
-const OKR_WORKFLOW_STATUS_QUERY = new Set(["planned", "in_progress", "completed"]);
+const OKR_WORKFLOW_STATUS_QUERY = new Set(["planned", "in_progress", "achieved", "not_achieved"]);
 
 function formatDate(d: string | null | undefined) {
   if (!d) return null;
@@ -199,7 +199,8 @@ export function OkrObjectivesPage() {
           <option value="">Todos os status</option>
           <option value="planned">Planejado</option>
           <option value="in_progress">Em Progresso</option>
-          <option value="completed">Concluído</option>
+          <option value="achieved">Atingido</option>
+          <option value="not_achieved">Não Atingido</option>
         </select>
 
         <select

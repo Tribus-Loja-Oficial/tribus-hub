@@ -24,6 +24,9 @@ import {
   ExternalLink,
   Pencil,
   Eye,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
 } from "lucide-react";
 import { isBefore } from "date-fns";
 import { formatCivilDate, parseCivilDateInput, startOfLocalDay } from "@/lib/date/civil-date";
@@ -847,6 +850,15 @@ interface ProjectHierarchyViewProps {
   onEditProject?: (p: ProjectHierarchyItem) => void;
 }
 
+type HierarchySortField =
+  | "title"
+  | "status"
+  | "health"
+  | "priority"
+  | "progress"
+  | "cycle"
+  | "targetDate";
+
 export function ProjectHierarchyView({
   searchQuery,
   filterStatus,
@@ -857,6 +869,10 @@ export function ProjectHierarchyView({
   onEditProject,
 }: ProjectHierarchyViewProps) {
   const queryClient = useQueryClient();
+  const [sort, setSort] = useState<{ field: HierarchySortField | null; dir: "asc" | "desc" }>({
+    field: null,
+    dir: "asc",
+  });
   const { widths, startResize } = useResizableGridColumns(
     HIERARCHY_COL_STORAGE_KEY,
     [...HIERARCHY_COL_DEFAULTS],
@@ -925,6 +941,93 @@ export function ProjectHierarchyView({
     });
   }, [data, searchQuery, filterStatus, filterPriority, filterHealth, filterCycle]);
 
+  const sorted = useMemo(() => {
+    if (!sort.field) return filtered;
+    const next = [...filtered];
+    const rankStatus = (p: ProjectHierarchyItem) => {
+      const slug = projectWorkflowSlug(p);
+      const rank: Record<string, number> = {
+        planned: 0,
+        in_progress: 1,
+        blocked: 2,
+        successful: 3,
+        partially_successful: 4,
+        failed: 5,
+        cancelled: 6,
+      };
+      return rank[slug] ?? 99;
+    };
+    const rankHealth = (p: ProjectHierarchyItem) => {
+      const slug = p.healthInsight?.slug
+        ? paceHealthBadgeToneSlug(p.healthInsight.slug)
+        : "not_started";
+      const rank: Record<string, number> = {
+        not_started: 0,
+        ahead: 1,
+        on_track: 2,
+        at_risk: 3,
+        off_track: 4,
+      };
+      return rank[slug] ?? 99;
+    };
+    const rankPriority = (p: ProjectHierarchyItem) => {
+      const rank: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
+      return rank[p.priority] ?? 99;
+    };
+    const parseDate = (iso?: string | null) =>
+      iso ? Number(new Date(iso).getTime()) || Number.POSITIVE_INFINITY : Number.POSITIVE_INFINITY;
+
+    next.sort((a, b) => {
+      let value = 0;
+      switch (sort.field) {
+        case "title":
+          value = a.title.localeCompare(b.title, "pt-BR", { sensitivity: "base" });
+          break;
+        case "status":
+          value = rankStatus(a) - rankStatus(b);
+          break;
+        case "health":
+          value = rankHealth(a) - rankHealth(b);
+          break;
+        case "priority":
+          value = rankPriority(a) - rankPriority(b);
+          break;
+        case "progress":
+          value = (a.progressPercent ?? 0) - (b.progressPercent ?? 0);
+          break;
+        case "cycle": {
+          const ca = a.cycleId ? (cycleTitleById.get(a.cycleId) ?? "") : "";
+          const cb = b.cycleId ? (cycleTitleById.get(b.cycleId) ?? "") : "";
+          value = ca.localeCompare(cb, "pt-BR", { sensitivity: "base" });
+          break;
+        }
+        case "targetDate":
+          value = parseDate(a.targetDate) - parseDate(b.targetDate);
+          break;
+      }
+      return sort.dir === "asc" ? value : -value;
+    });
+    return next;
+  }, [filtered, sort, cycleTitleById]);
+
+  const renderSortIcon = (field: HierarchySortField) => {
+    if (sort.field !== field)
+      return <ArrowUpDown className="h-3 w-3 shrink-0 text-muted-foreground/40" />;
+    return sort.dir === "asc" ? (
+      <ArrowUp className="h-3 w-3 shrink-0 text-primary" />
+    ) : (
+      <ArrowDown className="h-3 w-3 shrink-0 text-primary" />
+    );
+  };
+
+  const handleSortClick = (field: HierarchySortField) => {
+    setSort((prev) =>
+      prev.field !== field
+        ? { field, dir: "asc" }
+        : { field, dir: prev.dir === "asc" ? "desc" : "asc" },
+    );
+  };
+
   const handleCreateTask = (projectId: string, milestoneId: string) => {
     setCreateTaskProjectId(projectId);
     setCreateTaskMilestoneId(milestoneId);
@@ -946,7 +1049,7 @@ export function ProjectHierarchyView({
     );
   }
 
-  if (filtered.length === 0) {
+  if (sorted.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
         <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-muted">
@@ -978,68 +1081,117 @@ export function ProjectHierarchyView({
                 startResize={startResize}
                 className="justify-start"
               >
-                <span className="min-w-0 truncate text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Projeto / Milestone / Task
-                </span>
+                <button
+                  type="button"
+                  onClick={() => handleSortClick("title")}
+                  className="flex min-w-0 items-center gap-1 rounded-md px-1 py-1 transition-colors hover:bg-background/80"
+                >
+                  <span className="min-w-0 truncate text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Projeto / Milestone / Task
+                  </span>
+                  {renderSortIcon("title")}
+                </button>
               </HierarchyHeaderCell>
               <HierarchyHeaderCell
                 resizeIndex={3}
                 startResize={startResize}
                 className="justify-start"
               >
-                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Status
-                </span>
+                <button
+                  type="button"
+                  onClick={() => handleSortClick("status")}
+                  className="flex items-center gap-1 rounded-md px-1 py-1 transition-colors hover:bg-background/80"
+                >
+                  <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Status
+                  </span>
+                  {renderSortIcon("status")}
+                </button>
               </HierarchyHeaderCell>
               <HierarchyHeaderCell
                 resizeIndex={4}
                 startResize={startResize}
                 className="justify-start"
               >
-                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Health
-                </span>
+                <button
+                  type="button"
+                  onClick={() => handleSortClick("health")}
+                  className="flex items-center gap-1 rounded-md px-1 py-1 transition-colors hover:bg-background/80"
+                >
+                  <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Health
+                  </span>
+                  {renderSortIcon("health")}
+                </button>
               </HierarchyHeaderCell>
               <HierarchyHeaderCell
                 resizeIndex={5}
                 startResize={startResize}
                 className="justify-start"
               >
-                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Prioridade
-                </span>
+                <button
+                  type="button"
+                  onClick={() => handleSortClick("priority")}
+                  className="flex items-center gap-1 rounded-md px-1 py-1 transition-colors hover:bg-background/80"
+                >
+                  <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Prioridade
+                  </span>
+                  {renderSortIcon("priority")}
+                </button>
               </HierarchyHeaderCell>
               <HierarchyHeaderCell
                 resizeIndex={6}
                 startResize={startResize}
                 className="justify-start"
               >
-                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Progresso
-                </span>
+                <button
+                  type="button"
+                  onClick={() => handleSortClick("progress")}
+                  className="flex items-center gap-1 rounded-md px-1 py-1 transition-colors hover:bg-background/80"
+                >
+                  <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Progresso
+                  </span>
+                  {renderSortIcon("progress")}
+                </button>
               </HierarchyHeaderCell>
               <HierarchyHeaderCell
                 resizeIndex={7}
                 startResize={startResize}
                 className="justify-start"
               >
-                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Ciclo
-                </span>
+                <button
+                  type="button"
+                  onClick={() => handleSortClick("cycle")}
+                  className="flex items-center gap-1 rounded-md px-1 py-1 transition-colors hover:bg-background/80"
+                >
+                  <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Ciclo
+                  </span>
+                  {renderSortIcon("cycle")}
+                </button>
               </HierarchyHeaderCell>
               <HierarchyHeaderCell
                 resizeIndex={8}
                 startResize={startResize}
                 className="justify-start"
               >
-                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Prazo
-                </span>
+                <button
+                  type="button"
+                  onClick={() => handleSortClick("targetDate")}
+                  className="flex items-center gap-1 rounded-md px-1 py-1 transition-colors hover:bg-background/80"
+                >
+                  <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Prazo
+                  </span>
+                  {renderSortIcon("targetDate")}
+                </button>
               </HierarchyHeaderCell>
               <div className="min-w-0" aria-hidden />
             </div>
           </div>
-          {filtered.map((project) => (
+          {sorted.map((project) => (
             <ProjectRow
               key={project.id}
               project={project}

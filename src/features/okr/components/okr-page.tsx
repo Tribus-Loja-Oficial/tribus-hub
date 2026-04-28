@@ -11,13 +11,11 @@ import {
 import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import Link from "next/link";
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   Target,
   Plus,
   Search,
   ChevronRight,
-  ChevronDown,
   MoreHorizontal,
   Trash2,
   RefreshCw,
@@ -29,7 +27,6 @@ import {
   ArrowDown,
   ArrowUpDown,
   RotateCcw,
-  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -113,7 +110,8 @@ const OKR_LIST_GRID_BASE =
 const STATUS_FILTER_OPTIONS = [
   { value: "planned", label: "Planejado" },
   { value: "in_progress", label: "Em Progresso" },
-  { value: "completed", label: "Concluído" },
+  { value: "achieved", label: "Atingido" },
+  { value: "not_achieved", label: "Não Atingido" },
 ] as const;
 const HEALTH_FILTER_OPTIONS = [
   { value: "not_started", label: "Não iniciado" },
@@ -248,6 +246,7 @@ export function OkrPage() {
   const allObjectives = data?.data ?? [];
   const cycles = cyclesRes?.data ?? [];
   const cycleMap = new Map(cycles.map((c) => [c.id, c]));
+  const cycleTitleMap = new Map(cycles.map((c) => [c.id, c.title]));
   const selectedCycleFilter = filterCycleIds.size === 1 ? [...filterCycleIds][0] : "";
   const selectedStatusFilter = filterStatuses.size === 1 ? [...filterStatuses][0] : "";
   const selectedHealthFilter = filterHealthSlugs.size === 1 ? [...filterHealthSlugs][0] : "";
@@ -283,8 +282,8 @@ export function OkrPage() {
   }, [afterScopeFilters, search, cycles]);
 
   const sortedFiltered = useMemo(
-    () => sortOkrObjectivesForList(filtered, sort.field, sort.dir),
-    [filtered, sort.field, sort.dir],
+    () => sortOkrObjectivesForList(filtered, sort.field, sort.dir, cycleTitleMap),
+    [filtered, sort.field, sort.dir, cycleTitleMap],
   );
 
   useEffect(() => {
@@ -638,76 +637,32 @@ export function OkrPage() {
                   startResize={startResize}
                   className="min-w-0 justify-start px-1"
                 >
-                  <div className="flex w-full min-w-0 items-center justify-between gap-1">
-                    <span className="whitespace-nowrap pl-0.5 text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/60">
-                      Ciclo
-                    </span>
-                    <DropdownMenu.Root>
-                      <div className="relative shrink-0">
-                        <DropdownMenu.Trigger asChild>
-                          <button
-                            type="button"
-                            className={cn(
-                              "relative inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-background/90 hover:text-foreground",
-                              filterCycleIds.size > 0
-                                ? "border-primary/40 bg-primary/10 text-primary shadow-sm"
-                                : "border-border/60 bg-background/40",
-                            )}
-                            aria-label="Filtrar por ciclo"
-                          >
-                            <ChevronDown className="h-3.5 w-3.5" />
-                            {filterCycleIds.size > 0 ? (
-                              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-0.5 text-[9px] font-bold leading-none text-primary-foreground shadow-sm">
-                                {filterCycleIds.size}
-                              </span>
-                            ) : null}
-                          </button>
-                        </DropdownMenu.Trigger>
-                      </div>
-                      <DropdownMenu.Portal>
-                        <DropdownMenu.Content
-                          className="z-[200] min-w-[13rem] rounded-lg border border-border bg-popover p-1 shadow-lg"
-                          sideOffset={4}
-                          align="end"
-                          data-menu
-                        >
-                          <DropdownMenu.Item
-                            className="cursor-pointer rounded px-2 py-1.5 text-xs outline-none hover:bg-accent"
-                            onSelect={() => setFilterCycleIds(new Set())}
-                          >
-                            Limpar seleção
-                          </DropdownMenu.Item>
-                          <DropdownMenu.Separator className="my-1 h-px bg-border" />
-                          {cycles.map((c) => (
-                            <DropdownMenu.CheckboxItem
-                              key={c.id}
-                              className={cn(
-                                "relative flex items-center gap-2 rounded-sm py-1.5 pl-8 pr-2 text-xs",
-                                filterCycleIds.has(c.id) &&
-                                  "bg-primary/12 font-medium text-foreground",
-                              )}
-                              checked={filterCycleIds.has(c.id)}
-                              onCheckedChange={(checked) => {
-                                setFilterCycleIds((prev) => {
-                                  const n = new Set(prev);
-                                  if (checked) n.add(c.id);
-                                  else n.delete(c.id);
-                                  return n;
-                                });
-                              }}
-                              onSelect={(e) => e.preventDefault()}
-                            >
-                              <span className="absolute left-2 flex h-4 w-4 items-center justify-center text-primary">
-                                <DropdownMenu.ItemIndicator>
-                                  <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
-                                </DropdownMenu.ItemIndicator>
-                              </span>
-                              <span className="truncate">{c.title}</span>
-                            </DropdownMenu.CheckboxItem>
-                          ))}
-                        </DropdownMenu.Content>
-                      </DropdownMenu.Portal>
-                    </DropdownMenu.Root>
+                  <div className="flex w-full min-w-0 items-center">
+                    <button
+                      type="button"
+                      onClick={() => handleSortClick("cycle")}
+                      className={cn(
+                        "flex w-full items-center gap-1 rounded-md px-1.5 py-1 transition-colors hover:bg-background/80",
+                        sort.field === "cycle" &&
+                          "bg-background/90 shadow-sm ring-1 ring-border/60",
+                      )}
+                    >
+                      <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/75">
+                        Ciclo
+                      </span>
+                      {sort.field === "cycle" ? (
+                        sort.dir === "asc" ? (
+                          <ArrowUp className="h-3 w-3 shrink-0 text-primary" aria-hidden />
+                        ) : (
+                          <ArrowDown className="h-3 w-3 shrink-0 text-primary" aria-hidden />
+                        )
+                      ) : (
+                        <ArrowUpDown
+                          className="h-3 w-3 shrink-0 text-muted-foreground/40"
+                          aria-hidden
+                        />
+                      )}
+                    </button>
                   </div>
                 </OkrListHeaderCell>
                 <OkrListHeaderCell
@@ -715,7 +670,7 @@ export function OkrPage() {
                   startResize={startResize}
                   className="min-w-0 justify-start px-1"
                 >
-                  <div className="flex w-full min-w-0 items-center justify-between gap-1">
+                  <div className="flex w-full min-w-0 items-center">
                     <button
                       type="button"
                       onClick={() => handleSortClick("status")}
@@ -741,72 +696,6 @@ export function OkrPage() {
                         />
                       )}
                     </button>
-                    <DropdownMenu.Root>
-                      <div className="relative shrink-0">
-                        <DropdownMenu.Trigger asChild>
-                          <button
-                            type="button"
-                            className={cn(
-                              "relative inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-background/90 hover:text-foreground",
-                              filterStatuses.size > 0
-                                ? "border-primary/40 bg-primary/10 text-primary shadow-sm"
-                                : "border-border/60 bg-background/40",
-                            )}
-                            aria-label="Filtrar por status"
-                          >
-                            <ChevronDown className="h-3.5 w-3.5" />
-                            {filterStatuses.size > 0 ? (
-                              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-0.5 text-[9px] font-bold leading-none text-primary-foreground shadow-sm">
-                                {filterStatuses.size}
-                              </span>
-                            ) : null}
-                          </button>
-                        </DropdownMenu.Trigger>
-                      </div>
-                      <DropdownMenu.Portal>
-                        <DropdownMenu.Content
-                          className="z-[200] min-w-[12rem] rounded-lg border border-border bg-popover p-1 shadow-lg"
-                          sideOffset={4}
-                          align="end"
-                          data-menu
-                        >
-                          <DropdownMenu.Item
-                            className="cursor-pointer rounded px-2 py-1.5 text-xs outline-none hover:bg-accent"
-                            onSelect={() => setFilterStatuses(new Set())}
-                          >
-                            Limpar seleção
-                          </DropdownMenu.Item>
-                          <DropdownMenu.Separator className="my-1 h-px bg-border" />
-                          {STATUS_FILTER_OPTIONS.map((opt) => (
-                            <DropdownMenu.CheckboxItem
-                              key={opt.value}
-                              className={cn(
-                                "relative flex items-center rounded-sm py-1.5 pl-8 pr-2 text-xs",
-                                filterStatuses.has(opt.value) &&
-                                  "bg-primary/12 font-medium text-foreground",
-                              )}
-                              checked={filterStatuses.has(opt.value)}
-                              onCheckedChange={(checked) => {
-                                setFilterStatuses((prev) => {
-                                  const n = new Set(prev);
-                                  if (checked) n.add(opt.value);
-                                  else n.delete(opt.value);
-                                  return n;
-                                });
-                              }}
-                              onSelect={(e) => e.preventDefault()}
-                            >
-                              <span className="absolute left-2 flex h-4 w-4 items-center justify-center text-primary">
-                                <DropdownMenu.ItemIndicator>
-                                  <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
-                                </DropdownMenu.ItemIndicator>
-                              </span>
-                              {opt.label}
-                            </DropdownMenu.CheckboxItem>
-                          ))}
-                        </DropdownMenu.Content>
-                      </DropdownMenu.Portal>
-                    </DropdownMenu.Root>
                   </div>
                 </OkrListHeaderCell>
                 <OkrListHeaderCell
@@ -814,76 +703,32 @@ export function OkrPage() {
                   startResize={startResize}
                   className="min-w-0 justify-start px-2"
                 >
-                  <div className="flex w-full min-w-0 items-center justify-between gap-1">
-                    <span className="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/55">
-                      Health
-                    </span>
-                    <DropdownMenu.Root>
-                      <div className="relative shrink-0">
-                        <DropdownMenu.Trigger asChild>
-                          <button
-                            type="button"
-                            className={cn(
-                              "relative inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-background/90 hover:text-foreground",
-                              filterHealthSlugs.size > 0
-                                ? "border-primary/40 bg-primary/10 text-primary shadow-sm"
-                                : "border-border/60 bg-background/40",
-                            )}
-                            aria-label="Filtrar por health"
-                          >
-                            <ChevronDown className="h-3.5 w-3.5" />
-                            {filterHealthSlugs.size > 0 ? (
-                              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-0.5 text-[9px] font-bold leading-none text-primary-foreground shadow-sm">
-                                {filterHealthSlugs.size}
-                              </span>
-                            ) : null}
-                          </button>
-                        </DropdownMenu.Trigger>
-                      </div>
-                      <DropdownMenu.Portal>
-                        <DropdownMenu.Content
-                          className="z-[200] min-w-[12rem] rounded-lg border border-border bg-popover p-1 shadow-lg"
-                          sideOffset={4}
-                          align="end"
-                          data-menu
-                        >
-                          <DropdownMenu.Item
-                            className="cursor-pointer rounded px-2 py-1.5 text-xs outline-none hover:bg-accent"
-                            onSelect={() => setFilterHealthSlugs(new Set())}
-                          >
-                            Limpar seleção
-                          </DropdownMenu.Item>
-                          <DropdownMenu.Separator className="my-1 h-px bg-border" />
-                          {HEALTH_FILTER_OPTIONS.map((opt) => (
-                            <DropdownMenu.CheckboxItem
-                              key={opt.value}
-                              className={cn(
-                                "relative flex items-center rounded-sm py-1.5 pl-8 pr-2 text-xs",
-                                filterHealthSlugs.has(opt.value) &&
-                                  "bg-primary/12 font-medium text-foreground",
-                              )}
-                              checked={filterHealthSlugs.has(opt.value)}
-                              onCheckedChange={(checked) => {
-                                setFilterHealthSlugs((prev) => {
-                                  const n = new Set(prev);
-                                  if (checked) n.add(opt.value);
-                                  else n.delete(opt.value);
-                                  return n;
-                                });
-                              }}
-                              onSelect={(e) => e.preventDefault()}
-                            >
-                              <span className="absolute left-2 flex h-4 w-4 items-center justify-center text-primary">
-                                <DropdownMenu.ItemIndicator>
-                                  <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
-                                </DropdownMenu.ItemIndicator>
-                              </span>
-                              {opt.label}
-                            </DropdownMenu.CheckboxItem>
-                          ))}
-                        </DropdownMenu.Content>
-                      </DropdownMenu.Portal>
-                    </DropdownMenu.Root>
+                  <div className="flex w-full min-w-0 items-center">
+                    <button
+                      type="button"
+                      onClick={() => handleSortClick("health")}
+                      className={cn(
+                        "flex w-full items-center gap-1 rounded-md px-1.5 py-1 transition-colors hover:bg-background/80",
+                        sort.field === "health" &&
+                          "bg-background/90 shadow-sm ring-1 ring-border/60",
+                      )}
+                    >
+                      <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/75">
+                        Health
+                      </span>
+                      {sort.field === "health" ? (
+                        sort.dir === "asc" ? (
+                          <ArrowUp className="h-3 w-3 shrink-0 text-primary" aria-hidden />
+                        ) : (
+                          <ArrowDown className="h-3 w-3 shrink-0 text-primary" aria-hidden />
+                        )
+                      ) : (
+                        <ArrowUpDown
+                          className="h-3 w-3 shrink-0 text-muted-foreground/40"
+                          aria-hidden
+                        />
+                      )}
+                    </button>
                   </div>
                 </OkrListHeaderCell>
                 <OkrListHeaderCell
