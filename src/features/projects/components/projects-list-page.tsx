@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, type MouseEvent, type ReactNode } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -24,7 +24,7 @@ import { DateField } from "@/components/ui/date-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import type { OkrCycle, Project, WorkflowStatusSlug } from "@/lib/types/domain";
+import type { OkrCycle, Project } from "@/lib/types/domain";
 import { paceHealthBadgeToneSlug } from "@/lib/pace-health-display";
 import { healthRowAccentClass } from "@/components/pace-health-badge";
 import { WorkflowStatusRow } from "@/components/workflow-status-badge";
@@ -38,15 +38,6 @@ import { ProjectHierarchyView } from "./project-hierarchy-view";
 import { EditProjectDialog } from "./edit-project-dialog";
 import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
 import { cn } from "@/lib/utils/cn";
-import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resizable-grid-columns";
-import {
-  TABLE_HEALTH_CHIP_PX,
-  TABLE_HEALTH_CHIP_WIDTH_CLASS,
-  TABLE_PRIORITY_CHIP_PX,
-  TABLE_PRIORITY_CHIP_WIDTH_CLASS,
-  TABLE_STATUS_CHIP_PX,
-  TABLE_STATUS_CHIP_WIDTH_CLASS,
-} from "@/lib/ui/chip-width-tokens";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -70,9 +61,6 @@ const HEALTH_OPTIONS = [
   { value: "off_track", label: "Fora do Rumo" },
 ];
 
-const PROJECTS_LIST_TABLE_GRID =
-  "grid min-w-0 items-center gap-x-0 overflow-hidden [&>*]:min-h-0 [&>*]:min-w-0 [&>*]:border-r [&>*]:border-border/70 [&>*]:px-2.5 [&>*:last-child]:border-r-0 [&>*:first-child]:overflow-hidden";
-
 const PRIORITY_OPTIONS = [
   { value: "", label: "Todas as prioridades" },
   { value: "urgent", label: "Urgente" },
@@ -86,46 +74,12 @@ const SORT_OPTIONS = [
   { value: "targetDate", label: "Prazo" },
   { value: "priority", label: "Prioridade" },
   { value: "title", label: "Título" },
-  { value: "status", label: "Status" },
 ];
 
 const PRIORITY_ORDER: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
-const WORKFLOW_STATUS_ORDER: Record<WorkflowStatusSlug, number> = {
-  planned: 0,
-  in_progress: 1,
-  blocked: 2,
-  successful: 3,
-  partially_successful: 4,
-  failed: 5,
-  cancelled: 6,
-  completed: 7,
-  achieved: 8,
-  not_achieved: 9,
-};
 
 function projectHref(project: Project) {
   return `/projects/${encodeURIComponent(project.slug || project.id)}`;
-}
-
-function ProjectsListHeaderCell({
-  children,
-  className,
-  resizeIndex,
-  startResize,
-}: {
-  children: ReactNode;
-  className?: string;
-  resizeIndex: number;
-  startResize: (leftIndex: number, e: MouseEvent) => void;
-}) {
-  return (
-    <div className={cn("relative flex min-w-0 items-center", className)}>
-      {children}
-      <div className="absolute right-0 top-1/2 z-10 -translate-y-1/2 translate-x-1/2">
-        <GridColResizeHandle onMouseDown={(e) => startResize(resizeIndex, e)} />
-      </div>
-    </div>
-  );
 }
 
 const BOARD_COLUMNS = [
@@ -299,177 +253,6 @@ function CreateProjectDialog({ open, onOpenChange, onCreated }: CreateProjectDia
   );
 }
 
-// ─── List View ────────────────────────────────────────────────────────────────
-
-function ListView({
-  projects,
-  onEditProject,
-}: {
-  projects: Project[];
-  onEditProject: (p: Project) => void;
-}) {
-  const { widths, startResize } = useResizableGridColumns(
-    "hub:projects-list-cols-v6",
-    [232, 172, 172, 120, 108, 108, 48, 32],
-    { mode: "push" },
-  );
-  const gridTpl = widths.map((w) => `${w}px`).join(" ");
-
-  if (projects.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 text-center">
-        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-muted">
-          <FolderKanban className="h-6 w-6 text-muted-foreground/60" />
-        </div>
-        <p className="mb-1 text-sm font-medium text-foreground">Nenhum projeto encontrado</p>
-        <p className="text-xs text-muted-foreground">Ajuste os filtros ou crie um novo projeto.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="overflow-x-auto rounded-xl border border-border bg-card">
-      <div
-        className={cn(PROJECTS_LIST_TABLE_GRID, "border-b border-border bg-muted/30 px-3 py-2.5")}
-        style={{ gridTemplateColumns: gridTpl }}
-      >
-        <ProjectsListHeaderCell resizeIndex={0} startResize={startResize}>
-          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Projeto
-          </span>
-        </ProjectsListHeaderCell>
-        <ProjectsListHeaderCell resizeIndex={1} startResize={startResize} className="justify-start">
-          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Status
-          </span>
-        </ProjectsListHeaderCell>
-        <ProjectsListHeaderCell resizeIndex={2} startResize={startResize} className="justify-start">
-          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Health
-          </span>
-        </ProjectsListHeaderCell>
-        <ProjectsListHeaderCell resizeIndex={3} startResize={startResize}>
-          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Prioridade
-          </span>
-        </ProjectsListHeaderCell>
-        <ProjectsListHeaderCell resizeIndex={4} startResize={startResize}>
-          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Progresso
-          </span>
-        </ProjectsListHeaderCell>
-        <ProjectsListHeaderCell resizeIndex={5} startResize={startResize}>
-          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Prazo alvo
-          </span>
-        </ProjectsListHeaderCell>
-        <ProjectsListHeaderCell resizeIndex={6} startResize={startResize}>
-          <span className="sr-only">Editar</span>
-        </ProjectsListHeaderCell>
-        <div className="relative flex min-w-0 items-center justify-end" />
-      </div>
-      {projects.map((project) => (
-        <div
-          key={project.id}
-          className={cn(
-            PROJECTS_LIST_TABLE_GRID,
-            "border-b border-l-[3px] border-border/60 py-3.5 pl-3 pr-3 transition-colors last:border-b-0 hover:bg-muted/20",
-            healthRowAccentClass(project.healthInsight?.slug),
-          )}
-          style={{ gridTemplateColumns: gridTpl }}
-        >
-          <div className="min-h-0 min-w-0 max-w-full overflow-hidden">
-            <Link
-              href={projectHref(project)}
-              className="block truncate text-sm font-medium text-foreground transition-colors hover:text-primary"
-            >
-              {project.title}
-            </Link>
-            {project.externalRef && (
-              <p className="mt-0.5 truncate font-mono text-[10px] text-muted-foreground">
-                Ref: {project.externalRef}
-              </p>
-            )}
-            {project.summary && (
-              <p className="mt-0.5 line-clamp-2 break-words text-xs leading-snug text-muted-foreground">
-                {project.summary}
-              </p>
-            )}
-          </div>
-          <div className="flex w-full min-w-0 items-center justify-start overflow-hidden pr-0.5">
-            <WorkflowStatusRow
-              insight={project.workflowStatusInsight}
-              tableCellLayout
-              badgeWidthClass={TABLE_STATUS_CHIP_WIDTH_CLASS}
-              tableChipWidthPx={TABLE_STATUS_CHIP_PX}
-            />
-          </div>
-          <div className="flex w-full min-w-0 items-center justify-start overflow-hidden pr-0.5">
-            <ProjectHealthRow
-              insight={project.healthInsight}
-              tableCellLayout
-              badgeWidthClass={TABLE_HEALTH_CHIP_WIDTH_CLASS}
-              tableChipWidthPx={TABLE_HEALTH_CHIP_PX}
-            />
-          </div>
-          <div className="flex min-w-0 items-center justify-center overflow-hidden">
-            <PriorityBadge
-              priority={project.priority}
-              className={cn("justify-center", TABLE_PRIORITY_CHIP_WIDTH_CLASS)}
-              tableChipWidthPx={TABLE_PRIORITY_CHIP_PX}
-            />
-          </div>
-          <div className="flex min-w-0 items-center justify-center">
-            {(project.progressPercent ?? 0) > 0 ? (
-              <div className="flex w-full max-w-[140px] items-center gap-2.5">
-                <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-primary/60"
-                    style={{ width: `${Math.min(100, project.progressPercent ?? 0)}%` }}
-                  />
-                </div>
-                <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
-                  {Math.round(project.progressPercent ?? 0)}%
-                </span>
-              </div>
-            ) : (
-              <span className="text-xs text-muted-foreground/40">—</span>
-            )}
-          </div>
-          <div className="flex items-center justify-center whitespace-nowrap text-xs text-muted-foreground">
-            {project.targetDate ? formatCivilDate(project.targetDate, "dd MMM yy") : "—"}
-          </div>
-          <div className="flex items-center justify-center gap-1.5">
-            <EntityQuickViewEyeButton
-              entity={{ kind: "project", id: project.slug || project.id }}
-              className="h-8 w-8"
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
-              title="Editar projeto"
-              onClick={() => onEditProject(project)}
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-          <div className="flex justify-end">
-            <Link
-              href={projectHref(project)}
-              className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              title="Abrir projeto"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 // ─── Board View ────────────────────────────────────────────────────────────────
 
 function BoardView({
@@ -570,7 +353,7 @@ function BoardView({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-type ViewMode = "hierarchy" | "list" | "board";
+type ViewMode = "hierarchy" | "board";
 
 export function ProjectsListPage() {
   const queryClient = useQueryClient();
@@ -622,11 +405,6 @@ export function ProjectsListPage() {
       if (sortBy === "title") return a.title.localeCompare(b.title);
       if (sortBy === "priority")
         return (PRIORITY_ORDER[a.priority] ?? 99) - (PRIORITY_ORDER[b.priority] ?? 99);
-      if (sortBy === "status")
-        return (
-          (WORKFLOW_STATUS_ORDER[projectWorkflowSlug(a)] ?? 99) -
-          (WORKFLOW_STATUS_ORDER[projectWorkflowSlug(b)] ?? 99)
-        );
       if (sortBy === "targetDate") {
         if (!a.targetDate && !b.targetDate) return 0;
         if (!a.targetDate) return 1;
@@ -826,8 +604,6 @@ export function ProjectsListPage() {
           allExpanded={allExpanded}
           onEditProject={(p) => setEditProject(p)}
         />
-      ) : view === "list" ? (
-        <ListView projects={filtered} onEditProject={(p) => setEditProject(p)} />
       ) : (
         <BoardView projects={filtered} onEditProject={(p) => setEditProject(p)} />
       )}
