@@ -198,6 +198,7 @@ export interface Project {
   startDate: string | null;
   targetDate: string | null;
   completedAt: string | null;
+  estimationUnit?: "hours" | "story_points";
   healthSnapshotJson?: string | null;
   healthInsight?: HealthInsight;
   workflowStatusInsight?: WorkflowStatusInsight;
@@ -253,6 +254,8 @@ export interface Task {
   dueDate: string | null;
   startDate: string | null;
   completedAt: string | null;
+  estimatedHours?: number | null;
+  estimatedPoints?: number | null;
   sortOrder: number;
   createdBy: string;
   updatedBy: string;

@@ -161,7 +161,7 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
             <p className="text-sm text-muted-foreground">
               {selectedCycleId
                 ? "Métricas e riscos filtrados para o ciclo selecionado."
-                : "Visão executiva da saúde dos OKRs no workspace."}
+                : "Visão executiva do health dos OKRs no workspace."}
             </p>
           </div>
         </div>
@@ -200,7 +200,7 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
 
       <PageGuide title="O que é o Dashboard OKR?">
         <p>
-          Visão executiva da saúde estratégica do workspace. Mostra indicadores consolidados de
+          Visão executiva do health estratégico do workspace. Mostra indicadores consolidados de
           todos os objetivos e key results.
         </p>
         <GuideSection title="Nesta tela:">
@@ -312,7 +312,9 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
               <div className="rounded-xl border border-border bg-gradient-to-b from-muted/40 to-card p-5 shadow-sm">
                 <div className="mb-4 flex items-center gap-2">
                   <Gauge className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-semibold text-foreground">Saúde dos objetivos</span>
+                  <span className="text-sm font-semibold text-foreground">
+                    Health dos objetivos
+                  </span>
                   <span className="text-xs text-muted-foreground">(status no escopo atual)</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">

@@ -17,7 +17,7 @@ export const WORKFLOW_STATUS_LABELS: Record<WorkflowStatusSlug, string> = {
   cancelled: "Cancelado",
 };
 
-/** Cinco estados de saúde por ritmo exibidos na UI (slug interno pode variar). */
+/** Cinco estados de health por ritmo exibidos na UI (slug interno pode variar). */
 export const PACE_HEALTH_LABELS: Record<PaceHealthSlug, string> = {
   draft: "Não Iniciado",
   no_dates: "Não Iniciado",
@@ -39,7 +39,7 @@ export function paceHealthLabel(slug: PaceHealthSlug | string | null | undefined
   return PACE_HEALTH_LABELS[slug as PaceHealthSlug] ?? String(slug);
 }
 
-/** Agrupa slugs internos para a mesma paleta de badge (5 saúdes visíveis). */
+/** Agrupa slugs internos para a mesma paleta de badge (5 health visíveis). */
 export function paceHealthBadgeToneSlug(slug: PaceHealthSlug): PaceHealthSlug {
   if (slug === "draft" || slug === "no_dates" || slug === "not_started") return "not_started";
   if (slug === "completed_legacy") return "on_track";

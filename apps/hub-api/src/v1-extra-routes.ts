@@ -41,28 +41,89 @@ function createId() {
   return crypto.randomUUID().replace(/-/g, "");
 }
 
+type ProjectEstimateSummary = {
+  unit: "hours" | "story_points";
+  total: number;
+  completed: number;
+  milestoneProgressPercent: Map<string, number>;
+};
+
 async function milestoneTaskProgressPercentByProject(
   db: D1DatabaseLike,
   projectId: string,
-): Promise<Map<string, number>> {
+): Promise<ProjectEstimateSummary> {
   const r = await db
     .prepare(
-      `SELECT milestone_id,
-              COUNT(*) as total,
-              SUM(CASE WHEN completed_at IS NOT NULL THEN 1 ELSE 0 END) as done
-       FROM tasks
-       WHERE project_id = ? AND deleted_at IS NULL AND milestone_id IS NOT NULL
-       GROUP BY milestone_id`,
+      `SELECT
+          p.estimation_unit as estimation_unit,
+          t.milestone_id as milestone_id,
+          t.estimated_hours as estimated_hours,
+          t.estimated_points as estimated_points,
+          t.completed_at as completed_at,
+          c.slug as column_slug
+       FROM tasks t
+       INNER JOIN projects p ON p.id = t.project_id
+       INNER JOIN task_columns c ON c.id = t.column_id
+       WHERE t.project_id = ? AND t.deleted_at IS NULL`,
     )
     .bind(projectId)
-    .all<{ milestone_id: string; total: number; done: number }>();
-  const m = new Map<string, number>();
+    .all<{
+      estimation_unit: "hours" | "story_points" | null;
+      milestone_id: string | null;
+      estimated_hours: number | null;
+      estimated_points: number | null;
+      completed_at: string | null;
+      column_slug: string | null;
+    }>();
+  const unit = (r.results?.[0]?.estimation_unit ?? "hours") as "hours" | "story_points";
+  const byMilestone = new Map<
+    string,
+    { total: number; completed: number; count: number; done: number }
+  >();
+  let projectTotal = 0;
+  let projectCompleted = 0;
   for (const row of r.results ?? []) {
-    const t = Number(row.total ?? 0);
-    const d = Number(row.done ?? 0);
-    m.set(String(row.milestone_id), t > 0 ? Math.round((d / t) * 100) : 0);
+    const estimateRaw = unit === "story_points" ? row.estimated_points : row.estimated_hours;
+    const estimate = Number(estimateRaw ?? 0);
+    const isDone =
+      Boolean(row.completed_at) || String(row.column_slug ?? "").toLowerCase() === "done";
+    const isPositiveEstimate = Number.isFinite(estimate) && estimate > 0;
+    if (isPositiveEstimate) {
+      projectTotal += estimate;
+      if (isDone) projectCompleted += estimate;
+    }
+    if (!row.milestone_id) continue;
+    const current = byMilestone.get(row.milestone_id) ?? {
+      total: 0,
+      completed: 0,
+      count: 0,
+      done: 0,
+    };
+    if (isPositiveEstimate) {
+      current.total += estimate;
+      if (isDone) current.completed += estimate;
+    }
+    current.count += 1;
+    if (isDone) current.done += 1;
+    byMilestone.set(row.milestone_id, current);
   }
-  return m;
+  const milestoneProgressPercent = new Map<string, number>();
+  for (const [milestoneId, stat] of byMilestone.entries()) {
+    if (stat.total > 0) {
+      milestoneProgressPercent.set(milestoneId, Math.round((stat.completed / stat.total) * 100));
+    } else {
+      milestoneProgressPercent.set(
+        milestoneId,
+        stat.count > 0 ? Math.round((stat.done / stat.count) * 100) : 0,
+      );
+    }
+  }
+  return {
+    unit,
+    total: projectTotal,
+    completed: projectCompleted,
+    milestoneProgressPercent,
+  };
 }
 
 function healthInsightForProjectRow(raw: Record<string, unknown>) {
@@ -760,7 +821,7 @@ export async function handleV1ExtraRoutes(
         }
       }
       const today = new Date().toISOString().slice(0, 10);
-      const progCache = new Map<string, Map<string, number>>();
+      const progCache = new Map<string, ProjectEstimateSummary>();
       await Promise.all(
         pids.map(async (pid) => {
           const m = await milestoneTaskProgressPercentByProject(db, pid);
@@ -772,10 +833,18 @@ export async function handleV1ExtraRoutes(
         const projMilestones = milestonesByProject.get(id) ?? [];
         const projTasks = tasksByProject.get(id) ?? [];
         const doneTasks = projTasks.filter((x: { completedAt: unknown }) => !!x.completedAt).length;
-        const progMap = progCache.get(id) ?? new Map<string, number>();
+        const progress = progCache.get(id);
+        const progressPercent =
+          progress && progress.total > 0
+            ? Math.round((progress.completed / progress.total) * 100)
+            : Number(raw.progress_percent ?? 0);
         return {
           ...mapProjectRowCamel(raw),
-          healthInsight: healthInsightForProjectRow(raw),
+          progressPercent,
+          estimateSummary: progress
+            ? { unit: progress.unit, total: progress.total, completed: progress.completed }
+            : null,
+          healthInsight: healthInsightForProjectRow({ ...raw, progress_percent: progressPercent }),
           workflowStatusInsight: workflowStatusForProjectRow(raw),
           milestones: projMilestones.map((milestone) => {
             const mid = milestone.id as string;
@@ -783,7 +852,7 @@ export async function handleV1ExtraRoutes(
               completedAt: unknown;
             }[];
             const mDone = mTasks.filter((t) => !!t.completedAt).length;
-            const pct = progMap.get(mid) ?? 0;
+            const pct = progress?.milestoneProgressPercent.get(mid) ?? 0;
             return {
               ...mapMilestoneCamel(milestone),
               externalRef: refMap.get(`milestone:${mid}`) ?? null,
@@ -984,6 +1053,13 @@ export async function handleV1ExtraRoutes(
         const nextStatus = input.status !== undefined ? String(input.status) : prevStatus;
         const nextStartDate = input.startDate !== undefined ? input.startDate : cur.start_date;
         const nextTargetDate = input.targetDate !== undefined ? input.targetDate : cur.target_date;
+        if (
+          input.estimationUnit !== undefined &&
+          input.estimationUnit !== "hours" &&
+          input.estimationUnit !== "story_points"
+        ) {
+          return json({ error: { message: "estimationUnit is invalid" } }, 400);
+        }
         const dateError = validateProjectDateRange(nextStartDate, nextTargetDate);
         if (dateError) return json({ error: { message: dateError } }, 400);
         const nextCycleId =
@@ -1014,6 +1090,7 @@ export async function handleV1ExtraRoutes(
           ["cycleId", "cycle_id"],
           ["startDate", "start_date"],
           ["targetDate", "target_date"],
+          ["estimationUnit", "estimation_unit"],
         ];
         for (const [js, col] of map) {
           if (input[js] !== undefined) {
@@ -1089,11 +1166,6 @@ export async function handleV1ExtraRoutes(
       if (!proj.success || !proj.results?.[0])
         return json({ error: { message: "Not found" } }, 404);
       const projectRaw = proj.results[0];
-      const projectDto = {
-        ...mapProjectRowCamel(projectRaw),
-        healthInsight: healthInsightForProjectRow(projectRaw),
-        workflowStatusInsight: workflowStatusForProjectRow(projectRaw),
-      };
       const [ms, linkRows, taskCount, mileProg] = await Promise.all([
         db
           .prepare(`SELECT * FROM milestones WHERE project_id = ? ORDER BY sort_order ASC`)
@@ -1111,6 +1183,24 @@ export async function handleV1ExtraRoutes(
           .all<{ c: number }>(),
         milestoneTaskProgressPercentByProject(db, projectId),
       ]);
+      const progressPercent =
+        mileProg.total > 0
+          ? Math.round((mileProg.completed / mileProg.total) * 100)
+          : Number(projectRaw.progress_percent ?? 0);
+      const projectDto = {
+        ...mapProjectRowCamel(projectRaw),
+        progressPercent,
+        estimateSummary: {
+          unit: mileProg.unit,
+          total: mileProg.total,
+          completed: mileProg.completed,
+        },
+        healthInsight: healthInsightForProjectRow({
+          ...projectRaw,
+          progress_percent: progressPercent,
+        }),
+        workflowStatusInsight: workflowStatusForProjectRow(projectRaw),
+      };
       const objIdsOrdered = (linkRows.results ?? [])
         .map((r) => r.okr_objective_id)
         .filter((id): id is string => typeof id === "string" && id.length > 0);
@@ -1152,9 +1242,8 @@ export async function handleV1ExtraRoutes(
         )
         .bind(workspaceId, projectId)
         .all<Record<string, unknown>>();
-      const progMap = mileProg;
       const milestones = (ms.results ?? []).map((mm) => {
-        const pct = progMap.get(String(mm.id)) ?? 0;
+        const pct = mileProg.milestoneProgressPercent.get(String(mm.id)) ?? 0;
         return {
           ...mapMilestoneCamel(mm),
           taskProgressPercent: pct,
@@ -1236,6 +1325,9 @@ export async function handleV1ExtraRoutes(
             taskCount: Number((taskCount.results?.[0] as { c: number })?.c ?? 0),
             milestoneCount: milestones.length,
             openMilestones,
+            estimationUnit: mileProg.unit,
+            totalEstimate: mileProg.total,
+            completedEstimate: mileProg.completed,
           },
           linkedPages,
           linkedAssets,
@@ -1269,7 +1361,7 @@ export async function handleV1ExtraRoutes(
         const progMap = await milestoneTaskProgressPercentByProject(db, projectId);
         return json({
           data: (rows.results ?? []).map((mm) => {
-            const pct = progMap.get(String(mm.id)) ?? 0;
+            const pct = progMap.milestoneProgressPercent.get(String(mm.id)) ?? 0;
             return {
               ...mapMilestoneCamel(mm),
               taskProgressPercent: pct,
@@ -1349,7 +1441,7 @@ export async function handleV1ExtraRoutes(
           .all<Record<string, unknown>>();
         const mm = row.results?.[0] ?? {};
         const progMap = await milestoneTaskProgressPercentByProject(db, projectId);
-        const pct = progMap.get(String(id)) ?? 0;
+        const pct = progMap.milestoneProgressPercent.get(String(id)) ?? 0;
         const externalRef = await ensureExternalRef(db, {
           workspaceId,
           entityType: "milestone",
@@ -1402,7 +1494,7 @@ export async function handleV1ExtraRoutes(
           .all<Record<string, unknown>>();
         const projectRaw = projFull.results?.[0] ?? {};
         const progMap = await milestoneTaskProgressPercentByProject(db, projectId);
-        const pct = progMap.get(String(milestoneId)) ?? 0;
+        const pct = progMap.milestoneProgressPercent.get(String(milestoneId)) ?? 0;
         const mref = await getExternalRefMap(db, workspaceId, "milestone", [milestoneId]);
         return json({
           data: {
@@ -1505,7 +1597,7 @@ export async function handleV1ExtraRoutes(
           .all<Record<string, unknown>>();
         const mm2 = row.results?.[0] ?? {};
         const progMap = await milestoneTaskProgressPercentByProject(db, projectId);
-        const pct = progMap.get(String(milestoneId)) ?? 0;
+        const pct = progMap.milestoneProgressPercent.get(String(milestoneId)) ?? 0;
         return json({
           data: {
             ...mapMilestoneCamel(mm2),
@@ -1717,6 +1809,7 @@ function mapProjectRowCamel(raw: Record<string, unknown>) {
     healthSnapshotJson: (raw.health_snapshot_json as string | null | undefined) ?? null,
     priority: raw.priority,
     progressPercent: Number(raw.progress_percent ?? 0),
+    estimationUnit: (raw.estimation_unit as string | null | undefined) ?? "hours",
     ownerUserId: raw.owner_user_id,
     cycleId: (raw.cycle_id as string | null | undefined) ?? null,
     startDate: raw.start_date,
@@ -1802,6 +1895,8 @@ function mapTaskCamel(t: Record<string, unknown>) {
     dueDate: t.due_date,
     startDate: t.start_date,
     completedAt: t.completed_at,
+    estimatedHours: (t.estimated_hours as number | null | undefined) ?? null,
+    estimatedPoints: (t.estimated_points as number | null | undefined) ?? null,
     sortOrder: t.sort_order,
     createdBy: t.created_by,
     updatedBy: t.updated_by,

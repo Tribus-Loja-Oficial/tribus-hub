@@ -313,13 +313,13 @@ export function PmDashboardPage() {
 
       <PageGuide title="O que é o Project Manager?">
         <p>
-          Visão executiva do portfólio de projetos. Acompanhe o status, saúde e progresso de todos
+          Visão executiva do portfólio de projetos. Acompanhe o status, health e progresso de todos
           os projetos em um só lugar, organizados por ciclos.
         </p>
         <GuideSection title="Nesta tela:">
           <GuideList
             items={[
-              "cartões de saúde mostram projetos em risco, bloqueados e no prazo;",
+              "cards de health mostram projetos em risco, bloqueados e no prazo;",
               "milestones próximas do vencimento são destacadas com alertas;",
               "clique em qualquer card para filtrar a lista de projetos correspondente;",
               "ciclos possuem duas leituras: status administrativo (planejado, ativo, fechado, arquivado) e fase temporal (por vir, em andamento, encerrado);",
@@ -707,7 +707,7 @@ export function PmDashboardPage() {
                       setProjectHealthFilter(e.target.value as typeof projectHealthFilter)
                     }
                   >
-                    <option value="all">Qualquer saúde de projeto</option>
+                    <option value="all">Qualquer health de projeto</option>
                     <option value="on_track">No rumo</option>
                     <option value="at_risk">Em risco</option>
                     <option value="off_track">Fora do rumo</option>

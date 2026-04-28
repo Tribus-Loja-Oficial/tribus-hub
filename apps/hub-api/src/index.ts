@@ -52,6 +52,7 @@ type ProjectRow = {
   health_status: "on_track" | "at_risk" | "blocked" | "off_track" | null;
   priority: "low" | "medium" | "high" | "urgent";
   progress_percent: number;
+  estimation_unit?: "hours" | "story_points";
   owner_user_id: string | null;
   cycle_id?: string | null;
   start_date: string | null;
@@ -91,6 +92,8 @@ type TaskRow = {
   due_date: string | null;
   start_date: string | null;
   completed_at: string | null;
+  estimated_hours?: number | null;
+  estimated_points?: number | null;
   sort_order: number;
   created_by: string;
   updated_by: string;
@@ -131,6 +134,8 @@ type CreateTaskInput = {
   descriptionText?: string;
   descriptionJson?: Record<string, unknown>;
   labelIds?: string[];
+  estimatedHours?: number;
+  estimatedPoints?: number;
 };
 
 type CreateProjectInput = {
@@ -144,6 +149,7 @@ type CreateProjectInput = {
   cycleId?: string | null;
   startDate?: string | null;
   targetDate?: string | null;
+  estimationUnit?: "hours" | "story_points";
 };
 
 type CreateTaskLabelInput = {
@@ -163,6 +169,8 @@ type UpdateTaskInput = {
   descriptionJson?: Record<string, unknown> | null;
   sortOrder?: number;
   labelIds?: string[];
+  estimatedHours?: number | null;
+  estimatedPoints?: number | null;
 };
 
 type MoveTaskInput = {
@@ -389,6 +397,7 @@ async function getProjectsByWorkspace(db: D1DatabaseLike, workspaceId: string) {
         p.health_status,
         p.priority,
         p.progress_percent,
+        p.estimation_unit,
         p.owner_user_id,
         p.start_date,
         p.target_date,
@@ -445,6 +454,7 @@ async function getProjectsByWorkspace(db: D1DatabaseLike, workspaceId: string) {
       healthSnapshotJson: row.health_snapshot_json ?? null,
       priority: row.priority,
       progressPercent: Number(row.progress_percent ?? 0),
+      estimationUnit: row.estimation_unit ?? "hours",
       ownerUserId: row.owner_user_id,
       cycleId: (row.cycle_id as string | null | undefined) ?? null,
       startDate: row.start_date,
@@ -506,6 +516,22 @@ async function assertCycleBelongsWorkspace(
   }
 }
 
+async function getProjectEstimationUnit(
+  db: D1DatabaseLike,
+  workspaceId: string,
+  projectId: string | null | undefined,
+): Promise<"hours" | "story_points" | null> {
+  if (!projectId) return null;
+  const row = await db
+    .prepare(
+      `SELECT estimation_unit FROM projects WHERE id = ? AND workspace_id = ? AND deleted_at IS NULL LIMIT 1`,
+    )
+    .bind(projectId, workspaceId)
+    .all<{ estimation_unit: "hours" | "story_points" }>();
+  if (!row.success || !row.results?.[0]) throw new Error("projectId is invalid for this workspace");
+  return row.results[0].estimation_unit ?? "hours";
+}
+
 function mapProjectRowToDto(row: ProjectRow) {
   return {
     id: row.id,
@@ -521,6 +547,7 @@ function mapProjectRowToDto(row: ProjectRow) {
     healthSnapshotJson: row.health_snapshot_json ?? null,
     priority: row.priority,
     progressPercent: Number(row.progress_percent ?? 0),
+    estimationUnit: row.estimation_unit ?? "hours",
     ownerUserId: row.owner_user_id,
     cycleId: row.cycle_id ?? null,
     startDate: row.start_date,
@@ -551,6 +578,10 @@ async function createProject(
   const priority = input.priority ?? "medium";
   if (!["low", "medium", "high", "urgent"].includes(priority)) {
     throw new Error("priority is invalid");
+  }
+  const estimationUnit = input.estimationUnit ?? "hours";
+  if (!["hours", "story_points"].includes(estimationUnit)) {
+    throw new Error("estimationUnit is invalid");
   }
   const startDate = typeof input.startDate === "string" ? input.startDate : null;
   const targetDate = typeof input.targetDate === "string" ? input.targetDate : null;
@@ -593,10 +624,10 @@ async function createProject(
       `
       INSERT INTO projects (
         id, workspace_id, title, slug, summary, description_json, description_text,
-        status, health_status, priority, progress_percent, owner_user_id,
+        status, health_status, priority, progress_percent, estimation_unit, owner_user_id,
         cycle_id, start_date, target_date, completed_at, health_snapshot_json, created_by, updated_by,
         created_at, updated_at, archived_at, deleted_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     )
     .bind(
@@ -611,6 +642,7 @@ async function createProject(
       healthStatus,
       priority,
       0,
+      estimationUnit,
       input.ownerUserId ?? null,
       cycleId,
       startDate,
@@ -633,7 +665,7 @@ async function createProject(
       `
       SELECT
         id, workspace_id, title, slug, summary, description_json, description_text,
-        status, health_status, priority, progress_percent, owner_user_id,
+        status, health_status, priority, progress_percent, estimation_unit, owner_user_id,
         cycle_id, start_date, target_date, completed_at, health_snapshot_json, created_by, updated_by,
         created_at, updated_at, archived_at, deleted_at
       FROM projects
@@ -799,6 +831,8 @@ async function getTaskBoardData(db: D1DatabaseLike, workspaceId: string) {
         t.due_date,
         t.start_date,
         t.completed_at,
+        t.estimated_hours,
+        t.estimated_points,
         t.sort_order,
         t.created_by,
         t.updated_by,
@@ -902,6 +936,8 @@ async function getTaskBoardData(db: D1DatabaseLike, workspaceId: string) {
         dueDate: task.due_date,
         startDate: task.start_date,
         completedAt: task.completed_at,
+        estimatedHours: task.estimated_hours ?? null,
+        estimatedPoints: task.estimated_points ?? null,
         sortOrder: Number(task.sort_order ?? 0),
         createdBy: task.created_by,
         updatedBy: task.updated_by,
@@ -1038,6 +1074,8 @@ async function getTasksByWorkspace(
       due_date,
       start_date,
       completed_at,
+      estimated_hours,
+      estimated_points,
       sort_order,
       created_by,
       updated_by,
@@ -1074,6 +1112,8 @@ async function getTasksByWorkspace(
     dueDate: task.due_date,
     startDate: task.start_date,
     completedAt: task.completed_at,
+    estimatedHours: task.estimated_hours ?? null,
+    estimatedPoints: task.estimated_points ?? null,
     sortOrder: Number(task.sort_order ?? 0),
     createdBy: task.created_by,
     updatedBy: task.updated_by,
@@ -1151,6 +1191,23 @@ async function createTask(
   const now = new Date().toISOString();
   const slug = createSlug(input.title);
   const descriptionJson = input.descriptionJson ? JSON.stringify(input.descriptionJson) : null;
+  const projectEstimationUnit = await getProjectEstimationUnit(
+    db,
+    workspaceId,
+    input.projectId ?? null,
+  );
+  const estimatedHours =
+    projectEstimationUnit === "hours"
+      ? typeof input.estimatedHours === "number"
+        ? input.estimatedHours
+        : null
+      : null;
+  const estimatedPoints =
+    projectEstimationUnit === "story_points"
+      ? typeof input.estimatedPoints === "number"
+        ? input.estimatedPoints
+        : null
+      : null;
 
   const insert = await db
     .prepare(
@@ -1158,9 +1215,9 @@ async function createTask(
       INSERT INTO tasks (
         id, workspace_id, project_id, milestone_id, column_id, title, slug,
         description_json, description_text, priority, assignee_user_id, reporter_user_id,
-        due_date, start_date, completed_at, sort_order, created_by, updated_by,
+        due_date, start_date, completed_at, estimated_hours, estimated_points, sort_order, created_by, updated_by,
         created_at, updated_at, archived_at, deleted_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     )
     .bind(
@@ -1179,6 +1236,8 @@ async function createTask(
       input.dueDate ?? null,
       null,
       null,
+      estimatedHours,
+      estimatedPoints,
       maxSort + 1000,
       actorUserId,
       actorUserId,
@@ -1221,6 +1280,8 @@ async function createTask(
     dueDate: input.dueDate ?? null,
     startDate: null,
     completedAt: null,
+    estimatedHours,
+    estimatedPoints,
     sortOrder: maxSort + 1000,
     createdBy: actorUserId,
     updatedBy: actorUserId,
@@ -1239,7 +1300,7 @@ async function getTaskById(db: D1DatabaseLike, workspaceId: string, taskId: stri
       SELECT
         id, workspace_id, project_id, milestone_id, column_id, title, slug, description_json,
         description_text, priority, assignee_user_id, reporter_user_id, due_date, start_date,
-        completed_at, sort_order, created_by, updated_by, created_at, updated_at, archived_at, deleted_at
+        completed_at, estimated_hours, estimated_points, sort_order, created_by, updated_by, created_at, updated_at, archived_at, deleted_at
       FROM tasks
       WHERE id = ?
         AND workspace_id = ?
@@ -1284,6 +1345,8 @@ async function getTaskById(db: D1DatabaseLike, workspaceId: string, taskId: stri
     dueDate: task.due_date,
     startDate: task.start_date,
     completedAt: task.completed_at,
+    estimatedHours: task.estimated_hours ?? null,
+    estimatedPoints: task.estimated_points ?? null,
     sortOrder: Number(task.sort_order ?? 0),
     createdBy: task.created_by,
     updatedBy: task.updated_by,
@@ -1349,6 +1412,9 @@ async function updateTaskById(
 ) {
   const existing = await getTaskById(db, workspaceId, taskId);
   if (!existing) return null;
+  const nextProjectId =
+    input.projectId !== undefined ? (input.projectId ?? null) : (existing.projectId ?? null);
+  const projectEstimationUnit = await getProjectEstimationUnit(db, workspaceId, nextProjectId);
 
   const updates: string[] = [];
   const args: unknown[] = [];
@@ -1391,6 +1457,22 @@ async function updateTaskById(
   if (input.sortOrder !== undefined) {
     updates.push("sort_order = ?");
     args.push(input.sortOrder);
+  }
+  if (input.estimatedHours !== undefined && projectEstimationUnit !== "story_points") {
+    updates.push("estimated_hours = ?");
+    args.push(input.estimatedHours);
+  }
+  if (input.estimatedPoints !== undefined && projectEstimationUnit !== "hours") {
+    updates.push("estimated_points = ?");
+    args.push(input.estimatedPoints);
+  }
+  if (input.projectId !== undefined && projectEstimationUnit === "hours") {
+    updates.push("estimated_points = ?");
+    args.push(null);
+  }
+  if (input.projectId !== undefined && projectEstimationUnit === "story_points") {
+    updates.push("estimated_hours = ?");
+    args.push(null);
   }
 
   updates.push("updated_by = ?");

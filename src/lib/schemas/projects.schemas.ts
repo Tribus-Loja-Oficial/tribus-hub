@@ -10,6 +10,7 @@ export const createProjectSchema = z.object({
   cycleId: z.string().optional(),
   startDate: z.string().date().optional(),
   targetDate: z.string().date().optional(),
+  estimationUnit: z.enum(["hours", "story_points"]).optional(),
 });
 
 export const updateProjectSchema = createProjectSchema.partial();

@@ -4,7 +4,7 @@ import type { PaceHealthSlug } from "@/lib/types/domain";
 interface OkrProgressBarProps {
   percent: number;
   status?: string;
-  /** Quando a API envia saúde por ritmo, a cor da barra segue o slug de saúde. */
+  /** Quando a API envia health por ritmo, a cor da barra segue o slug de health. */
   healthSlug?: PaceHealthSlug | null;
   showLabel?: boolean;
   size?: "xs" | "sm" | "md";

@@ -82,7 +82,7 @@ function milestoneStatusCell(milestone: HierarchyMilestone) {
 }
 
 /**
- * 9 colunas: chevron | ícone | título | status | health | prioridade | prazo | progresso | ações.
+ * 10 colunas: chevron | ícone | título | status | health | prioridade | progresso | ciclo | prazo | ações.
  * Cada célula define o próprio flex; não forçar flex global para evitar desalinhamento entre níveis.
  */
 const HIERARCHY_GRID_ROW_CLASS =
@@ -93,8 +93,8 @@ function hierarchyGridColumnsStyle(gridTpl: string): CSSProperties {
 }
 
 /** Larguras default (px); coluna de ações maior para evitar corte de contadores e botões. */
-const HIERARCHY_COL_DEFAULTS = [24, 44, 320, 176, 176, 116, 108, 128, 210] as const;
-const HIERARCHY_COL_STORAGE_KEY = "hub:project-hierarchy-cols-v7";
+const HIERARCHY_COL_DEFAULTS = [24, 44, 300, 176, 176, 116, 116, 148, 108, 210] as const;
+const HIERARCHY_COL_STORAGE_KEY = "hub:project-hierarchy-cols-v8";
 
 function HierarchyHeaderCell({
   children,
@@ -258,6 +258,19 @@ function TaskRow({
         />
       </div>
       <div className="flex min-w-0 items-center justify-start overflow-hidden">
+        <span
+          className={cn(
+            "text-[10px] font-medium tabular-nums",
+            done ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/50",
+          )}
+        >
+          {done ? "Concluída" : "—"}
+        </span>
+      </div>
+      <div className="flex min-w-0 items-center justify-start overflow-hidden">
+        <span className="text-[10px] text-muted-foreground/40">—</span>
+      </div>
+      <div className="flex min-w-0 items-center justify-start overflow-hidden">
         {task.dueDate ? (
           <span
             className={cn(
@@ -271,16 +284,6 @@ function TaskRow({
         ) : (
           <span className="text-[10px] text-muted-foreground/40">—</span>
         )}
-      </div>
-      <div className="flex min-w-0 items-center justify-start overflow-hidden">
-        <span
-          className={cn(
-            "text-[10px] font-medium tabular-nums",
-            done ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/50",
-          )}
-        >
-          {done ? "Concluída" : "—"}
-        </span>
       </div>
       <div className="flex min-w-0 items-center justify-end gap-0.5">
         <Link
@@ -402,6 +405,17 @@ function MilestoneRow({
             />
           </div>
           <div className="flex min-w-0 items-center justify-start overflow-hidden opacity-90 transition-opacity group-hover:opacity-100">
+            <ProgressBar
+              done={milestone.taskStats.done}
+              total={milestone.taskStats.total}
+              className="w-full min-w-0"
+              showFraction={false}
+            />
+          </div>
+          <div className="flex min-w-0 items-center justify-start overflow-hidden opacity-90 transition-opacity group-hover:opacity-100">
+            <span className="text-[10px] text-muted-foreground/40">—</span>
+          </div>
+          <div className="flex min-w-0 items-center justify-start overflow-hidden opacity-90 transition-opacity group-hover:opacity-100">
             {milestone.dueDate ? (
               <span
                 className={cn(
@@ -415,14 +429,6 @@ function MilestoneRow({
             ) : (
               <span className="text-[10px] text-muted-foreground/40">—</span>
             )}
-          </div>
-          <div className="flex min-w-0 items-center justify-start overflow-hidden opacity-90 transition-opacity group-hover:opacity-100">
-            <ProgressBar
-              done={milestone.taskStats.done}
-              total={milestone.taskStats.total}
-              className="w-full min-w-0"
-              showFraction={false}
-            />
           </div>
           <div className="min-w-0" aria-hidden />
         </div>
@@ -488,6 +494,7 @@ function ProjectRow({
   onEditProject,
   expandSignal,
   hierarchyGridTpl,
+  cycleTitle,
 }: {
   project: ProjectHierarchyItem;
   members: Map<string, MemberRow>;
@@ -497,6 +504,7 @@ function ProjectRow({
   onEditProject?: (p: ProjectHierarchyItem) => void;
   expandSignal: boolean;
   hierarchyGridTpl: string;
+  cycleTitle: string | null;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -611,6 +619,21 @@ function ProjectRow({
             />
           </div>
           <div className="flex min-w-0 items-center justify-start overflow-hidden">
+            <ProgressBar
+              done={project.projectStats.doneTasks}
+              total={project.projectStats.totalTasks}
+              className="w-full min-w-0"
+              showFraction={false}
+            />
+          </div>
+          <div className="flex min-w-0 items-center justify-start overflow-hidden">
+            {cycleTitle ? (
+              <span className="truncate text-[11px] text-muted-foreground">{cycleTitle}</span>
+            ) : (
+              <span className="text-[10px] text-muted-foreground/40">—</span>
+            )}
+          </div>
+          <div className="flex min-w-0 items-center justify-start overflow-hidden">
             {project.targetDate ? (
               <span
                 className={cn(
@@ -624,14 +647,6 @@ function ProjectRow({
             ) : (
               <span className="text-[10px] text-muted-foreground/40">—</span>
             )}
-          </div>
-          <div className="flex min-w-0 items-center justify-start overflow-hidden">
-            <ProgressBar
-              done={project.projectStats.doneTasks}
-              total={project.projectStats.totalTasks}
-              className="w-full min-w-0"
-              showFraction={false}
-            />
           </div>
           <div className="flex min-w-0 items-center justify-end gap-1.5">
             {owner && (
@@ -718,8 +733,9 @@ function ProjectRow({
                 <div className="flex items-center justify-start">Status</div>
                 <div className="flex items-center justify-start">Health</div>
                 <div className="flex items-center justify-start">Prioridade</div>
-                <div className="flex items-center justify-start">Prazo</div>
                 <div className="flex items-center justify-start">Progresso</div>
+                <div className="flex items-center justify-start">Ciclo</div>
+                <div className="flex items-center justify-start">Prazo</div>
                 <div className="min-w-0" aria-hidden />
               </div>
               {project.milestones.map((milestone) => (
@@ -810,6 +826,7 @@ interface ProjectHierarchyViewProps {
   filterStatus: string;
   filterPriority: string;
   filterHealth: string;
+  filterCycle: string;
   allExpanded: boolean;
   onEditProject?: (p: ProjectHierarchyItem) => void;
 }
@@ -819,6 +836,7 @@ export function ProjectHierarchyView({
   filterStatus,
   filterPriority,
   filterHealth,
+  filterCycle,
   allExpanded,
   onEditProject,
 }: ProjectHierarchyViewProps) {
@@ -865,12 +883,23 @@ export function ProjectHierarchyView({
     return map;
   }, [membersRes]);
 
+  const { data: cyclesRes } = useQuery<{ data: Array<{ id: string; title: string }> }>({
+    queryKey: ["okr-cycles"],
+    queryFn: () => fetch("/api/okr/cycles").then((r) => r.json()),
+    staleTime: 60_000,
+  });
+  const cycleTitleById = useMemo(
+    () => new Map((cyclesRes?.data ?? []).map((c) => [c.id, c.title] as const)),
+    [cyclesRes],
+  );
+
   const filtered = useMemo(() => {
     if (!data?.data) return [];
     return data.data.filter((p) => {
       if (searchQuery && !projectMatchesSearch(p, searchQuery)) return false;
       if (filterStatus && projectWorkflowSlug(p) !== filterStatus) return false;
       if (filterPriority && p.priority !== filterPriority) return false;
+      if (filterCycle && p.cycleId !== filterCycle) return false;
       if (filterHealth) {
         const slug = p.healthInsight?.slug;
         if (!slug) return false;
@@ -878,7 +907,7 @@ export function ProjectHierarchyView({
       }
       return true;
     });
-  }, [data, searchQuery, filterStatus, filterPriority, filterHealth]);
+  }, [data, searchQuery, filterStatus, filterPriority, filterHealth, filterCycle]);
 
   const handleCreateTask = (projectId: string, milestoneId: string) => {
     setCreateTaskProjectId(projectId);
@@ -970,7 +999,7 @@ export function ProjectHierarchyView({
                 className="justify-start"
               >
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Prazo
+                  Progresso
                 </span>
               </HierarchyHeaderCell>
               <HierarchyHeaderCell
@@ -979,7 +1008,16 @@ export function ProjectHierarchyView({
                 className="justify-start"
               >
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Progresso
+                  Ciclo
+                </span>
+              </HierarchyHeaderCell>
+              <HierarchyHeaderCell
+                resizeIndex={8}
+                startResize={startResize}
+                className="justify-start"
+              >
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Prazo
                 </span>
               </HierarchyHeaderCell>
               <div className="min-w-0" aria-hidden />
@@ -998,6 +1036,7 @@ export function ProjectHierarchyView({
               onEditProject={onEditProject}
               expandSignal={allExpanded}
               hierarchyGridTpl={hierarchyGridTpl}
+              cycleTitle={project.cycleId ? (cycleTitleById.get(project.cycleId) ?? null) : null}
             />
           ))}
         </div>

@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils/cn";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type ProjectRow = { id: string; title: string };
+type ProjectRow = { id: string; title: string; estimationUnit?: "hours" | "story_points" };
 type MilestoneRow = { id: string; title: string };
 type LabelRow = { id: string; name: string; colorToken: string | null };
 type MemberRow = { id: string; name: string; email: string };
@@ -117,6 +117,7 @@ export function TaskFormDialog({
   const [assigneeUserId, setAssigneeUserId] = useState("");
   const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>([]);
   const [newLabelName, setNewLabelName] = useState("");
+  const [estimateValue, setEstimateValue] = useState("");
 
   // ── Queries ──
   const { data: taskRes } = useQuery<{ data: TaskWithLabels }>({
@@ -168,6 +169,7 @@ export function TaskFormDialog({
       setDueDate("");
       setAssigneeUserId("");
       setSelectedLabelIds([]);
+      setEstimateValue("");
       setTimeout(() => titleRef.current?.focus(), 50);
       return;
     }
@@ -182,6 +184,9 @@ export function TaskFormDialog({
       setDueDate(t.dueDate ? String(t.dueDate).slice(0, 10) : "");
       setAssigneeUserId(t.assigneeUserId ?? "");
       setSelectedLabelIds((t.labels ?? []).map((l) => l.id));
+      const hours = typeof t.estimatedHours === "number" ? t.estimatedHours : null;
+      const points = typeof t.estimatedPoints === "number" ? t.estimatedPoints : null;
+      setEstimateValue(hours != null ? String(hours) : points != null ? String(points) : "");
     }
   }, [open, mode, taskRes?.data, defaultColumnId, columns, initialProjectId, initialMilestoneId]);
 
@@ -215,6 +220,14 @@ export function TaskFormDialog({
         assigneeUserId: assigneeUserId || undefined,
         descriptionText: description.trim() || undefined,
         labelIds: selectedLabelIds,
+        estimatedHours:
+          estimationUnit === "hours" && estimateValue.trim() !== ""
+            ? Number(estimateValue)
+            : undefined,
+        estimatedPoints:
+          estimationUnit === "story_points" && estimateValue.trim() !== ""
+            ? Number(estimateValue)
+            : undefined,
       };
 
       if (mode === "create") {
@@ -237,6 +250,18 @@ export function TaskFormDialog({
           assigneeUserId: assigneeUserId || null,
           dueDate: dueDate || null,
           descriptionText: description.trim() || null,
+          estimatedHours:
+            estimationUnit === "hours"
+              ? estimateValue.trim() === ""
+                ? null
+                : Number(estimateValue)
+              : null,
+          estimatedPoints:
+            estimationUnit === "story_points"
+              ? estimateValue.trim() === ""
+                ? null
+                : Number(estimateValue)
+              : null,
         }),
       });
       if (!res.ok) throw new Error("update failed");
@@ -277,6 +302,8 @@ export function TaskFormDialog({
   const milestones = milestonesRes?.data ?? [];
   const labels = labelsRes?.data ?? [];
   const members = membersRes?.data ?? [];
+  const selectedProject = projects.find((p) => p.id === projectId) ?? null;
+  const estimationUnit = selectedProject?.estimationUnit ?? "hours";
 
   const toggleLabel = (id: string) =>
     setSelectedLabelIds((prev) =>
@@ -453,6 +480,23 @@ export function TaskFormDialog({
                   </div>
                 </div>
               </div>
+              {projectId ? (
+                <div>
+                  <FieldLabel htmlFor="task-estimate">
+                    Estimativa ({estimationUnit === "hours" ? "horas" : "story points"})
+                  </FieldLabel>
+                  <input
+                    id="task-estimate"
+                    type="number"
+                    min={0}
+                    step="0.5"
+                    value={estimateValue}
+                    onChange={(e) => setEstimateValue(e.target.value)}
+                    placeholder={estimationUnit === "hours" ? "Ex.: 6" : "Ex.: 5"}
+                    className={selectClass}
+                  />
+                </div>
+              ) : null}
 
               {/* Coluna + Vencimento */}
               <div className="grid grid-cols-2 gap-3">

@@ -8,7 +8,7 @@ import { tableChipBoxStyle } from "@/lib/ui/chip-width-tokens";
 import { cn } from "@/lib/utils/cn";
 import { paceHealthBadgeToneSlug, paceHealthLabel } from "@/lib/pace-health-display";
 
-/** Barra vertical à esquerda da linha (lista OKR / projetos), alinhada à saúde por ritmo. */
+/** Barra vertical à esquerda da linha (lista OKR / projetos), alinhada ao health por ritmo. */
 const ROW_ACCENT: Record<PaceHealthSlug, string> = {
   draft: "border-l-slate-400/50",
   no_dates: "border-l-slate-400/40",
@@ -65,7 +65,7 @@ function healthTooltip(insight: HealthInsight): string {
 
   const bullets = [
     `• Health atual: ${paceHealthLabel(insight.slug)}`,
-    `• ${slugLine[insight.slug] ?? "Saude calculada pelo ritmo."}`,
+    `• ${slugLine[insight.slug] ?? "Health calculado pelo ritmo."}`,
     `• Datas consideradas: ${fmtWindowDate(insight.windowStart)} a ${fmtWindowDate(insight.windowEnd)}`,
     `• Progresso: ${progress} | Tempo decorrido: ${elapsed}`,
     `• Diferenca de ritmo: ${diff}`,
@@ -89,7 +89,7 @@ export function HealthInsightHint({
         className,
       )}
       title={title}
-      aria-label="Como calculamos a saúde em relação ao prazo"
+      aria-label="Como calculamos o health em relação ao prazo"
     >
       <Info className="h-3.5 w-3.5" />
     </button>

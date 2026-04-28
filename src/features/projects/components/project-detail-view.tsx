@@ -65,7 +65,14 @@ interface HubPayload {
       confidence?: number | null;
     }>;
   }>;
-  stats: { taskCount: number; milestoneCount: number; openMilestones: number };
+  stats: {
+    taskCount: number;
+    milestoneCount: number;
+    openMilestones: number;
+    estimationUnit?: "hours" | "story_points";
+    totalEstimate?: number;
+    completedEstimate?: number;
+  };
   linkedPages: Array<{ id: string; title: string; isFolder: boolean }>;
   linkedAssets: Array<{ id: string; filename: string; mimeType: string; sizeBytes: number }>;
   recentTasks: Task[];
@@ -654,20 +661,23 @@ export function ProjectDetailView({
       </div>
 
       {/* Progress bar */}
-      {(project.progressPercent ?? 0) > 0 && (
-        <div className="space-y-1">
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>Progresso manual</span>
-            <span className="tabular-nums">{Math.round(project.progressPercent ?? 0)}%</span>
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-primary/70 transition-all"
-              style={{ width: `${Math.min(100, project.progressPercent ?? 0)}%` }}
-            />
-          </div>
+      <div className="space-y-1">
+        <div className="flex justify-between text-xs text-muted-foreground">
+          <span>Progresso por estimativa</span>
+          <span className="tabular-nums">{Math.round(project.progressPercent ?? 0)}%</span>
         </div>
-      )}
+        <div className="h-2 overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full rounded-full bg-primary/70 transition-all"
+            style={{ width: `${Math.min(100, project.progressPercent ?? 0)}%` }}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {Number(stats.completedEstimate ?? 0).toFixed(1)} /{" "}
+          {Number(stats.totalEstimate ?? 0).toFixed(1)}{" "}
+          {stats.estimationUnit === "story_points" ? "story points concluídos" : "horas concluídas"}
+        </p>
+      </div>
 
       {/* Alerts */}
       {overdueMilestones > 0 && (

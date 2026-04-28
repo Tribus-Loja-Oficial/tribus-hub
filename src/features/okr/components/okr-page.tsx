@@ -115,6 +115,13 @@ const STATUS_FILTER_OPTIONS = [
   { value: "in_progress", label: "Em Progresso" },
   { value: "completed", label: "Concluído" },
 ] as const;
+const HEALTH_FILTER_OPTIONS = [
+  { value: "not_started", label: "Não iniciado" },
+  { value: "ahead", label: "Adiantado" },
+  { value: "on_track", label: "No rumo" },
+  { value: "at_risk", label: "Em risco" },
+  { value: "off_track", label: "Fora do rumo" },
+] as const;
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -127,6 +134,7 @@ export function OkrPage() {
   /** Vazio = todos. Vários valores = OR (união). */
   const [filterStatuses, setFilterStatuses] = useState<Set<string>>(() => new Set());
   const [filterCycleIds, setFilterCycleIds] = useState<Set<string>>(() => new Set());
+  const [filterHealthSlugs, setFilterHealthSlugs] = useState<Set<string>>(() => new Set());
   const [sort, setSort] = useState<{
     field: OkrListSortField | null;
     dir: "asc" | "desc";
@@ -252,8 +260,14 @@ export function OkrPage() {
     if (filterCycleIds.size > 0) {
       list = list.filter((o) => o.cycleId != null && filterCycleIds.has(o.cycleId));
     }
+    if (filterHealthSlugs.size > 0) {
+      list = list.filter((o) => {
+        const health = reconcileOkrHealthInsightForDisplay(o.healthInsight, o) ?? o.healthInsight;
+        return health?.slug ? filterHealthSlugs.has(health.slug) : false;
+      });
+    }
     return list;
-  }, [allObjectives, filterStatuses, filterCycleIds]);
+  }, [allObjectives, filterStatuses, filterCycleIds, filterHealthSlugs]);
 
   const filtered = useMemo(() => {
     const map = new Map(cycles.map((c) => [c.id, c]));
@@ -281,7 +295,11 @@ export function OkrPage() {
   }, [searchParams, sortedFiltered]);
 
   const hasNonDefaultTableState = Boolean(
-    filterStatuses.size > 0 || filterCycleIds.size > 0 || search.trim() || sort.field !== null,
+    filterStatuses.size > 0 ||
+    filterCycleIds.size > 0 ||
+    filterHealthSlugs.size > 0 ||
+    search.trim() ||
+    sort.field !== null,
   );
 
   /** Cabeçalhos visíveis com filtros/ordenação ativos ou quando há linhas (busca incluída). */
@@ -323,6 +341,7 @@ export function OkrPage() {
   function clearAllFiltersAndSort() {
     setFilterStatuses(new Set());
     setFilterCycleIds(new Set());
+    setFilterHealthSlugs(new Set());
     setSearch("");
     setSort({ field: null, dir: "asc" });
   }
@@ -747,9 +766,77 @@ export function OkrPage() {
                   startResize={startResize}
                   className="min-w-0 justify-start px-2"
                 >
-                  <span className="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/55">
-                    Health
-                  </span>
+                  <div className="flex w-full min-w-0 items-center justify-between gap-1">
+                    <span className="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/55">
+                      Health
+                    </span>
+                    <DropdownMenu.Root>
+                      <div className="relative shrink-0">
+                        <DropdownMenu.Trigger asChild>
+                          <button
+                            type="button"
+                            className={cn(
+                              "relative inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-background/90 hover:text-foreground",
+                              filterHealthSlugs.size > 0
+                                ? "border-primary/40 bg-primary/10 text-primary shadow-sm"
+                                : "border-border/60 bg-background/40",
+                            )}
+                            aria-label="Filtrar por health"
+                          >
+                            <ChevronDown className="h-3.5 w-3.5" />
+                            {filterHealthSlugs.size > 0 ? (
+                              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-0.5 text-[9px] font-bold leading-none text-primary-foreground shadow-sm">
+                                {filterHealthSlugs.size}
+                              </span>
+                            ) : null}
+                          </button>
+                        </DropdownMenu.Trigger>
+                      </div>
+                      <DropdownMenu.Portal>
+                        <DropdownMenu.Content
+                          className="z-[200] min-w-[12rem] rounded-lg border border-border bg-popover p-1 shadow-lg"
+                          sideOffset={4}
+                          align="end"
+                          data-menu
+                        >
+                          <DropdownMenu.Item
+                            className="cursor-pointer rounded px-2 py-1.5 text-xs outline-none hover:bg-accent"
+                            onSelect={() => setFilterHealthSlugs(new Set())}
+                          >
+                            Limpar seleção
+                          </DropdownMenu.Item>
+                          <DropdownMenu.Separator className="my-1 h-px bg-border" />
+                          {HEALTH_FILTER_OPTIONS.map((opt) => (
+                            <DropdownMenu.CheckboxItem
+                              key={opt.value}
+                              className={cn(
+                                "relative flex items-center rounded-sm py-1.5 pl-8 pr-2 text-xs",
+                                filterHealthSlugs.has(opt.value) &&
+                                  "bg-primary/12 font-medium text-foreground",
+                              )}
+                              checked={filterHealthSlugs.has(opt.value)}
+                              onCheckedChange={(checked) => {
+                                setFilterHealthSlugs((prev) => {
+                                  const n = new Set(prev);
+                                  if (checked) n.add(opt.value);
+                                  else n.delete(opt.value);
+                                  return n;
+                                });
+                              }}
+                              onSelect={(e) => e.preventDefault()}
+                            >
+                              <span className="absolute left-2 flex h-4 w-4 items-center justify-center text-primary">
+                                <DropdownMenu.ItemIndicator>
+                                  <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
+                                </DropdownMenu.ItemIndicator>
+                              </span>
+                              {opt.label}
+                            </DropdownMenu.CheckboxItem>
+                          ))}
+                        </DropdownMenu.Content>
+                      </DropdownMenu.Portal>
+                    </DropdownMenu.Root>
+                  </div>
                 </OkrListHeaderCell>
                 <OkrListHeaderCell
                   resizeIndex={5}

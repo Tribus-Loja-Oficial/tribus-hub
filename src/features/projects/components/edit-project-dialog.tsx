@@ -40,6 +40,7 @@ export function EditProjectFormFields({
   const [summary, setSummary] = useState("");
   const [status, setStatus] = useState("planned");
   const [priority, setPriority] = useState("medium");
+  const [estimationUnit, setEstimationUnit] = useState<"hours" | "story_points">("hours");
   const [cycleId, setCycleId] = useState("");
   const [ownerUserId, setOwnerUserId] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -94,6 +95,7 @@ export function EditProjectFormFields({
     setSummary(project.summary ?? "");
     setStatus(project.status);
     setPriority(project.priority);
+    setEstimationUnit((project.estimationUnit as "hours" | "story_points" | undefined) ?? "hours");
     setCycleId(project.cycleId ?? "");
     setOwnerUserId(project.ownerUserId ?? "");
     setStartDate(project.startDate ?? "");
@@ -113,6 +115,7 @@ export function EditProjectFormFields({
           summary: summary.trim() || undefined,
           status,
           priority,
+          estimationUnit,
           cycleId: cycleId || undefined,
           ownerUserId: ownerUserId || undefined,
           startDate: startDate || undefined,
@@ -152,6 +155,25 @@ export function EditProjectFormFields({
               <SelectItem value="medium">Média</SelectItem>
               <SelectItem value="high">Alta</SelectItem>
               <SelectItem value="urgent">Urgente</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label>Estimativa do projeto</Label>
+          <Select
+            value={estimationUnit}
+            onValueChange={(v) => setEstimationUnit(v as "hours" | "story_points")}
+          >
+            <SelectTrigger aria-label="Estimativa do projeto">
+              <SelectValue placeholder="Unidade de estimativa" />
+            </SelectTrigger>
+            <SelectContent
+              position="popper"
+              sideOffset={4}
+              onCloseAutoFocus={(e) => e.preventDefault()}
+            >
+              <SelectItem value="hours">Horas</SelectItem>
+              <SelectItem value="story_points">Story points</SelectItem>
             </SelectContent>
           </Select>
         </div>

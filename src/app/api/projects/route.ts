@@ -19,6 +19,7 @@ type HubApiCreatedProject = {
   healthStatus: string | null;
   priority: string;
   progressPercent: number;
+  estimationUnit?: "hours" | "story_points";
   ownerUserId: string | null;
   cycleId?: string | null;
   startDate: string | null;
@@ -69,6 +70,7 @@ export async function POST(request: NextRequest) {
         cycleId: input.cycleId ?? null,
         startDate: input.startDate ?? null,
         targetDate: input.targetDate ?? null,
+        estimationUnit: input.estimationUnit ?? "hours",
       },
     });
 

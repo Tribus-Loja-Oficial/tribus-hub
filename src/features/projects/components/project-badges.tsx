@@ -48,7 +48,7 @@ function Badge({
   );
 }
 
-/** Saúde por ritmo (hub-api); sem insight mostra traço. */
+/** Health por ritmo (hub-api); sem insight mostra traço. */
 export function ProjectHealthRow({
   insight,
   /** Em tabelas: badge à esquerda, ícone à direita da célula (ícones alinhados entre linhas). */

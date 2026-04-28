@@ -11,6 +11,8 @@ export const createTaskSchema = z.object({
   descriptionText: z.string().optional(),
   descriptionJson: z.record(z.unknown()).optional(),
   labelIds: z.array(z.string()).optional(),
+  estimatedHours: z.number().nonnegative().optional(),
+  estimatedPoints: z.number().nonnegative().optional(),
 });
 
 export const updateTaskSchema = z.object({
@@ -25,6 +27,8 @@ export const updateTaskSchema = z.object({
   descriptionJson: z.record(z.unknown()).optional(),
   sortOrder: z.number().int().optional(),
   labelIds: z.array(z.string()).optional(),
+  estimatedHours: z.number().nonnegative().optional().nullable(),
+  estimatedPoints: z.number().nonnegative().optional().nullable(),
 });
 
 export const createTaskLabelSchema = z.object({

@@ -85,7 +85,7 @@ export function OkrStatusBadge({ status, size = "sm", className }: OkrStatusBadg
   );
 }
 
-/** Status operacional (Planejado / Em progresso / Concluído) + saúde por ritmo quando a API envia insights. */
+/** Status operacional (Planejado / Em progresso / Concluído) + health por ritmo quando a API envia insights. */
 export function OkrEntityStatusRow({
   status,
   workflowStatusInsight,

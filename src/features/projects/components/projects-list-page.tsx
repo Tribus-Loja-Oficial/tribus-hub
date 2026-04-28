@@ -53,7 +53,7 @@ const STATUS_OPTIONS = [
 ];
 
 const HEALTH_OPTIONS = [
-  { value: "", label: "Qualquer saúde" },
+  { value: "", label: "Qualquer health" },
   { value: "not_started", label: "Não Iniciado" },
   { value: "ahead", label: "Adiantado" },
   { value: "on_track", label: "No Rumo" },
@@ -105,6 +105,7 @@ function CreateProjectDialog({ open, onOpenChange, onCreated }: CreateProjectDia
   const [summary, setSummary] = useState("");
   const [status, setStatus] = useState("planned");
   const [priority, setPriority] = useState("medium");
+  const [estimationUnit, setEstimationUnit] = useState<"hours" | "story_points">("hours");
   const [cycleId, setCycleId] = useState("");
   const [startDate, setStartDate] = useState("");
   const [targetDate, setTargetDate] = useState("");
@@ -132,6 +133,7 @@ function CreateProjectDialog({ open, onOpenChange, onCreated }: CreateProjectDia
       setSummary("");
       setStatus("planned");
       setPriority("medium");
+      setEstimationUnit("hours");
       setCycleId("");
       setStartDate("");
       setTargetDate("");
@@ -153,6 +155,7 @@ function CreateProjectDialog({ open, onOpenChange, onCreated }: CreateProjectDia
               summary: summary.trim() || undefined,
               status,
               priority,
+              estimationUnit,
               cycleId: cycleId || undefined,
               startDate: startDate || undefined,
               targetDate: targetDate || undefined,
@@ -220,6 +223,17 @@ function CreateProjectDialog({ open, onOpenChange, onCreated }: CreateProjectDia
                 <option value="medium">Média</option>
                 <option value="high">Alta</option>
                 <option value="urgent">Urgente</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Estimativa do projeto</Label>
+              <select
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={estimationUnit}
+                onChange={(e) => setEstimationUnit(e.target.value as "hours" | "story_points")}
+              >
+                <option value="hours">Horas</option>
+                <option value="story_points">Story points</option>
               </select>
             </div>
           </div>
@@ -365,6 +379,7 @@ export function ProjectsListPage() {
   const [filterStatus, setFilterStatus] = useState("");
   const [filterPriority, setFilterPriority] = useState("");
   const [filterHealth, setFilterHealth] = useState("");
+  const [filterCycle, setFilterCycle] = useState("");
   const [sortBy, setSortBy] = useState("updatedAt");
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [allExpanded, setAllExpanded] = useState(false);
@@ -386,6 +401,11 @@ export function ProjectsListPage() {
     queryFn: () => fetch("/api/projects").then((r) => r.json()),
     staleTime: 30_000,
   });
+  const { data: cyclesRes } = useQuery<{ data: OkrCycle[] }>({
+    queryKey: ["okr-cycles"],
+    queryFn: () => fetch("/api/okr/cycles").then((r) => r.json()),
+    staleTime: 60_000,
+  });
 
   const projects = data?.data ?? [];
 
@@ -394,6 +414,7 @@ export function ProjectsListPage() {
       if (search && !p.title.toLowerCase().includes(search.toLowerCase())) return false;
       if (filterStatus && projectWorkflowSlug(p) !== filterStatus) return false;
       if (filterPriority && p.priority !== filterPriority) return false;
+      if (filterCycle && p.cycleId !== filterCycle) return false;
       if (filterHealth) {
         const slug = p.healthInsight?.slug;
         if (!slug) return false;
@@ -449,7 +470,7 @@ export function ProjectsListPage() {
             items={[
               "a visão Hierarquia mostra projetos → milestones → tasks de forma expandível;",
               "a visão Board agrupa projetos por status operacional e resultados finais (planejado, em progresso, bloqueado, bem sucedido, parcial, falhou, cancelado);",
-              "use os filtros de status, prioridade e saúde para encontrar projetos específicos;",
+              "use os filtros de status, prioridade e health para encontrar projetos específicos;",
               "use o ícone de olho para quick view e o lápis para edição.",
             ]}
           />
@@ -571,13 +592,26 @@ export function ProjectsListPage() {
                 </option>
               ))}
             </select>
-            {(filterStatus || filterPriority || filterHealth || search) && (
+            <select
+              className="h-8 rounded-md border border-input bg-background px-2.5 text-sm"
+              value={filterCycle}
+              onChange={(e) => setFilterCycle(e.target.value)}
+            >
+              <option value="">Todos os ciclos</option>
+              {(cyclesRes?.data ?? []).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.title}
+                </option>
+              ))}
+            </select>
+            {(filterStatus || filterPriority || filterHealth || filterCycle || search) && (
               <button
                 className="text-xs text-muted-foreground hover:text-foreground"
                 onClick={() => {
                   setFilterStatus("");
                   setFilterPriority("");
                   setFilterHealth("");
+                  setFilterCycle("");
                   setSearch("");
                 }}
               >
@@ -601,6 +635,7 @@ export function ProjectsListPage() {
           filterStatus={filterStatus}
           filterPriority={filterPriority}
           filterHealth={filterHealth}
+          filterCycle={filterCycle}
           allExpanded={allExpanded}
           onEditProject={(p) => setEditProject(p)}
         />

@@ -78,6 +78,7 @@ export function OkrObjectivesPage() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterCycle, setFilterCycle] = useState("");
+  const [filterHealth, setFilterHealth] = useState("");
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [groupBy, setGroupBy] = useState<"none" | "status" | "cycle">("none");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -147,6 +148,10 @@ export function OkrObjectivesPage() {
   const filtered = allObjectives.filter((o) => {
     if (search && !o.title.toLowerCase().includes(search.toLowerCase())) return false;
     if (filterStatus && (o.workflowStatusInsight?.slug ?? "planned") !== filterStatus) return false;
+    if (filterHealth) {
+      const health = reconcileOkrHealthInsightForDisplay(o.healthInsight, o) ?? o.healthInsight;
+      if ((health?.slug ?? "") !== filterHealth) return false;
+    }
     return true;
   });
 
@@ -209,6 +214,18 @@ export function OkrObjectivesPage() {
             </option>
           ))}
         </select>
+        <select
+          className="h-8 rounded-md border border-input bg-background px-2.5 text-sm"
+          value={filterHealth}
+          onChange={(e) => setFilterHealth(e.target.value)}
+        >
+          <option value="">Qualquer health</option>
+          <option value="not_started">Não iniciado</option>
+          <option value="ahead">Adiantado</option>
+          <option value="on_track">No rumo</option>
+          <option value="at_risk">Em risco</option>
+          <option value="off_track">Fora do rumo</option>
+        </select>
 
         <div className="ml-auto flex items-center gap-1">
           <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
@@ -236,11 +253,11 @@ export function OkrObjectivesPage() {
         <div className="py-20 text-center">
           <Target className="mx-auto mb-3 h-10 w-10 text-muted-foreground opacity-30" />
           <p className="mb-4 text-sm text-muted-foreground">
-            {search || filterStatus || filterCycle
+            {search || filterStatus || filterCycle || filterHealth
               ? "Nenhum objetivo corresponde aos filtros."
               : "Nenhum objetivo criado ainda."}
           </p>
-          {!search && !filterStatus && !filterCycle && (
+          {!search && !filterStatus && !filterCycle && !filterHealth && (
             <Button onClick={() => setCreateOpen(true)} variant="outline">
               <Plus className="h-4 w-4" />
               Criar primeiro objetivo
