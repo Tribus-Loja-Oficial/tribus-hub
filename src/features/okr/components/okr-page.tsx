@@ -248,6 +248,9 @@ export function OkrPage() {
   const allObjectives = data?.data ?? [];
   const cycles = cyclesRes?.data ?? [];
   const cycleMap = new Map(cycles.map((c) => [c.id, c]));
+  const selectedCycleFilter = filterCycleIds.size === 1 ? [...filterCycleIds][0] : "";
+  const selectedStatusFilter = filterStatuses.size === 1 ? [...filterStatuses][0] : "";
+  const selectedHealthFilter = filterHealthSlugs.size === 1 ? [...filterHealthSlugs][0] : "";
 
   const afterScopeFilters = useMemo(() => {
     let list = allObjectives;
@@ -493,6 +496,51 @@ export function OkrPage() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+        <select
+          className="h-8 rounded-md border border-input bg-background px-2.5 text-sm"
+          value={selectedCycleFilter}
+          onChange={(e) => {
+            const next = e.target.value;
+            setFilterCycleIds(next ? new Set([next]) : new Set());
+          }}
+        >
+          <option value="">Todos os ciclos</option>
+          {cycles.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.title}
+            </option>
+          ))}
+        </select>
+        <select
+          className="h-8 rounded-md border border-input bg-background px-2.5 text-sm"
+          value={selectedStatusFilter}
+          onChange={(e) => {
+            const next = e.target.value;
+            setFilterStatuses(next ? new Set([next]) : new Set());
+          }}
+        >
+          <option value="">Todos os status</option>
+          {STATUS_FILTER_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+        <select
+          className="h-8 rounded-md border border-input bg-background px-2.5 text-sm"
+          value={selectedHealthFilter}
+          onChange={(e) => {
+            const next = e.target.value;
+            setFilterHealthSlugs(next ? new Set([next]) : new Set());
+          }}
+        >
+          <option value="">Qualquer health</option>
+          {HEALTH_FILTER_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
         {hasNonDefaultTableState && (
           <Button
             type="button"

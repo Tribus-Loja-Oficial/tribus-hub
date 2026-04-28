@@ -143,12 +143,14 @@ function ProgressBar({
   percent,
   className,
   showFraction = true,
+  showPercent = false,
 }: {
   done: number;
   total: number;
   percent?: number;
   className?: string;
   showFraction?: boolean;
+  showPercent?: boolean;
 }) {
   const pct =
     typeof percent === "number"
@@ -164,6 +166,9 @@ function ProgressBar({
           style={{ width: `${pct}%` }}
         />
       </div>
+      {showPercent && (
+        <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">{pct}%</span>
+      )}
       {showFraction && (
         <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
           {done}/{total}
@@ -418,6 +423,7 @@ function MilestoneRow({
               percent={milestone.taskProgressPercent ?? 0}
               className="w-full min-w-0"
               showFraction={false}
+              showPercent
             />
           </div>
           <div className="flex min-w-0 items-center justify-start overflow-hidden opacity-90 transition-opacity group-hover:opacity-100">
@@ -633,6 +639,7 @@ function ProjectRow({
               percent={project.progressPercent ?? 0}
               className="w-full min-w-0"
               showFraction={false}
+              showPercent
             />
           </div>
           <div className="flex min-w-0 items-center justify-start overflow-hidden">
