@@ -601,13 +601,6 @@ function ProjectRow({
                     {project.title}
                   </Link>
                 </div>
-                {project.projectStats.overdueMilestones > 0 ? (
-                  <span className="flex shrink-0 items-center gap-0.5 whitespace-nowrap text-[10px] font-medium text-red-500">
-                    <AlertTriangle className="h-3 w-3 shrink-0" />
-                    {project.projectStats.overdueMilestones} atrasado
-                    {project.projectStats.overdueMilestones > 1 ? "s" : ""}
-                  </span>
-                ) : null}
               </div>
               {project.externalRef ? (
                 <span className="block min-w-0 break-all font-mono text-[10px] leading-tight text-muted-foreground">
