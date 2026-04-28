@@ -1,8 +1,7 @@
 "use client";
 
-import { use, useCallback, useEffect, useState } from "react";
+import { use, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Project, Milestone, Task, TaskColumn } from "@/lib/types/domain";
 import type { OkrObjectiveLink, OkrKrLink } from "@/lib/types/pm-hierarchy";
@@ -41,9 +40,8 @@ import { cn } from "@/lib/utils/cn";
 import { WorkflowStatusRow } from "@/components/workflow-status-badge";
 import { ProjectHealthRow, PriorityBadge, MilestoneHealthRow } from "./project-badges";
 import type { OkrObjective, OkrKeyResult } from "@/lib/types/domain";
-import { EditProjectDialog } from "./edit-project-dialog";
+import { EditProjectInlineSection } from "./edit-project-dialog";
 import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
-import { useQuickViewLeave } from "@/components/quick-view-leave-context";
 import { TaskFormDialog } from "@/features/tasks/components/task-form-dialog";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -447,25 +445,6 @@ function OkrLinksTab({ projectId }: { projectId: string }) {
   );
 }
 
-/**
- * Só monta na página completa do projeto (`embedded` falso), para `useSearchParams` não correr
- * dentro do quick view (listas sem Suspense).
- */
-function EditProjectFromSearchParams({ onOpen }: { onOpen: () => void }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  useEffect(() => {
-    if (searchParams.get("edit") !== "1") return;
-    onOpen();
-    const sp = new URLSearchParams(searchParams.toString());
-    sp.delete("edit");
-    const qs = sp.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-  }, [searchParams, pathname, router, onOpen]);
-  return null;
-}
-
 // ─── Main View ────────────────────────────────────────────────────────────────
 
 export function ProjectDetailView({ paramsPromise, embedded }: ProjectDetailViewProps) {
@@ -541,9 +520,6 @@ export function ProjectDetailView({ paramsPromise, embedded }: ProjectDetailView
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["project-hub", projectId] }),
   });
-
-  const quickLeave = useQuickViewLeave();
-  const openEditDialog = useCallback(() => setEditProjectOpen(true), []);
 
   if (isLoading) {
     return (
@@ -669,15 +645,7 @@ export function ProjectDetailView({ paramsPromise, embedded }: ProjectDetailView
           <Button
             size="sm"
             variant="outline"
-            onClick={() => {
-              if (embedded && quickLeave) {
-                quickLeave.leaveTo(
-                  `/projects/${encodeURIComponent(project.slug || project.id)}?edit=1`,
-                );
-                return;
-              }
-              setEditProjectOpen(true);
-            }}
+            onClick={() => setEditProjectOpen(true)}
             className="gap-1.5"
           >
             <Pencil className="h-3.5 w-3.5" />
@@ -696,6 +664,10 @@ export function ProjectDetailView({ paramsPromise, embedded }: ProjectDetailView
           </select>
         </div>
       </div>
+
+      {editProjectOpen && (
+        <EditProjectInlineSection project={project} onClose={() => setEditProjectOpen(false)} />
+      )}
 
       {/* Progress bar */}
       {(project.progressPercent ?? 0) > 0 && (
@@ -1293,12 +1265,6 @@ export function ProjectDetailView({ paramsPromise, embedded }: ProjectDetailView
         open={createMilestoneOpen}
         onOpenChange={setCreateMilestoneOpen}
         onCreated={() => queryClient.invalidateQueries({ queryKey: ["project-hub", projectId] })}
-      />
-      {!embedded && <EditProjectFromSearchParams onOpen={openEditDialog} />}
-      <EditProjectDialog
-        open={editProjectOpen}
-        onOpenChange={setEditProjectOpen}
-        project={project}
       />
       <TaskFormDialog
         open={taskEditOpen}
