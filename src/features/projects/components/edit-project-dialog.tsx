@@ -6,14 +6,20 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DateField } from "@/components/ui/date-field";
-import { nativeSelectClassName } from "@/components/ui/form-control-classes";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import type { OkrCycle, Project } from "@/lib/types/domain";
 
 type MemberRow = { id: string; name: string; email: string };
 
-/** Formulário partilhado: modal (lista) ou painel inline na ficha (igual ao milestone no quick view). */
+/** Formulário partilhado — usa Radix Select para funcionar dentro de Dialog aninhado (quick view + editar). */
 export function EditProjectFormFields({
   project,
   formActive,
@@ -120,17 +126,22 @@ export function EditProjectFormFields({
       </div>
       <div className="space-y-1.5">
         <Label>Status no cadastro</Label>
-        <select
-          className={nativeSelectClassName}
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-        >
-          <option value="planned">Planejado</option>
-          <option value="active">Ativo</option>
-          <option value="on_hold">Em espera</option>
-          <option value="completed">Concluído</option>
-          <option value="cancelled">Cancelado</option>
-        </select>
+        <Select value={status} onValueChange={setStatus}>
+          <SelectTrigger aria-label="Status no cadastro">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent
+            position="popper"
+            sideOffset={4}
+            onCloseAutoFocus={(e) => e.preventDefault()}
+          >
+            <SelectItem value="planned">Planejado</SelectItem>
+            <SelectItem value="active">Ativo</SelectItem>
+            <SelectItem value="on_hold">Em espera</SelectItem>
+            <SelectItem value="completed">Concluído</SelectItem>
+            <SelectItem value="cancelled">Cancelado</SelectItem>
+          </SelectContent>
+        </Select>
         <p className="text-[11px] text-muted-foreground">
           Na lista, o status exibido é o operacional (Planejado, Em Progresso, Bloqueado,
           Bem/Parcialmente bem sucedido, Falhou ou Cancelado), calculado a partir destes valores,
@@ -140,46 +151,67 @@ export function EditProjectFormFields({
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label>Prioridade</Label>
-          <select
-            className={nativeSelectClassName}
-            value={priority}
-            onChange={(e) => setPriority(e.target.value)}
-          >
-            <option value="low">Baixa</option>
-            <option value="medium">Média</option>
-            <option value="high">Alta</option>
-            <option value="urgent">Urgente</option>
-          </select>
+          <Select value={priority} onValueChange={setPriority}>
+            <SelectTrigger aria-label="Prioridade">
+              <SelectValue placeholder="Prioridade" />
+            </SelectTrigger>
+            <SelectContent
+              position="popper"
+              sideOffset={4}
+              onCloseAutoFocus={(e) => e.preventDefault()}
+            >
+              <SelectItem value="low">Baixa</SelectItem>
+              <SelectItem value="medium">Média</SelectItem>
+              <SelectItem value="high">Alta</SelectItem>
+              <SelectItem value="urgent">Urgente</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-1.5">
           <Label>Ciclo</Label>
-          <select
-            className={nativeSelectClassName}
-            value={cycleId}
-            onChange={(e) => setCycleId(e.target.value)}
+          <Select
+            value={cycleId || "__none__"}
+            onValueChange={(v) => setCycleId(v === "__none__" ? "" : v)}
           >
-            <option value="">Sem ciclo</option>
-            {(cyclesRes?.data ?? []).map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.title}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger aria-label="Ciclo OKR">
+              <SelectValue placeholder="Sem ciclo" />
+            </SelectTrigger>
+            <SelectContent
+              position="popper"
+              sideOffset={4}
+              onCloseAutoFocus={(e) => e.preventDefault()}
+            >
+              <SelectItem value="__none__">Sem ciclo</SelectItem>
+              {(cyclesRes?.data ?? []).map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-1.5">
           <Label>Responsável</Label>
-          <select
-            className={nativeSelectClassName}
-            value={ownerUserId}
-            onChange={(e) => setOwnerUserId(e.target.value)}
+          <Select
+            value={ownerUserId || "__none__"}
+            onValueChange={(v) => setOwnerUserId(v === "__none__" ? "" : v)}
           >
-            <option value="">—</option>
-            {members.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger aria-label="Responsável">
+              <SelectValue placeholder="—" />
+            </SelectTrigger>
+            <SelectContent
+              position="popper"
+              sideOffset={4}
+              onCloseAutoFocus={(e) => e.preventDefault()}
+            >
+              <SelectItem value="__none__">—</SelectItem>
+              {members.map((m) => (
+                <SelectItem key={m.id} value={m.id}>
+                  {m.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
