@@ -138,11 +138,6 @@ const bottomItems = [{ href: "/settings", label: "Configurações", icon: Settin
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const {
-    href: workspaceCyclesHref,
-    label: workspaceCyclesLabel,
-    icon: WorkspaceCyclesNavIcon,
-  } = workspaceCyclesNav;
   const [sidebarWidth, setSidebarWidth] = useState(232);
   const dragging = useRef(false);
   const lastX = useRef(0);
