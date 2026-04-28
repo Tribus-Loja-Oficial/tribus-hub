@@ -205,33 +205,19 @@ export function EditProjectFormFields({
   );
 }
 
-/** Painel inline na ficha do projeto (mesmo padrão que `MilestoneDetailView` + quick view). */
-export function EditProjectInlineSection({
-  project,
-  onClose,
-}: {
-  project: Project;
-  onClose: () => void;
-}) {
-  return (
-    <div className="rounded-xl border border-border bg-card p-6">
-      <h2 className="mb-4 text-sm font-semibold">Editar projeto</h2>
-      <EditProjectFormFields project={project} formActive onCancel={onClose} onSaved={onClose} />
-    </div>
-  );
-}
-
 interface EditProjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   project: Project | null;
+  /** Dentro do quick view ou outro modal — overlay acima do pai. */
+  nested?: boolean;
 }
 
-export function EditProjectDialog({ open, onOpenChange, project }: EditProjectDialogProps) {
+export function EditProjectDialog({ open, onOpenChange, project, nested }: EditProjectDialogProps) {
   if (!project) return null;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
+      <DialogContent nested={nested} className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar projeto</DialogTitle>
         </DialogHeader>

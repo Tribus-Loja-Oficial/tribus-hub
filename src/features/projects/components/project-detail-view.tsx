@@ -40,7 +40,7 @@ import { cn } from "@/lib/utils/cn";
 import { WorkflowStatusRow } from "@/components/workflow-status-badge";
 import { ProjectHealthRow, PriorityBadge, MilestoneHealthRow } from "./project-badges";
 import type { OkrObjective, OkrKeyResult } from "@/lib/types/domain";
-import { EditProjectInlineSection } from "./edit-project-dialog";
+import { EditProjectDialog } from "./edit-project-dialog";
 import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
 import { TaskFormDialog } from "@/features/tasks/components/task-form-dialog";
 
@@ -665,10 +665,6 @@ export function ProjectDetailView({ paramsPromise, embedded }: ProjectDetailView
         </div>
       </div>
 
-      {editProjectOpen && (
-        <EditProjectInlineSection project={project} onClose={() => setEditProjectOpen(false)} />
-      )}
-
       {/* Progress bar */}
       {(project.progressPercent ?? 0) > 0 && (
         <div className="space-y-1">
@@ -1265,6 +1261,12 @@ export function ProjectDetailView({ paramsPromise, embedded }: ProjectDetailView
         open={createMilestoneOpen}
         onOpenChange={setCreateMilestoneOpen}
         onCreated={() => queryClient.invalidateQueries({ queryKey: ["project-hub", projectId] })}
+      />
+      <EditProjectDialog
+        open={editProjectOpen}
+        onOpenChange={setEditProjectOpen}
+        project={project}
+        nested={!!embedded}
       />
       <TaskFormDialog
         open={taskEditOpen}
