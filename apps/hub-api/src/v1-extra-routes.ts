@@ -852,7 +852,10 @@ export async function handleV1ExtraRoutes(
             ? { unit: progress.unit, total: progress.total, completed: progress.completed }
             : null,
           healthInsight: healthInsightForProjectRow({ ...raw, progress_percent: progressPercent }),
-          workflowStatusInsight: workflowStatusForProjectRow(raw),
+          workflowStatusInsight: workflowStatusForProjectRow({
+            ...raw,
+            progress_percent_effective: progressPercent,
+          }),
           milestones: projMilestones.map((milestone) => {
             const mid = milestone.id as string;
             const mTasks = (tasksByMilestone.get(mid) ?? []) as {
@@ -1211,7 +1214,10 @@ export async function handleV1ExtraRoutes(
           ...projectRaw,
           progress_percent: progressPercent,
         }),
-        workflowStatusInsight: workflowStatusForProjectRow(projectRaw),
+        workflowStatusInsight: workflowStatusForProjectRow({
+          ...projectRaw,
+          progress_percent_effective: progressPercent,
+        }),
       };
       const objIdsOrdered = (linkRows.results ?? [])
         .map((r) => r.okr_objective_id)

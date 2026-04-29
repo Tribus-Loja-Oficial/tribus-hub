@@ -16,12 +16,15 @@ import {
   isCivilCalendarStrictlyAfterPrazoEnd,
 } from "./pace-civil-dates";
 import { effectiveOkrStatusForPaceAndWorkflow } from "./okr-pace-integrity";
+import { resolveUnifiedStatus } from "./status-engine";
 
 export type WorkflowStatusSlug =
   | "planned"
   | "in_progress"
   | "blocked"
   | "completed"
+  | "achieved"
+  | "not_achieved"
   | "successful"
   | "partially_successful"
   | "failed"
@@ -36,6 +39,17 @@ export type WorkflowStatusInsightDto = {
   locked: boolean;
   explanationPt: string;
 };
+
+function isUnifiedStatusEngineEnabled(): boolean {
+  const g = globalThis as typeof globalThis & {
+    TRIBUS_UNIFIED_STATUS_ENGINE?: unknown;
+    process?: { env?: Record<string, string | undefined> };
+  };
+  const raw = g.TRIBUS_UNIFIED_STATUS_ENGINE ?? g.process?.env?.TRIBUS_UNIFIED_STATUS_ENGINE;
+  if (raw === undefined || raw === null || raw === "") return true;
+  const v = String(raw).toLowerCase();
+  return !(v === "0" || v === "false" || v === "off");
+}
 
 function isBeforeStart(windowStart: string | null, now: Date): boolean {
   if (!windowStart) return false;
@@ -68,6 +82,52 @@ export function computeWorkflowStatus(input: {
   const now = input.now ?? new Date();
   const { kind, dbStatus } = input;
   const progressPercent = Number(input.progressPercent ?? 0);
+  const hasWindow = Boolean(input.windowStart && input.windowEnd);
+  const beforeStart = hasWindow && isBeforeStart(input.windowStart, now);
+  const afterEndUnified = hasWindow && isStrictlyAfterEnd(input.windowEnd, now);
+
+  if (isUnifiedStatusEngineEnabled()) {
+    const unified = resolveUnifiedStatus({
+      kind: kind as "okr_objective" | "okr_key_result" | "project" | "milestone" | "cycle",
+      dbStatus,
+      progressPercent,
+      windowStart: input.windowStart,
+      windowEnd: input.windowEnd,
+      isBeforeStart: beforeStart,
+      isAfterEnd: afterEndUnified,
+      isDraft: input.isDraft,
+      isManuallyBlocked: input.isManuallyBlocked,
+    });
+    const labelBySlug: Record<WorkflowStatusSlug, string> = {
+      planned: "Planejado",
+      in_progress: "Em Progresso",
+      blocked: "Bloqueado",
+      completed: "Concluído",
+      achieved: "Atingido",
+      not_achieved: "Não Atingido",
+      successful: "Bem Sucedido",
+      partially_successful: "Parcialmente Bem Sucedido",
+      failed: "Falhou",
+      cancelled: "Cancelado",
+    };
+    const locked =
+      unified === "completed" ||
+      unified === "achieved" ||
+      unified === "not_achieved" ||
+      unified === "successful" ||
+      unified === "partially_successful" ||
+      unified === "failed" ||
+      unified === "cancelled";
+    return {
+      slug: unified as WorkflowStatusSlug,
+      labelPt: labelBySlug[unified as WorkflowStatusSlug] ?? "Planejado",
+      dateSourcePt: input.dateSourcePt,
+      windowStart: input.windowStart,
+      windowEnd: input.windowEnd,
+      locked,
+      explanationPt: `${input.dateSourcePt} Status operacional derivado por janela temporal e progresso efetivo.`,
+    };
+  }
 
   if (isDbCompleted(kind, dbStatus)) {
     return {
@@ -217,6 +277,7 @@ export function workflowStatusForOkrObjective(
   return computeWorkflowStatus({
     kind: "okr_objective",
     dbStatus: effectiveOkrStatusForPaceAndWorkflow(raw, p),
+    progressPercent: p,
     isDraft: raw === "draft",
     windowStart: w.start,
     windowEnd: w.end,
@@ -235,6 +296,7 @@ export function workflowStatusForOkrKr(
   return computeWorkflowStatus({
     kind: "okr_key_result",
     dbStatus: effectiveOkrStatusForPaceAndWorkflow(raw, p),
+    progressPercent: p,
     isDraft: raw === "draft",
     windowStart: w.start,
     windowEnd: w.end,
@@ -247,7 +309,7 @@ export function workflowStatusForProjectRow(raw: Record<string, unknown>) {
   return computeWorkflowStatus({
     kind: "project",
     dbStatus: String(raw.status ?? "planned"),
-    progressPercent: Number(raw.progress_percent ?? 0),
+    progressPercent: Number(raw.progress_percent_effective ?? raw.progress_percent ?? 0),
     isManuallyBlocked:
       String(raw.health_status ?? "") === "blocked" || String(raw.status ?? "") === "on_hold",
     windowStart: w.start,

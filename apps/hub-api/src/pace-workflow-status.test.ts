@@ -128,6 +128,19 @@ describe("workflowStatusForOkrObjective", () => {
     );
     expect(result.slug).toBe("in_progress");
   });
+
+  it("após prazo com progresso >=80 retorna achieved", () => {
+    const result = workflowStatusForOkrObjective(
+      {
+        status: "on_track",
+        progress_percent: 85,
+        start_date: "2024-01-01",
+        target_date: "2024-06-30",
+      },
+      null,
+    );
+    expect(result.slug).toBe("achieved");
+  });
 });
 
 // ─── workflowStatusForOkrKr ──────────────────────────────────────────────────
@@ -140,6 +153,20 @@ describe("workflowStatusForOkrKr", () => {
       null,
     );
     expect(["in_progress", "planned"]).toContain(result.slug);
+  });
+
+  it("após prazo com progresso <80 retorna not_achieved", () => {
+    const result = workflowStatusForOkrKr(
+      {
+        status: "on_track",
+        progress_percent: 60,
+        start_date: "2024-01-01",
+        target_date: "2024-06-30",
+      },
+      { start_date: null, target_date: null },
+      null,
+    );
+    expect(result.slug).toBe("not_achieved");
   });
 });
 
@@ -180,6 +207,17 @@ describe("workflowStatusForProjectRow", () => {
     const result = workflowStatusForProjectRow({
       status: "active",
       progress_percent: 100,
+      start_date: "2020-01-01",
+      target_date: "2020-06-30",
+    });
+    expect(result.slug).toBe("successful");
+  });
+
+  it("prefers effective progress when provided", () => {
+    const result = workflowStatusForProjectRow({
+      status: "active",
+      progress_percent: 10,
+      progress_percent_effective: 100,
       start_date: "2020-01-01",
       target_date: "2020-06-30",
     });
