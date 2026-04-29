@@ -334,7 +334,7 @@ export function workflowStatusForMilestoneRow(
     kind: "milestone",
     dbStatus: String(milestone.status ?? "pending"),
     progressPercent: Math.max(0, Math.min(100, progress)),
-    isManuallyBlocked: String(milestone.status ?? "") === "missed",
+    isManuallyBlocked: String(milestone.status ?? "") === "blocked",
     windowStart: w.start,
     windowEnd: w.end,
     dateSourcePt: w.dateSourcePt,

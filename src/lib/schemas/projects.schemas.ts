@@ -18,7 +18,7 @@ export const updateProjectSchema = createProjectSchema.partial();
 export const createMilestoneSchema = z.object({
   title: z.string().min(1).max(500),
   description: z.string().max(2000).optional(),
-  status: z.enum(["pending", "in_progress", "completed", "missed"]).optional(),
+  status: z.enum(["pending", "in_progress", "completed", "missed", "blocked"]).optional(),
   priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
   dueDate: z.string().date().optional(),
   ownerUserId: z.string().optional(),

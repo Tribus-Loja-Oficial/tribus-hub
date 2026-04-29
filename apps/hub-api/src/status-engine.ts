@@ -60,7 +60,8 @@ export function resolveUnifiedStatus(input: {
   }
 
   if (kind === "milestone") {
-    if (dbStatus === "missed" || input.isManuallyBlocked) return "blocked";
+    if (dbStatus === "blocked" || input.isManuallyBlocked) return "blocked";
+    if (dbStatus === "missed") return "failed";
     if (p >= 100) return "successful";
     if (!hasWindow || input.isBeforeStart) return "planned";
     if (!input.isAfterEnd) return "in_progress";

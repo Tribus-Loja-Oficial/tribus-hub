@@ -141,6 +141,25 @@ export function EditProjectFormFields({
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
+          <Label>Status</Label>
+          <Select value={status} onValueChange={setStatus}>
+            <SelectTrigger aria-label="Status do projeto">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent
+              position="popper"
+              sideOffset={4}
+              onCloseAutoFocus={(e) => e.preventDefault()}
+            >
+              <SelectItem value="planned">Planejado</SelectItem>
+              <SelectItem value="active">Em progresso</SelectItem>
+              <SelectItem value="on_hold">Bloqueado</SelectItem>
+              <SelectItem value="completed">Concluído</SelectItem>
+              <SelectItem value="cancelled">Cancelado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
           <Label>Prioridade</Label>
           <Select value={priority} onValueChange={setPriority}>
             <SelectTrigger aria-label="Prioridade">

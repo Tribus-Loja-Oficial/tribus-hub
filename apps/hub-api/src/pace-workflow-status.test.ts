@@ -236,13 +236,22 @@ describe("workflowStatusForMilestoneRow", () => {
     expect(result.slug).toBe("successful");
   });
 
-  it("returns blocked for missed milestone", () => {
+  it("returns blocked for blocked milestone", () => {
     const result = workflowStatusForMilestoneRow(
-      { status: "missed", due_date: null },
+      { status: "blocked", due_date: null },
       { status: "active", start_date: "2026-01-01", target_date: "2026-12-31", title: "P" },
       40,
     );
     expect(result.slug).toBe("blocked");
+  });
+
+  it("treats missed milestone as failed (not manual lock)", () => {
+    const result = workflowStatusForMilestoneRow(
+      { status: "missed", due_date: "2020-06-30" },
+      { status: "active", start_date: "2020-01-01", target_date: "2020-12-31", title: "P" },
+      40,
+    );
+    expect(result.slug).toBe("failed");
   });
 
   it("returns successful for in_progress milestone when task progress is 100%", () => {

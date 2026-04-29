@@ -74,7 +74,7 @@ const milestoneDataSchema = z
     project_id: z.string().optional(),
     project_ref: z.string().optional(),
     project_external_ref: z.string().max(100).optional(),
-    status: z.enum(["pending", "in_progress", "completed", "missed"]).optional(),
+    status: z.enum(["pending", "in_progress", "completed", "missed", "blocked"]).optional(),
     priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
     owner_user_id: z.string().optional(),
     owner_user_external_ref: z.string().max(100).optional(),

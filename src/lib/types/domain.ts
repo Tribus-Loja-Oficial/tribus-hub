@@ -210,7 +210,7 @@ export interface Project {
   deletedAt: string | null;
 }
 
-export type MilestoneStatus = "pending" | "in_progress" | "completed" | "missed";
+export type MilestoneStatus = "pending" | "in_progress" | "completed" | "missed" | "blocked";
 
 export interface Milestone {
   id: string;

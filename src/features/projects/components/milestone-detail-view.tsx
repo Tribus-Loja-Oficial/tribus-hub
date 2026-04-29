@@ -182,6 +182,7 @@ export function MilestoneDetailView({ paramsPromise, embedded }: MilestoneDetail
                 >
                   <option value="pending">Pendente</option>
                   <option value="in_progress">Em progresso</option>
+                  <option value="blocked">Bloqueado</option>
                   <option value="completed">Concluído</option>
                   <option value="missed">Perdido</option>
                 </select>

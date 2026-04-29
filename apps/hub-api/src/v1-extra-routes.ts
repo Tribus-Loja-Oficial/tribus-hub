@@ -48,6 +48,9 @@ type ProjectEstimateSummary = {
   milestoneProgressPercent: Map<string, number>;
 };
 
+const PROJECT_DB_STATUSES = new Set(["planned", "active", "on_hold", "completed", "cancelled"]);
+const MILESTONE_DB_STATUSES = new Set(["pending", "in_progress", "blocked", "completed", "missed"]);
+
 async function milestoneTaskProgressPercentByProject(
   db: D1DatabaseLike,
   projectId: string,
@@ -1066,6 +1069,9 @@ export async function handleV1ExtraRoutes(
         const cur = curRes.results[0];
         const prevStatus = String(cur.status ?? "planned");
         const nextStatus = input.status !== undefined ? String(input.status) : prevStatus;
+        if (!PROJECT_DB_STATUSES.has(nextStatus)) {
+          return json({ error: { message: "status is invalid" } }, 400);
+        }
         const nextStartDate = input.startDate !== undefined ? input.startDate : cur.start_date;
         const nextTargetDate = input.targetDate !== undefined ? input.targetDate : cur.target_date;
         if (
@@ -1408,6 +1414,9 @@ export async function handleV1ExtraRoutes(
         const id = createId();
         const now = new Date().toISOString();
         const status = String(input.status ?? "pending");
+        if (!MILESTONE_DB_STATUSES.has(status)) {
+          return json({ error: { message: "status is invalid" } }, 400);
+        }
         const w = resolveMilestoneWindow(
           { due_date: dueDate as string | null },
           {
@@ -1542,6 +1551,9 @@ export async function handleV1ExtraRoutes(
         const projectRaw = projFull.results?.[0] ?? {};
         const prevStatus = String(cur.status ?? "pending");
         const nextStatus = input.status !== undefined ? String(input.status) : prevStatus;
+        if (!MILESTONE_DB_STATUSES.has(nextStatus)) {
+          return json({ error: { message: "status is invalid" } }, 400);
+        }
         const nextDueDate = input.dueDate !== undefined ? input.dueDate : cur.due_date;
         const dueError = validateMilestoneDueWithinProjectRange(
           nextDueDate,
