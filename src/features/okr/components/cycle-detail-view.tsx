@@ -22,6 +22,15 @@ import { UpdateCycleDialog } from "./update-cycle-dialog";
 import { differenceInDays, isAfter, isBefore } from "date-fns";
 import { formatCivilDate, parseCivilDateInput, startOfLocalDay } from "@/lib/date/civil-date";
 type ObjectiveWithKRs = OkrObjective & { keyResults: OkrKeyResult[] };
+/** GET /okr/cycles/:id embute objetivos sem `keyResults`; a lista `/okr/objectives?cycleId=` vem completa. */
+function normalizeObjectiveList(
+  list: Array<OkrObjective & { keyResults?: OkrKeyResult[] }>,
+): ObjectiveWithKRs[] {
+  return list.map((o) => ({
+    ...(o as OkrObjective),
+    keyResults: Array.isArray(o.keyResults) ? o.keyResults : [],
+  }));
+}
 type CycleProject = {
   id: string;
   title: string;
@@ -105,8 +114,14 @@ export function CycleDetailView({ cycleId }: CycleDetailViewProps) {
     );
   }
 
-  const objectives =
-    (cycleRes?.data?.objectives as ObjectiveWithKRs[] | undefined) ?? objectivesRes?.data ?? [];
+  const objectivesEmbedded = cycleRes?.data?.objectives as ObjectiveWithKRs[] | undefined;
+  const objectivesListed = objectivesRes?.data;
+  const objectivesMerged =
+    objectivesListed !== undefined && !objLoading
+      ? objectivesListed
+      : (objectivesEmbedded ?? objectivesListed ?? []);
+  const objectives = normalizeObjectiveList(objectivesMerged);
+
   const projects = cycleRes?.data?.projects ?? [];
   const timeProgress = calcTimeProgress(cycle);
   const endCivil = parseCivilDateInput(cycle.endDate);
@@ -124,7 +139,7 @@ export function CycleDetailView({ cycleId }: CycleDetailViewProps) {
   const avgProgress =
     objectives.length > 0
       ? Math.round(
-          (objectives.reduce((s, o) => s + o.progressPercent, 0) / objectives.length) * 10,
+          (objectives.reduce((s, o) => s + (o.progressPercent ?? 0), 0) / objectives.length) * 10,
         ) / 10
       : 0;
 
@@ -271,7 +286,11 @@ export function CycleDetailView({ cycleId }: CycleDetailViewProps) {
                 href={`/okr/objectives/${obj.id}`}
                 className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/20"
               >
-                <MiniProgressRing percent={obj.progressPercent} size={36} status={obj.status} />
+                <MiniProgressRing
+                  percent={obj.progressPercent ?? 0}
+                  size={36}
+                  status={obj.status}
+                />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-foreground">{obj.title}</p>
                   <div className="mt-1 flex items-center gap-2">
@@ -290,13 +309,13 @@ export function CycleDetailView({ cycleId }: CycleDetailViewProps) {
                 </div>
                 <div className="flex w-28 shrink-0 items-center gap-2">
                   <OkrProgressBar
-                    percent={obj.progressPercent}
+                    percent={obj.progressPercent ?? 0}
                     status={obj.status}
                     size="xs"
                     className="flex-1"
                   />
                   <span className="w-8 text-right text-xs tabular-nums text-muted-foreground">
-                    {Math.round(obj.progressPercent)}%
+                    {Math.round(obj.progressPercent ?? 0)}%
                   </span>
                 </div>
               </Link>

@@ -30,7 +30,7 @@ export function CycleGovernanceBadge({
   size?: "sm" | "md";
   className?: string;
 }) {
-  const c = CFG[status];
+  const c = CFG[status] ?? CFG.planned;
   return (
     <span
       className={cn(
