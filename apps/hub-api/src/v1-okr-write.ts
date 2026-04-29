@@ -18,6 +18,12 @@ import {
   effectiveOkrStatusForPaceAndWorkflow,
   resolveOkrStatusAfterProgress,
 } from "./okr-pace-integrity";
+import {
+  deriveCycleGovernanceStatusFromDates,
+  resolveCycleStatusAfterPatch,
+  resolveCycleStatusForCreate,
+  utcCivilDateToday,
+} from "./cycle-governance-from-dates";
 
 type D1PreparedStatement = {
   bind: (...values: unknown[]) => D1PreparedStatement;
@@ -137,6 +143,34 @@ async function uniqueSlug(
   const check = await db.prepare(q).bind(workspaceId, b).all<{ id: string }>();
   if (check.results?.length) return `${b}-${crypto.randomUUID().replace(/-/g, "").slice(0, 6)}`;
   return b;
+}
+
+const CYCLE_GOVERNANCE_STATUSES = ["planned", "active", "closed"] as const;
+
+function parseCycleGovernanceStatus(
+  value: unknown,
+): (typeof CYCLE_GOVERNANCE_STATUSES)[number] | null {
+  const s = String(value ?? "").trim();
+  if (!s) return null;
+  return (CYCLE_GOVERNANCE_STATUSES as readonly string[]).includes(s)
+    ? (s as (typeof CYCLE_GOVERNANCE_STATUSES)[number])
+    : null;
+}
+
+/** Fecha os demais ciclos active do workspace (unicidade do ciclo em andamento). */
+async function closeOtherActiveCyclesInWorkspace(
+  db: D1DatabaseLike,
+  actorUserId: string,
+  workspaceId: string,
+  exceptCycleId: string,
+) {
+  const now = new Date().toISOString();
+  await db
+    .prepare(
+      `UPDATE okr_cycles SET status = 'closed', updated_by = ?, updated_at = ? WHERE workspace_id = ? AND status = 'active' AND id != ? AND deleted_at IS NULL`,
+    )
+    .bind(actorUserId, now, workspaceId, exceptCycleId)
+    .all();
 }
 
 function mapCycle(r: Record<string, unknown>) {
@@ -596,6 +630,20 @@ export async function handleV1OkrWriteRoutes(
       const slug = await uniqueSlug(db, "okr_cycles", "workspace_id", workspaceId!, base);
       const id = createId();
       const now = new Date().toISOString();
+      const requestedStatus = parseCycleGovernanceStatus(input.status ?? "planned");
+      if (!requestedStatus) {
+        return json(
+          { error: { message: "invalid cycle status; use planned, active, or closed" } },
+          400,
+        );
+      }
+      const startM = toIsoCivilDateOrNull(input.startDate);
+      const endM = toIsoCivilDateOrNull(input.endDate);
+      const derived = deriveCycleGovernanceStatusFromDates(startM, endM, utcCivilDateToday());
+      const statusToPersist = resolveCycleStatusForCreate(requestedStatus, derived);
+      if (statusToPersist === "active") {
+        await closeOtherActiveCyclesInWorkspace(db, actorUserId!, workspaceId!, id);
+      }
       const ins = await db
         .prepare(
           `INSERT INTO okr_cycles (id, workspace_id, title, slug, description, start_date, end_date, status, created_by, updated_by, created_at, updated_at)
@@ -607,9 +655,9 @@ export async function handleV1OkrWriteRoutes(
           title,
           slug,
           input.description ?? null,
-          input.startDate,
-          input.endDate,
-          input.status ?? "planned",
+          startM,
+          endM,
+          statusToPersist,
           actorUserId,
           actorUserId,
           now,
@@ -698,13 +746,37 @@ export async function handleV1OkrWriteRoutes(
         .bind(id, workspaceId)
         .all<Record<string, unknown>>();
       if (!cur.results?.[0]) return json({ error: { message: "Not found" } }, 404);
-      if (input.status === "active" && cur.results[0].status !== "active") {
-        await db
-          .prepare(
-            `UPDATE okr_cycles SET status = 'closed', updated_by = ?, updated_at = ? WHERE workspace_id = ? AND status = 'active' AND id != ? AND deleted_at IS NULL`,
-          )
-          .bind(actorUserId, new Date().toISOString(), workspaceId, id)
-          .all();
+      const curRow = cur.results[0];
+      const curStatus = String(curRow.status ?? "");
+      if (input.status !== undefined) {
+        const nextSt = parseCycleGovernanceStatus(input.status);
+        if (!nextSt) {
+          return json(
+            { error: { message: "invalid cycle status; use planned, active, or closed" } },
+            400,
+          );
+        }
+        input.status = nextSt;
+      }
+      const hasExplicitStatus = input.status !== undefined;
+      const mergedStart =
+        input.startDate !== undefined
+          ? toIsoCivilDateOrNull(input.startDate)
+          : toIsoCivilDateOrNull(curRow.start_date);
+      const mergedEnd =
+        input.endDate !== undefined
+          ? toIsoCivilDateOrNull(input.endDate)
+          : toIsoCivilDateOrNull(curRow.end_date);
+      const nextStatus = resolveCycleStatusAfterPatch({
+        hasExplicitStatus,
+        explicitStatus: hasExplicitStatus ? parseCycleGovernanceStatus(input.status) : null,
+        curStatus,
+        mergedStart,
+        mergedEnd,
+        todayYmd: utcCivilDateToday(),
+      });
+      if (nextStatus === "active" && curStatus !== "active") {
+        await closeOtherActiveCyclesInWorkspace(db, actorUserId!, workspaceId!, id);
       }
       const sets: string[] = [];
       const args: unknown[] = [];
@@ -713,13 +785,18 @@ export async function handleV1OkrWriteRoutes(
         description: "description",
         startDate: "start_date",
         endDate: "end_date",
-        status: "status",
       })) {
         if (input[k] !== undefined) {
           sets.push(`${col} = ?`);
-          args.push(input[k] ?? null);
+          args.push(
+            col === "start_date" || col === "end_date"
+              ? toIsoCivilDateOrNull(input[k])
+              : (input[k] ?? null),
+          );
         }
       }
+      sets.push("status = ?");
+      args.push(nextStatus);
       sets.push("updated_by = ?", "updated_at = ?");
       args.push(actorUserId, new Date().toISOString(), id, workspaceId);
       const up = await db

@@ -240,7 +240,7 @@ type OkrCycleRow = {
   description: string | null;
   start_date: string;
   end_date: string;
-  status: "planned" | "active" | "closed" | "archived";
+  status: "planned" | "active" | "closed";
   created_by: string;
   updated_by: string;
   created_at: string;

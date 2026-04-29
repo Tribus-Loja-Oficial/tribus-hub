@@ -35,15 +35,19 @@ describe("createCycleSchema", () => {
   });
 
   it("rejects invalid date format", () => {
-    expect(
-      createCycleSchema.safeParse({ ...base, startDate: "01-01-2025" }).success,
-    ).toBe(false);
+    expect(createCycleSchema.safeParse({ ...base, startDate: "01-01-2025" }).success).toBe(false);
   });
 
   it("accepts all valid statuses", () => {
-    for (const status of ["planned", "active", "closed", "archived"]) {
+    for (const status of ["planned", "active", "closed"]) {
       expect(createCycleSchema.safeParse({ ...base, status }).success).toBe(true);
     }
+  });
+
+  it("rejects archived status", () => {
+    expect(createCycleSchema.safeParse({ ...base, status: "archived" as never }).success).toBe(
+      false,
+    );
   });
 });
 
@@ -125,15 +129,13 @@ describe("createKeyResultSchema", () => {
   });
 
   it("rejects missing objectiveId", () => {
-    expect(
-      createKeyResultSchema.safeParse({ title: "KR", targetValue: 5 }).success,
-    ).toBe(false);
+    expect(createKeyResultSchema.safeParse({ title: "KR", targetValue: 5 }).success).toBe(false);
   });
 
   it("rejects missing targetValue", () => {
-    expect(
-      createKeyResultSchema.safeParse({ title: "KR", objectiveId: "obj-1" }).success,
-    ).toBe(false);
+    expect(createKeyResultSchema.safeParse({ title: "KR", objectiveId: "obj-1" }).success).toBe(
+      false,
+    );
   });
 
   it("rejects confidence below 0", () => {

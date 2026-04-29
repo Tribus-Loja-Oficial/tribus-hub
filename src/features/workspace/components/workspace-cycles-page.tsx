@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
-  Archive,
   CalendarRange,
   CheckCircle,
   ChevronRight,
@@ -32,9 +31,9 @@ import { WorkflowStatusRow } from "@/components/workflow-status-badge";
 import { OkrProgressBar } from "@/features/okr/components/okr-progress-bar";
 import { CreateCycleDialog } from "@/features/okr/components/create-cycle-dialog";
 import { UpdateCycleDialog } from "@/features/okr/components/update-cycle-dialog";
-import { OkrEntityStatusRow, OkrStatusBadge } from "@/features/okr/components/okr-status-badge";
+import { CycleGovernanceBadge } from "@/components/cycles/cycle-governance-badge";
+import { OkrEntityStatusRow } from "@/features/okr/components/okr-status-badge";
 import { ProjectHealthRow } from "@/features/projects/components/project-badges";
-import { cyclePhaseLabel, getCyclePhase, type CyclePhase } from "@/lib/cycles/cycle-phase";
 import { cn } from "@/lib/utils/cn";
 import { formatCivilDate, parseCivilDateInput } from "@/lib/date/civil-date";
 import { differenceInDays, isAfter, isBefore } from "date-fns";
@@ -135,19 +134,9 @@ function cycleCardTone(status: OkrCycle["status"]): string {
       return "border-border bg-card hover:border-muted-foreground/25";
     case "closed":
       return "border-border/80 bg-muted/25";
-    case "archived":
-      return "border-dashed border-border/90 bg-muted/15 opacity-[0.92]";
     default:
       return "border-border bg-card";
   }
-}
-
-function cycleStatusLabel(status: OkrCycle["status"]): string {
-  if (status === "planned") return "Planejado";
-  if (status === "active") return "Ativo";
-  if (status === "closed") return "Encerrado";
-  if (status === "archived") return "Arquivado";
-  return status;
 }
 
 export function WorkspaceCyclesPage() {
@@ -158,7 +147,6 @@ export function WorkspaceCyclesPage() {
   const [expandedCycleId, setExpandedCycleId] = useState<string | null>(null);
 
   const [search, setSearch] = useState("");
-  const [phaseFilter, setPhaseFilter] = useState<"all" | CyclePhase>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [qualityFilter, setQualityFilter] = useState<QualityFilter>("all");
   const [sortKey, setSortKey] = useState<SortKey>("start_desc");
@@ -266,10 +254,6 @@ export function WorkspaceCyclesPage() {
     else if (quickOnlyPlanned) list = list.filter((c) => c.status === "planned");
     else if (statusFilter !== "all") list = list.filter((c) => c.status === statusFilter);
 
-    if (phaseFilter !== "all") {
-      list = list.filter((c) => getCyclePhase(c.startDate, c.endDate) === phaseFilter);
-    }
-
     list = list.filter((c) => {
       const row = workspaceByCycle.get(c.id);
       if (!row) {
@@ -315,7 +299,6 @@ export function WorkspaceCyclesPage() {
     return list;
   }, [
     cycles,
-    phaseFilter,
     qualityFilter,
     quickOnlyActive,
     quickOnlyPlanned,
@@ -330,7 +313,7 @@ export function WorkspaceCyclesPage() {
       activeCycle &&
       activeCycle.id !== id &&
       !confirm(
-        `Ativar este ciclo encerrará o ciclo ativo atual (“${activeCycle.title}”). Continuar?`,
+        `Colocar este ciclo em andamento encerrará o ciclo em andamento atual (“${activeCycle.title}”). Continuar?`,
       )
     ) {
       return;
@@ -338,10 +321,9 @@ export function WorkspaceCyclesPage() {
     patchMutation.mutate({ id, status: "active" });
   }
 
-  function requestArchive(id: string, title: string) {
-    if (!confirm(`Arquivar o ciclo “${title}”? Ele ficará disponível apenas para consulta.`))
-      return;
-    patchMutation.mutate({ id, status: "archived" });
+  function requestClose(id: string, title: string) {
+    if (!confirm(`Encerrar o ciclo “${title}”?`)) return;
+    patchMutation.mutate({ id, status: "closed" });
   }
 
   return (
@@ -370,7 +352,7 @@ export function WorkspaceCyclesPage() {
                 {activeCycle && (
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800 dark:text-emerald-200">
                     <CheckCircle className="h-3 w-3" />
-                    Ativo: {activeCycle.title}
+                    Em andamento: {activeCycle.title}
                   </span>
                 )}
               </div>
@@ -396,8 +378,8 @@ export function WorkspaceCyclesPage() {
         <GuideSection title="Nesta página:">
           <GuideList
             items={[
-              "cards de resumo no topo (ciclo ativo, totais e portfólio);",
-              "busca pelo nome do ciclo, objetivo ou projeto; filtros por fase, status e qualidade da composição;",
+              "cards de resumo no topo (ciclo em andamento, totais e portfólio);",
+              "busca pelo nome do ciclo, objetivo ou projeto; filtros por status de governança e qualidade da composição;",
               "lista com o mesmo modelo visual das demais telas de ciclos (tempo, estatísticas, ações);",
               "expanda o ciclo para carregar objetivos com KRs detalhados e a lista completa de projetos com situação e saúde.",
             ]}
@@ -408,11 +390,11 @@ export function WorkspaceCyclesPage() {
       {!isLoading && cycles.length > 0 && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <SummaryCard
-            title="Ciclo ativo"
+            title="Ciclo em andamento"
             icon={CheckCircle}
             iconClass="text-emerald-600 dark:text-emerald-400"
             empty={!activeCycle}
-            emptyLabel="Nenhum ciclo ativo"
+            emptyLabel="Nenhum ciclo em andamento"
           >
             {activeCycle && (
               <>
@@ -421,7 +403,7 @@ export function WorkspaceCyclesPage() {
                   {formatD(activeCycle.startDate)} → {formatD(activeCycle.endDate)}
                 </p>
                 <div className="mt-2">
-                  <OkrStatusBadge status={activeCycle.status} />
+                  <CycleGovernanceBadge status={activeCycle.status} />
                 </div>
                 <div className="mt-2 text-[11px] text-muted-foreground">
                   Tempo: {getTemporalLine(activeCycle).progress}%
@@ -456,11 +438,11 @@ export function WorkspaceCyclesPage() {
             )}
           </SummaryCard>
           <SummaryCard
-            title="Portfólio no ciclo ativo"
+            title="Portfólio no ciclo em andamento"
             icon={Target}
             iconClass="text-violet-600 dark:text-violet-400"
             empty={!activeCycle || !activeWsRow || !activeStats}
-            emptyLabel="Sem ciclo ativo ou dados consolidados"
+            emptyLabel="Sem ciclo em andamento ou dados consolidados"
           >
             {activeCycle && activeWsRow && activeStats && (
               <div className="grid grid-cols-2 gap-2 text-xs">
@@ -509,17 +491,6 @@ export function WorkspaceCyclesPage() {
             <Filter className="hidden h-3.5 w-3.5 text-muted-foreground sm:block" />
             <select
               className="h-9 rounded-lg border border-input bg-background px-2 text-sm"
-              value={phaseFilter}
-              onChange={(e) => setPhaseFilter(e.target.value as typeof phaseFilter)}
-            >
-              <option value="all">Todas as fases</option>
-              <option value="upcoming">Por vir</option>
-              <option value="running">Em andamento</option>
-              <option value="ended">Encerrado</option>
-              <option value="undated">Sem janela</option>
-            </select>
-            <select
-              className="h-9 rounded-lg border border-input bg-background px-2 text-sm"
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value as StatusFilter);
@@ -529,9 +500,8 @@ export function WorkspaceCyclesPage() {
             >
               <option value="all">Todos os status</option>
               <option value="planned">Planejado</option>
-              <option value="active">Ativo</option>
+              <option value="active">Em andamento</option>
               <option value="closed">Encerrado</option>
-              <option value="archived">Arquivado</option>
             </select>
             <select
               className="h-9 rounded-lg border border-input bg-background px-2 text-sm"
@@ -564,7 +534,7 @@ export function WorkspaceCyclesPage() {
                 setStatusFilter("all");
               }}
             >
-              Só ativo
+              Só em andamento
             </Button>
             <Button
               type="button"
@@ -631,7 +601,6 @@ export function WorkspaceCyclesPage() {
                 className="text-primary underline-offset-2 hover:underline"
                 onClick={() => {
                   setSearch("");
-                  setPhaseFilter("all");
                   setStatusFilter("all");
                   setQualityFilter("all");
                   setQuickOnlyActive(false);
@@ -705,17 +674,7 @@ export function WorkspaceCyclesPage() {
                           >
                             {cycle.title}
                           </Link>
-                          <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
-                            {cycleStatusLabel(cycle.status)}
-                          </span>
-                          <span className="inline-flex items-center rounded-full border border-border/80 bg-muted/30 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                            {cyclePhaseLabel(getCyclePhase(cycle.startDate, cycle.endDate))}
-                          </span>
-                          {cycle.status === "active" && (
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
-                              Ciclo em foco
-                            </span>
-                          )}
+                          <CycleGovernanceBadge status={cycle.status} />
                         </div>
                         <p className="text-sm text-muted-foreground">
                           <span className="tabular-nums">{formatD(cycle.startDate)}</span>
@@ -758,7 +717,7 @@ export function WorkspaceCyclesPage() {
                       percent={temporal.progress}
                       size="sm"
                       status={cycle.status === "active" ? "on_track" : undefined}
-                      className={cycle.status === "archived" ? "opacity-80" : undefined}
+                      className={cycle.status === "closed" ? "opacity-85" : undefined}
                     />
                     <p className="text-[11px] leading-snug text-muted-foreground">
                       {temporal.caption}
@@ -811,41 +770,26 @@ export function WorkspaceCyclesPage() {
                         ) : (
                           <CheckCircle className="h-3.5 w-3.5" />
                         )}
-                        Ativar
+                        Colocar em andamento
                       </Button>
                     )}
                     {cycle.status === "active" && (
                       <>
                         <div className="flex items-center justify-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 py-2 text-xs font-semibold text-emerald-800 dark:text-emerald-200">
                           <CheckCircle className="h-3.5 w-3.5 shrink-0" />
-                          Ciclo ativo
+                          Em andamento
                         </div>
                         <Button
                           size="sm"
                           variant="outline"
                           className="w-full"
                           disabled={isPatchingThis}
-                          onClick={() => {
-                            if (!confirm(`Encerrar o ciclo “${cycle.title}”?`)) return;
-                            patchMutation.mutate({ id: cycle.id, status: "closed" });
-                          }}
+                          onClick={() => requestClose(cycle.id, cycle.title)}
                         >
                           <XCircle className="h-3.5 w-3.5" />
                           Encerrar
                         </Button>
                       </>
-                    )}
-                    {cycle.status === "closed" && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="w-full"
-                        disabled={isPatchingThis}
-                        onClick={() => requestArchive(cycle.id, cycle.title)}
-                      >
-                        <Archive className="h-3.5 w-3.5" />
-                        Arquivar
-                      </Button>
                     )}
 
                     <div className="relative">
@@ -860,6 +804,14 @@ export function WorkspaceCyclesPage() {
                       </Button>
                       {menuOpen === cycle.id && (
                         <div className="absolute right-0 top-full z-[100] mt-1 w-52 rounded-lg border border-border bg-popover py-1 shadow-lg">
+                          <Link
+                            href={`/okr/cycles/${cycle.id}`}
+                            className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted/60"
+                            onClick={() => setMenuOpen(null)}
+                          >
+                            <ChevronRight className="h-3.5 w-3.5" />
+                            Ver detalhes
+                          </Link>
                           <button
                             type="button"
                             className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted/60"
@@ -871,50 +823,68 @@ export function WorkspaceCyclesPage() {
                             <Pencil className="h-3.5 w-3.5" />
                             Editar ciclo
                           </button>
-                          <button
-                            type="button"
-                            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-muted/50"
-                            onClick={() => {
-                              patchMutation.mutate({ id: cycle.id, status: "planned" });
-                              setMenuOpen(null);
-                            }}
-                          >
-                            <RotateCcw className="h-3.5 w-3.5" />
-                            Planejado
-                          </button>
-                          <button
-                            type="button"
-                            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-muted/50"
-                            onClick={() => {
-                              patchMutation.mutate({ id: cycle.id, status: "active" });
-                              setMenuOpen(null);
-                            }}
-                          >
-                            <CheckCircle className="h-3.5 w-3.5" />
-                            Ativar
-                          </button>
-                          <button
-                            type="button"
-                            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-muted/50"
-                            onClick={() => {
-                              patchMutation.mutate({ id: cycle.id, status: "closed" });
-                              setMenuOpen(null);
-                            }}
-                          >
-                            <XCircle className="h-3.5 w-3.5" />
-                            Encerrar
-                          </button>
-                          <button
-                            type="button"
-                            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-muted/50"
-                            onClick={() => {
-                              patchMutation.mutate({ id: cycle.id, status: "archived" });
-                              setMenuOpen(null);
-                            }}
-                          >
-                            <Archive className="h-3.5 w-3.5" />
-                            Arquivar
-                          </button>
+                          <div className="my-1 border-t border-border" />
+                          <p className="px-3 py-1 text-[10px] font-semibold uppercase text-muted-foreground">
+                            Status
+                          </p>
+                          {cycle.status !== "planned" && (
+                            <button
+                              type="button"
+                              className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-muted/50"
+                              onClick={() => {
+                                patchMutation.mutate({ id: cycle.id, status: "planned" });
+                                setMenuOpen(null);
+                              }}
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" />
+                              Planejado
+                            </button>
+                          )}
+                          {cycle.status !== "active" && (
+                            <button
+                              type="button"
+                              className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-muted/50"
+                              onClick={() => {
+                                requestActivate(cycle.id);
+                                setMenuOpen(null);
+                              }}
+                            >
+                              <CheckCircle className="h-3.5 w-3.5" />
+                              Colocar em andamento
+                            </button>
+                          )}
+                          {cycle.status !== "closed" && (
+                            <button
+                              type="button"
+                              className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-muted/50"
+                              onClick={() => {
+                                requestClose(cycle.id, cycle.title);
+                                setMenuOpen(null);
+                              }}
+                            >
+                              <XCircle className="h-3.5 w-3.5" />
+                              Encerrar
+                            </button>
+                          )}
+                          {cycle.status === "closed" && (
+                            <button
+                              type="button"
+                              className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-muted/50"
+                              onClick={() => {
+                                if (
+                                  confirm(
+                                    `Reabrir “${cycle.title}” como planejado? Revise as datas se o período já passou.`,
+                                  )
+                                ) {
+                                  patchMutation.mutate({ id: cycle.id, status: "planned" });
+                                }
+                                setMenuOpen(null);
+                              }}
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" />
+                              Reabrir (planejado)
+                            </button>
+                          )}
                           <div className="my-1 border-t border-border" />
                           <button
                             type="button"

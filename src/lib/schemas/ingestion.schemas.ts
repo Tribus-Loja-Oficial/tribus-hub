@@ -8,7 +8,7 @@ const okrCycleDataSchema = z.object({
   description: z.string().max(2000).optional(),
   start_date: z.string().date("Formato de data inválido (esperado YYYY-MM-DD)"),
   end_date: z.string().date("Formato de data inválido (esperado YYYY-MM-DD)"),
-  status: z.enum(["planned", "active", "closed", "archived"]).optional(),
+  status: z.enum(["planned", "active", "closed"]).optional(),
 });
 
 const okrObjectiveDataSchema = z.object({

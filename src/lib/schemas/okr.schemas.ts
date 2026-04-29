@@ -7,7 +7,7 @@ export const createCycleSchema = z.object({
   description: z.string().max(2000).optional(),
   startDate: z.string().date(),
   endDate: z.string().date(),
-  status: z.enum(["planned", "active", "closed", "archived"]).optional(),
+  status: z.enum(["planned", "active", "closed"]).optional(),
 });
 
 export const updateCycleSchema = createCycleSchema.partial();

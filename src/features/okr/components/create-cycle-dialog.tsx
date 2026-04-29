@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils/cn";
 
-type CycleStatus = "planned" | "active" | "closed" | "archived";
+type CycleStatus = "planned" | "active" | "closed";
 
 interface CreateCycleDialogProps {
   open: boolean;
@@ -81,9 +81,8 @@ function getCurrentYearRange(now = new Date()): { start: string; end: string } {
 
 const STATUS_LABELS: Record<CycleStatus, string> = {
   planned: "Planejado",
-  active: "Ativo",
-  closed: "Fechado",
-  archived: "Arquivado",
+  active: "Em andamento",
+  closed: "Encerrado",
 };
 
 export function CreateCycleDialog({ open, onOpenChange }: CreateCycleDialogProps) {

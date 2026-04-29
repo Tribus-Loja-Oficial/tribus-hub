@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils/cn";
 import type { OkrCycle } from "@/lib/types/domain";
 
-type CycleStatus = "planned" | "active" | "closed" | "archived";
+type CycleStatus = "planned" | "active" | "closed";
 
 interface UpdateCycleDialogProps {
   open: boolean;
@@ -83,9 +83,8 @@ function getCurrentYearRange(now = new Date()): { start: string; end: string } {
 
 const STATUS_LABELS: Record<CycleStatus, string> = {
   planned: "Planejado",
-  active: "Ativo",
-  closed: "Fechado",
-  archived: "Arquivado",
+  active: "Em andamento",
+  closed: "Encerrado",
 };
 
 export function UpdateCycleDialog({ open, onOpenChange, cycle }: UpdateCycleDialogProps) {

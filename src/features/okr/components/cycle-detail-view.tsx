@@ -15,13 +15,12 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { OkrCycle, OkrObjective, OkrKeyResult } from "@/lib/types/domain";
-import { OkrEntityStatusRow, OkrStatusBadge } from "./okr-status-badge";
+import { CycleGovernanceBadge } from "@/components/cycles/cycle-governance-badge";
+import { OkrEntityStatusRow } from "./okr-status-badge";
 import { OkrProgressBar, MiniProgressRing } from "./okr-progress-bar";
 import { UpdateCycleDialog } from "./update-cycle-dialog";
 import { differenceInDays, isAfter, isBefore } from "date-fns";
 import { formatCivilDate, parseCivilDateInput, startOfLocalDay } from "@/lib/date/civil-date";
-import { cyclePhaseLabel, getCyclePhase } from "@/lib/cycles/cycle-phase";
-
 type ObjectiveWithKRs = OkrObjective & { keyResults: OkrKeyResult[] };
 type CycleProject = {
   id: string;
@@ -147,10 +146,7 @@ export function CycleDetailView({ cycleId }: CycleDetailViewProps) {
             <div className="flex items-center gap-2">
               <CalendarRange className="h-5 w-5 text-primary" />
               <h1 className="text-xl font-bold text-foreground">{cycle.title}</h1>
-              <OkrStatusBadge status={cycle.status} size="md" />
-              <span className="inline-flex items-center rounded-full border border-border/80 bg-muted/30 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
-                {cyclePhaseLabel(getCyclePhase(cycle.startDate, cycle.endDate))}
-              </span>
+              <CycleGovernanceBadge status={cycle.status} size="md" />
             </div>
             <p className="mt-1 text-sm text-muted-foreground">
               {formatCivilDate(cycle.startDate, "dd MMM yyyy")} →{" "}
@@ -178,7 +174,7 @@ export function CycleDetailView({ cycleId }: CycleDetailViewProps) {
                 disabled={patchMutation.isPending}
               >
                 <CheckCircle className="mr-1 h-3.5 w-3.5" />
-                Ativar
+                Colocar em andamento
               </Button>
             )}
             {cycle.status === "active" && (

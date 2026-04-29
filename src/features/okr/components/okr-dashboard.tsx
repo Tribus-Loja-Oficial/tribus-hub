@@ -178,7 +178,7 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
               {allCycles.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.title}
-                  {c.status === "active" ? " (ativo)" : ""}
+                  {c.status === "active" ? " (em andamento)" : ""}
                 </option>
               ))}
             </select>

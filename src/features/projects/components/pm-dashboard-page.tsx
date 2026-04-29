@@ -27,10 +27,10 @@ import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatCivilDate } from "@/lib/date/civil-date";
 import { ProjectHealthRow, PriorityBadge } from "./project-badges";
-import type { Project, WorkflowStatusInsight } from "@/lib/types/domain";
+import type { OkrCycle, Project, WorkflowStatusInsight } from "@/lib/types/domain";
 import { WorkflowStatusRow } from "@/components/workflow-status-badge";
 import { cn } from "@/lib/utils/cn";
-import { cyclePhaseLabel, getCyclePhase, type CyclePhase } from "@/lib/cycles/cycle-phase";
+import { CycleGovernanceBadge } from "@/components/cycles/cycle-governance-badge";
 
 interface UpcomingMilestone {
   id: string;
@@ -71,35 +71,15 @@ type WorkspaceCycleRow = {
   }>;
 };
 
-const CYCLE_PHASE_OPTIONS: Array<{ value: "all" | CyclePhase; label: string }> = [
-  { value: "all", label: "Todas as fases" },
-  { value: "upcoming", label: "Por vir" },
-  { value: "running", label: "Em andamento" },
-  { value: "ended", label: "Encerrado" },
-];
-
-const CYCLE_GOVERNANCE_OPTIONS = [
-  { value: "all", label: "Todos administrativos" },
+const CYCLE_GOVERNANCE_OPTIONS: Array<{
+  value: "all" | OkrCycle["status"];
+  label: string;
+}> = [
+  { value: "all", label: "Todos os status" },
   { value: "planned", label: "Planejado" },
-  { value: "active", label: "Ativo" },
-  { value: "closed", label: "Fechado" },
-  { value: "archived", label: "Arquivado" },
-] as const;
-
-function cycleAdminLabel(status: string): string {
-  switch (status) {
-    case "planned":
-      return "Planejado";
-    case "active":
-      return "Ativo";
-    case "closed":
-      return "Fechado";
-    case "archived":
-      return "Arquivado";
-    default:
-      return status;
-  }
-}
+  { value: "active", label: "Em andamento" },
+  { value: "closed", label: "Encerrado" },
+];
 
 function StatCard({
   icon: Icon,
@@ -152,10 +132,9 @@ export function PmDashboardPage() {
     ? "cycles"
     : "overview";
   const [cycleSearch, setCycleSearch] = useState("");
-  const [cyclePhaseFilter, setCyclePhaseFilter] = useState<"all" | CyclePhase>("all");
-  const [cycleGovernanceFilter, setCycleGovernanceFilter] = useState<
-    "all" | "planned" | "active" | "closed" | "archived"
-  >("all");
+  const [cycleGovernanceFilter, setCycleGovernanceFilter] = useState<"all" | OkrCycle["status"]>(
+    "all",
+  );
   const [cycleQualityFilter, setCycleQualityFilter] = useState<
     "all" | "without_objectives" | "without_projects" | "without_active_projects"
   >("all");
@@ -206,8 +185,7 @@ export function PmDashboardPage() {
       ...cycles.map((c) => ({
         id: c.id,
         title: c.title,
-        status: c.status,
-        phase: getCyclePhase(c.startDate, c.endDate),
+        status: c.status as OkrCycle["status"],
         startDate: c.startDate,
         endDate: c.endDate,
         objectiveCount: Number(c.summary?.objectiveCount ?? 0),
@@ -216,8 +194,7 @@ export function PmDashboardPage() {
       {
         id: "__without_cycle__",
         title: "Sem ciclo",
-        status: "planned",
-        phase: "undated" as const,
+        status: "planned" as const,
         startDate: null,
         endDate: null,
         objectiveCount: 0,
@@ -228,7 +205,6 @@ export function PmDashboardPage() {
   const filteredCycles = useMemo(() => {
     const q = cycleSearch.trim().toLowerCase();
     return cyclesWithProjects.filter((c) => {
-      if (cyclePhaseFilter !== "all" && c.phase !== cyclePhaseFilter) return false;
       if (cycleGovernanceFilter !== "all" && c.status !== cycleGovernanceFilter) return false;
       if (cycleQualityFilter === "without_projects" && c.projects.length > 0) return false;
       if (cycleQualityFilter === "without_objectives" && c.objectiveCount > 0) return false;
@@ -257,7 +233,6 @@ export function PmDashboardPage() {
     });
   }, [
     cycleGovernanceFilter,
-    cyclePhaseFilter,
     cycleQualityFilter,
     cycleSearch,
     cyclesWithProjects,
@@ -322,8 +297,7 @@ export function PmDashboardPage() {
               "cards de health mostram projetos em risco, bloqueados e no prazo;",
               "milestones próximas do vencimento são destacadas com alertas;",
               "clique em qualquer card para filtrar a lista de projetos correspondente;",
-              "ciclos possuem duas leituras: status administrativo (planejado, ativo, fechado, arquivado) e fase temporal (por vir, em andamento, encerrado);",
-              "a fase temporal é calculada automaticamente pelas datas de início/fim e aplicada nas telas de ciclos do hub.",
+              "cada ciclo tem um único status de governança (planejado, em andamento ou encerrado), alinhado às demais telas de ciclos do hub.",
             ]}
           />
         </GuideSection>
@@ -645,18 +619,7 @@ export function PmDashboardPage() {
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                   Filtros de ciclo
                 </p>
-                <div className="grid grid-cols-3 gap-2">
-                  <select
-                    className="h-9 rounded-md border border-input bg-background px-2 text-xs"
-                    value={cyclePhaseFilter}
-                    onChange={(e) => setCyclePhaseFilter(e.target.value as typeof cyclePhaseFilter)}
-                  >
-                    {CYCLE_PHASE_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
+                <div className="grid grid-cols-2 gap-2">
                   <select
                     className="h-9 rounded-md border border-input bg-background px-2 text-xs"
                     value={cycleGovernanceFilter}
@@ -716,7 +679,6 @@ export function PmDashboardPage() {
               </div>
             </div>
             {(cycleSearch ||
-              cyclePhaseFilter !== "all" ||
               cycleGovernanceFilter !== "all" ||
               cycleQualityFilter !== "all" ||
               projectStatusFilter !== "all" ||
@@ -725,7 +687,6 @@ export function PmDashboardPage() {
                 className="text-left text-xs text-muted-foreground hover:text-foreground"
                 onClick={() => {
                   setCycleSearch("");
-                  setCyclePhaseFilter("all");
                   setCycleGovernanceFilter("all");
                   setCycleQualityFilter("all");
                   setProjectStatusFilter("all");
@@ -756,24 +717,11 @@ export function PmDashboardPage() {
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="truncate text-sm font-semibold text-foreground">{c.title}</p>
-                      <span
-                        className={cn(
-                          "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold",
-                          c.phase === "running" &&
-                            "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200",
-                          c.phase === "upcoming" &&
-                            "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-200",
-                          c.phase === "ended" &&
-                            "border-slate-500/30 bg-slate-500/10 text-slate-700 dark:text-slate-200",
-                          c.phase === "undated" &&
-                            "border-border bg-muted/40 text-muted-foreground",
-                        )}
-                      >
-                        {cyclePhaseLabel(c.phase)}
-                      </span>
-                      {c.id !== "__without_cycle__" && (
-                        <span className="inline-flex items-center rounded-full border border-border/80 bg-muted/30 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                          {cycleAdminLabel(c.status)}
+                      {c.id !== "__without_cycle__" ? (
+                        <CycleGovernanceBadge status={c.status} />
+                      ) : (
+                        <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                          Portfólio avulso
                         </span>
                       )}
                     </div>

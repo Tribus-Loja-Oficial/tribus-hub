@@ -12,7 +12,6 @@ import {
   Trash2,
   CheckCircle,
   RotateCcw,
-  Archive,
   XCircle,
   Loader2,
   LayoutGrid,
@@ -32,15 +31,14 @@ import type {
   OkrCycleWithStats,
   ObjectiveWithKRs,
 } from "@/lib/services/okr.service";
-import { OkrEntityStatusRow, OkrStatusBadge } from "./okr-status-badge";
+import { CycleGovernanceBadge } from "@/components/cycles/cycle-governance-badge";
+import { OkrEntityStatusRow } from "./okr-status-badge";
 import { OkrProgressBar } from "./okr-progress-bar";
 import { CreateCycleDialog } from "./create-cycle-dialog";
 import { UpdateCycleDialog } from "./update-cycle-dialog";
 import { differenceInDays, isAfter, isBefore } from "date-fns";
 import { cn } from "@/lib/utils/cn";
 import { formatCivilDate, parseCivilDateInput } from "@/lib/date/civil-date";
-import { cyclePhaseLabel, getCyclePhase } from "@/lib/cycles/cycle-phase";
-
 type SortKey = "start_desc" | "start_asc" | "end_desc" | "end_asc";
 type StatusFilter = "all" | OkrCycle["status"];
 
@@ -64,11 +62,6 @@ function resolveCycleStats(cycle: { stats?: CycleCardStats }): CycleCardStats {
 function formatD(d: string | null | undefined) {
   if (!d) return "—";
   return formatCivilDate(d, "dd MMM yyyy") || "—";
-}
-
-function formatShort(d: string | null | undefined) {
-  if (!d) return "—";
-  return formatCivilDate(d, "dd MMM") || "—";
 }
 
 /** Progresso temporal 0–100 e texto contextual (independente do status administrativo). */
@@ -110,8 +103,6 @@ function cycleCardTone(status: OkrCycle["status"]): string {
       return "border-border bg-card hover:border-muted-foreground/25";
     case "closed":
       return "border-border/80 bg-muted/25";
-    case "archived":
-      return "border-dashed border-border/90 bg-muted/15 opacity-[0.92]";
     default:
       return "border-border bg-card";
   }
@@ -247,7 +238,7 @@ export function OkrCyclesPage() {
       activeCycle &&
       activeCycle.id !== id &&
       !confirm(
-        `Ativar este ciclo encerrará o ciclo ativo atual (“${activeCycle.title}”). Continuar?`,
+        `Colocar este ciclo em andamento encerrará o ciclo em andamento atual (“${activeCycle.title}”). Continuar?`,
       )
     ) {
       return;
@@ -258,12 +249,6 @@ export function OkrCyclesPage() {
   function requestClose(id: string, title: string) {
     if (!confirm(`Encerrar o ciclo “${title}”?`)) return;
     patchMutation.mutate({ id, status: "closed" });
-  }
-
-  function requestArchive(id: string, title: string) {
-    if (!confirm(`Arquivar o ciclo “${title}”? Ele ficará disponível apenas para consulta.`))
-      return;
-    patchMutation.mutate({ id, status: "archived" });
   }
 
   return (
@@ -278,8 +263,8 @@ export function OkrCyclesPage() {
             <div>
               <h1 className="text-xl font-semibold tracking-tight text-foreground">Ciclos OKR</h1>
               <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted-foreground">
-                Gerencie os períodos estratégicos que organizam objetivos e resultados-chave. Um
-                ciclo ativo define o contexto padrão do OKR Manager e dos filtros do módulo.
+                Gerencie os períodos estratégicos que organizam objetivos e resultados-chave. O
+                ciclo em andamento define o contexto padrão do OKR Manager e dos filtros do módulo.
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/80 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
@@ -290,7 +275,7 @@ export function OkrCyclesPage() {
                 {activeCycle && (
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800 dark:text-emerald-200">
                     <CheckCircle className="h-3 w-3" />
-                    Ativo: {activeCycle.title}
+                    Em andamento: {activeCycle.title}
                   </span>
                 )}
               </div>
@@ -316,9 +301,8 @@ export function OkrCyclesPage() {
           <GuideList
             items={[
               "cada ciclo agrupa objetivos e KRs de um período específico;",
-              "apenas um ciclo pode estar ativo por vez — ele define o contexto padrão do OKR Manager;",
-              "além do status administrativo, cada ciclo tem fase temporal automática: por vir, em andamento ou encerrado;",
-              "ciclos encerrados ficam arquivados para consulta histórica;",
+              "apenas um ciclo pode estar em andamento por vez — ele define o contexto padrão do OKR Manager;",
+              "três estados: Planejado, Em andamento e Encerrado;",
               "ao clicar em um ciclo você vê seus OKRs detalhados.",
             ]}
           />
@@ -329,11 +313,11 @@ export function OkrCyclesPage() {
       {!isLoading && cycles.length > 0 && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <SummaryCard
-            title="Ciclo ativo"
+            title="Ciclo em andamento"
             icon={CheckCircle}
             iconClass="text-emerald-600 dark:text-emerald-400"
             empty={!activeCycle}
-            emptyLabel="Nenhum ciclo ativo"
+            emptyLabel="Nenhum ciclo em andamento"
           >
             {activeCycle && (
               <>
@@ -342,7 +326,7 @@ export function OkrCyclesPage() {
                   {formatD(activeCycle.startDate)} → {formatD(activeCycle.endDate)}
                 </p>
                 <div className="mt-2">
-                  <OkrStatusBadge status={activeCycle.status} />
+                  <CycleGovernanceBadge status={activeCycle.status} />
                 </div>
                 <div className="mt-2 text-[11px] text-muted-foreground">
                   Tempo: {getTemporalLine(activeCycle).progress}%
@@ -358,7 +342,7 @@ export function OkrCyclesPage() {
           >
             <p className="text-2xl font-bold tabular-nums text-foreground">{cycles.length}</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Inclui planejados, ativos e encerrados
+              Inclui planejados, em andamento e encerrados
             </p>
           </SummaryCard>
 
@@ -380,11 +364,11 @@ export function OkrCyclesPage() {
           </SummaryCard>
 
           <SummaryCard
-            title="Execução no ciclo ativo"
+            title="Execução no ciclo em andamento"
             icon={Target}
             iconClass="text-violet-600 dark:text-violet-400"
             empty={!activeCycle}
-            emptyLabel="Sem ciclo ativo"
+            emptyLabel="Sem ciclo em andamento"
           >
             {activeCycle && activeStats && (
               <div className="grid grid-cols-2 gap-2 text-xs">
@@ -445,9 +429,8 @@ export function OkrCyclesPage() {
             >
               <option value="all">Todos os status</option>
               <option value="planned">Planejado</option>
-              <option value="active">Ativo</option>
+              <option value="active">Em andamento</option>
               <option value="closed">Encerrado</option>
-              <option value="archived">Arquivado</option>
             </select>
             <select
               className="h-9 rounded-lg border border-input bg-background px-2 text-sm"
@@ -470,7 +453,7 @@ export function OkrCyclesPage() {
                 setStatusFilter("all");
               }}
             >
-              Só ativo
+              Só em andamento
             </Button>
             <Button
               type="button"
@@ -600,15 +583,7 @@ export function OkrCyclesPage() {
                               {cycle.externalRef}
                             </span>
                           )}
-                          <CycleStatusBadge status={cycle.status} />
-                          <span className="inline-flex items-center rounded-full border border-border/80 bg-muted/30 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                            {cyclePhaseLabel(getCyclePhase(cycle.startDate, cycle.endDate))}
-                          </span>
-                          {cycle.status === "active" && (
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
-                              Ciclo em foco
-                            </span>
-                          )}
+                          <CycleGovernanceBadge status={cycle.status} />
                         </div>
                         <p className="text-sm text-muted-foreground">
                           <span className="tabular-nums">{formatD(cycle.startDate)}</span>
@@ -643,7 +618,7 @@ export function OkrCyclesPage() {
                       percent={progress}
                       size="sm"
                       status={cycle.status === "active" ? "on_track" : undefined}
-                      className={cycle.status === "archived" ? "opacity-80" : undefined}
+                      className={cycle.status === "closed" ? "opacity-85" : undefined}
                     />
                     <p className="text-[11px] leading-snug text-muted-foreground">{caption}</p>
                   </div>
@@ -685,14 +660,14 @@ export function OkrCyclesPage() {
                         ) : (
                           <CheckCircle className="h-3.5 w-3.5" />
                         )}
-                        Ativar
+                        Colocar em andamento
                       </Button>
                     )}
                     {cycle.status === "active" && (
                       <>
                         <div className="flex items-center justify-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 py-2 text-xs font-semibold text-emerald-800 dark:text-emerald-200">
                           <CheckCircle className="h-3.5 w-3.5 shrink-0" />
-                          Ciclo ativo
+                          Em andamento
                         </div>
                         <Button
                           size="sm"
@@ -710,24 +685,6 @@ export function OkrCyclesPage() {
                         </Button>
                       </>
                     )}
-                    {cycle.status === "closed" && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="w-full"
-                        disabled={isPatchingThis}
-                        onClick={() => requestArchive(cycle.id, cycle.title)}
-                      >
-                        <Archive className="h-3.5 w-3.5" />
-                        Arquivar
-                      </Button>
-                    )}
-                    {cycle.status === "archived" && (
-                      <p className="px-1 text-center text-[11px] text-muted-foreground">
-                        Arquivado — use o menu para reabrir se necessário.
-                      </p>
-                    )}
-
                     <div className="relative">
                       <Button
                         size="sm"
@@ -776,7 +733,7 @@ export function OkrCyclesPage() {
                               Planejado
                             </button>
                           )}
-                          {cycle.status !== "active" && cycle.status !== "archived" && (
+                          {cycle.status !== "active" && (
                             <button
                               type="button"
                               className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-muted/50"
@@ -786,10 +743,10 @@ export function OkrCyclesPage() {
                               }}
                             >
                               <CheckCircle className="h-3.5 w-3.5" />
-                              Ativar
+                              Colocar em andamento
                             </button>
                           )}
-                          {cycle.status !== "closed" && cycle.status !== "archived" && (
+                          {cycle.status !== "closed" && (
                             <button
                               type="button"
                               className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-muted/50"
@@ -802,20 +759,7 @@ export function OkrCyclesPage() {
                               Encerrar
                             </button>
                           )}
-                          {cycle.status !== "archived" && (
-                            <button
-                              type="button"
-                              className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-muted/50"
-                              onClick={() => {
-                                requestArchive(cycle.id, cycle.title);
-                                setMenuOpen(null);
-                              }}
-                            >
-                              <Archive className="h-3.5 w-3.5" />
-                              Arquivar
-                            </button>
-                          )}
-                          {(cycle.status === "closed" || cycle.status === "archived") && (
+                          {cycle.status === "closed" && (
                             <button
                               type="button"
                               className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-muted/50"
@@ -1017,40 +961,5 @@ function StatChip({
         {value}
       </p>
     </div>
-  );
-}
-
-/** Badge mais explícito que o genérico para estados de ciclo. */
-function CycleStatusBadge({ status }: { status: OkrCycle["status"] }) {
-  const cfg: Record<OkrCycle["status"], { label: string; className: string }> = {
-    planned: {
-      label: "Planejado",
-      className:
-        "bg-slate-100 text-slate-700 ring-slate-300/40 dark:bg-slate-900/50 dark:text-slate-300",
-    },
-    active: {
-      label: "Ativo",
-      className:
-        "bg-emerald-100 text-emerald-900 ring-emerald-400/50 dark:bg-emerald-950/60 dark:text-emerald-200",
-    },
-    closed: {
-      label: "Encerrado",
-      className: "bg-zinc-100 text-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-300",
-    },
-    archived: {
-      label: "Arquivado",
-      className: "bg-zinc-50 text-zinc-500 ring-dashed ring-zinc-300/60 dark:bg-zinc-900/40",
-    },
-  };
-  const c = cfg[status];
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset",
-        c.className,
-      )}
-    >
-      {c.label}
-    </span>
   );
 }

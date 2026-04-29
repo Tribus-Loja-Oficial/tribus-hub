@@ -57,7 +57,7 @@ export const INGESTION_TYPE_REFERENCES: IngestionTypeReference[] = [
         key: "status",
         requirement: "optional",
         valueType: "enum",
-        enumValues: ["planned", "active", "closed", "archived"],
+        enumValues: ["planned", "active", "closed"],
         default: "planned",
       },
     ],

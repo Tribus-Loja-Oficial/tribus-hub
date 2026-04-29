@@ -30,7 +30,7 @@ export type AuditAction =
 
 // ─── OKR ─────────────────────────────────────────────────────────────────────
 
-export type OkrCycleStatus = "planned" | "active" | "closed" | "archived";
+export type OkrCycleStatus = "planned" | "active" | "closed";
 export type OkrObjectiveStatus = "draft" | "on_track" | "at_risk" | "off_track" | "completed";
 export type OkrKeyResultStatus = "draft" | "on_track" | "at_risk" | "off_track" | "completed";
 export type OkrMetricType = "percentage" | "number" | "currency" | "boolean" | "custom";

@@ -16,6 +16,7 @@ const migrations = [
   { id: "0010_okr_completed_progress_invariant", file: "./migrations/0010_okr_completed_progress_invariant.sql" },
   { id: "0011_projects_cycle_id", file: "./migrations/0011_projects_cycle_id.sql" },
   { id: "0012_project_task_estimation", file: "./migrations/0012_project_task_estimation.sql" },
+  { id: "0013_okr_cycle_status_three_way", file: "./migrations/0013_okr_cycle_status_three_way.sql" },
 ];
 
 function run(cmd) {
