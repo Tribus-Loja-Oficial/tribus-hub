@@ -8,12 +8,7 @@ import type {
   OkrCycleStatus,
   WorkflowStatusInsight,
 } from "@/lib/types/domain";
-import {
-  TABLE_HEALTH_CHIP_PX,
-  TABLE_HEALTH_CHIP_WIDTH_CLASS,
-  TABLE_STATUS_CHIP_PX,
-  TABLE_STATUS_CHIP_WIDTH_CLASS,
-} from "@/lib/ui/chip-width-tokens";
+import { TABLE_HEALTH_CHIP_PX, TABLE_STATUS_CHIP_PX } from "@/lib/ui/chip-width-tokens";
 import { deriveOkrWorkflowStatusInsight } from "@/features/okr/lib/okr-workflow-status";
 import { reconcileOkrHealthInsightForDisplay } from "@/features/okr/lib/okr-pace-health-local";
 
@@ -95,12 +90,16 @@ export function OkrEntityStatusRow({
   progressPercent,
   size = "sm",
   className,
+  workflowChipWidthPx,
+  healthChipWidthPx,
 }: OkrStatusBadgeProps & {
   healthInsight?: HealthInsight | null;
   workflowStatusInsight?: WorkflowStatusInsight | null;
   startDate?: string | null;
   targetDate?: string | null;
   progressPercent?: number | null;
+  workflowChipWidthPx?: number;
+  healthChipWidthPx?: number;
 }) {
   const okrWorkflow = deriveOkrWorkflowStatusInsight({
     workflowStatusInsight,
@@ -112,23 +111,16 @@ export function OkrEntityStatusRow({
     startDate,
     targetDate,
   });
+  const statusChipPx = workflowChipWidthPx ?? TABLE_STATUS_CHIP_PX;
+  const healthChipPx = healthChipWidthPx ?? TABLE_HEALTH_CHIP_PX;
   return (
     <span
       className={cn("inline-flex min-w-0 max-w-full flex-nowrap items-center gap-1.5", className)}
     >
-      <WorkflowStatusRow
-        insight={okrWorkflow}
-        size={size}
-        badgeWidthClass={TABLE_STATUS_CHIP_WIDTH_CLASS}
-        tableChipWidthPx={TABLE_STATUS_CHIP_PX}
-      />
+      <WorkflowStatusRow insight={okrWorkflow} size={size} tableChipWidthPx={statusChipPx} />
       {health ? (
         <>
-          <PaceHealthBadge
-            insight={health}
-            className={cn("justify-center text-center", TABLE_HEALTH_CHIP_WIDTH_CLASS)}
-            tableChipWidthPx={TABLE_HEALTH_CHIP_PX}
-          />
+          <PaceHealthBadge insight={health} tableChipWidthPx={healthChipPx} />
           <HealthInsightHint insight={health} />
         </>
       ) : null}

@@ -761,7 +761,7 @@ export function WorkspaceCyclesPage() {
                     {cycle.status === "planned" && (
                       <Button
                         size="sm"
-                        className="w-full justify-center gap-1.5"
+                        className="h-auto min-h-9 w-full justify-center gap-1.5 py-2.5"
                         disabled={isPatchingThis}
                         onClick={() => requestActivate(cycle.id)}
                       >
@@ -1008,6 +1008,8 @@ function WorkspaceCycleExpandedPortfolio({
                       startDate={obj.startDate}
                       targetDate={obj.targetDate}
                       progressPercent={obj.progressPercent}
+                      workflowChipWidthPx={CYCLE_PORTFOLIO_STATUS_CHIP_WIDTH_PX}
+                      healthChipWidthPx={CYCLE_PORTFOLIO_STATUS_CHIP_WIDTH_PX}
                     />
                     <span className="inline-block w-[7.25rem] text-right text-xs tabular-nums tracking-tight text-muted-foreground">
                       {Math.round(obj.progressPercent)}% · {obj.keyResults.length} KR

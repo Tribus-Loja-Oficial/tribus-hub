@@ -645,13 +645,13 @@ export function OkrCyclesPage() {
 
                   {/* D — Ações */}
                   <div
-                    className="flex shrink-0 flex-col items-stretch justify-center gap-2 border-t border-border/60 pt-4 lg:w-[148px] lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0"
+                    className="flex shrink-0 flex-col items-stretch justify-center gap-2 border-t border-border/60 pt-4 lg:w-[176px] lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0"
                     data-cycle-menu
                   >
                     {cycle.status === "planned" && (
                       <Button
                         size="sm"
-                        className="w-full justify-center gap-1.5"
+                        className="h-auto min-h-9 w-full justify-center gap-1.5 py-2.5"
                         disabled={isPatchingThis}
                         onClick={() => requestActivate(cycle.id)}
                       >
@@ -834,6 +834,7 @@ function CycleExpandedObjectives({
   open: boolean;
   objectiveCount: number;
 }) {
+  const CYCLE_LIST_STATUS_CHIP_WIDTH_PX = 116;
   const { data, isLoading, isError } = useQuery<{ data: ObjectiveWithKRs[] }>({
     queryKey: ["okr-objectives", "by-cycle", cycleId],
     queryFn: () =>
@@ -895,6 +896,8 @@ function CycleExpandedObjectives({
                     startDate={obj.startDate}
                     targetDate={obj.targetDate}
                     progressPercent={obj.progressPercent}
+                    workflowChipWidthPx={CYCLE_LIST_STATUS_CHIP_WIDTH_PX}
+                    healthChipWidthPx={CYCLE_LIST_STATUS_CHIP_WIDTH_PX}
                   />
                   <span className="inline-block w-[7.25rem] text-right text-xs tabular-nums tracking-tight text-muted-foreground">
                     {Math.round(obj.progressPercent)}% · {obj.keyResults.length} KR
