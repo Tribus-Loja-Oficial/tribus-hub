@@ -18,6 +18,34 @@ import { Label } from "@/components/ui/label";
 import type { OkrCycle, Project } from "@/lib/types/domain";
 
 type MemberRow = { id: string; name: string; email: string };
+type ProjectStatusOption = Project["status"];
+type ProjectPriorityOption = Project["priority"];
+
+const PROJECT_STATUS_OPTIONS: readonly ProjectStatusOption[] = [
+  "planned",
+  "active",
+  "on_hold",
+  "completed",
+  "cancelled",
+];
+const PROJECT_PRIORITY_OPTIONS: readonly ProjectPriorityOption[] = [
+  "low",
+  "medium",
+  "high",
+  "urgent",
+];
+
+function normalizeProjectStatus(value: unknown): ProjectStatusOption {
+  return PROJECT_STATUS_OPTIONS.includes(value as ProjectStatusOption)
+    ? (value as ProjectStatusOption)
+    : "planned";
+}
+
+function normalizeProjectPriority(value: unknown): ProjectPriorityOption {
+  return PROJECT_PRIORITY_OPTIONS.includes(value as ProjectPriorityOption)
+    ? (value as ProjectPriorityOption)
+    : "medium";
+}
 
 /** Formulário partilhado — usa Radix Select para funcionar dentro de Dialog aninhado (quick view + editar). */
 export function EditProjectFormFields({
@@ -93,8 +121,8 @@ export function EditProjectFormFields({
     seededThisOpen.current = true;
     setTitle(project.title);
     setSummary(project.summary ?? "");
-    setStatus(project.status);
-    setPriority(project.priority);
+    setStatus(normalizeProjectStatus(project.status));
+    setPriority(normalizeProjectPriority(project.priority));
     setEstimationUnit((project.estimationUnit as "hours" | "story_points" | undefined) ?? "hours");
     setCycleId(project.cycleId ?? "");
     setOwnerUserId(project.ownerUserId ?? "");
@@ -113,8 +141,8 @@ export function EditProjectFormFields({
         mutation.mutate({
           title: title.trim(),
           summary: summary.trim() || undefined,
-          status,
-          priority,
+          status: normalizeProjectStatus(status),
+          priority: normalizeProjectPriority(priority),
           estimationUnit,
           cycleId: cycleId || undefined,
           ownerUserId: ownerUserId || undefined,

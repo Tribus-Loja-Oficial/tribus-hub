@@ -602,7 +602,7 @@ export function ProjectsCyclesPage() {
                   </div>
 
                   <div
-                    className="flex shrink-0 flex-col items-stretch justify-center gap-2 border-t border-border/60 pt-4 lg:w-[148px] lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0"
+                    className="flex shrink-0 flex-col items-stretch justify-center gap-2 border-t border-border/60 pt-4 lg:w-[176px] lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0"
                     data-cycle-menu
                   >
                     {cycle.status === "planned" && (
@@ -783,6 +783,7 @@ function CycleExpandedProjects({
   projects: WorkspaceCycleRow["projects"];
 }) {
   if (!open) return null;
+  const CYCLE_PROJECT_STATUS_CHIP_WIDTH_PX = 116;
   return (
     <div className="border-t border-border/70 bg-muted/20 px-4 py-4 sm:px-5">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -813,13 +814,19 @@ function CycleExpandedProjects({
                 </span>
                 <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
                   {p.workflowStatusInsight ? (
-                    <WorkflowStatusRow insight={p.workflowStatusInsight} />
+                    <WorkflowStatusRow
+                      insight={p.workflowStatusInsight}
+                      tableChipWidthPx={CYCLE_PROJECT_STATUS_CHIP_WIDTH_PX}
+                    />
                   ) : (
                     <span className="rounded-md border border-border/70 bg-muted/40 px-2 py-0.5 text-xs text-muted-foreground">
                       {p.status}
                     </span>
                   )}
-                  <ProjectHealthRow insight={p.healthInsight} />
+                  <ProjectHealthRow
+                    insight={p.healthInsight}
+                    tableChipWidthPx={CYCLE_PROJECT_STATUS_CHIP_WIDTH_PX}
+                  />
                 </div>
               </Link>
             </li>

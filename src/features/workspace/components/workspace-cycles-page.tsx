@@ -755,7 +755,7 @@ export function WorkspaceCyclesPage() {
                   </div>
 
                   <div
-                    className="flex shrink-0 flex-col items-stretch justify-center gap-2 border-t border-border/60 pt-4 lg:w-[148px] lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0"
+                    className="flex shrink-0 flex-col items-stretch justify-center gap-2 border-t border-border/60 pt-4 lg:w-[176px] lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0"
                     data-cycle-menu
                   >
                     {cycle.status === "planned" && (
@@ -944,6 +944,7 @@ function WorkspaceCycleExpandedPortfolio({
   objectiveCount: number;
   projects: WorkspacePortfolioRow["projects"];
 }) {
+  const CYCLE_PORTFOLIO_STATUS_CHIP_WIDTH_PX = 116;
   const objectivesQuery = useQuery<{ data: ObjectiveWithKRs[] }>({
     queryKey: ["okr-objectives", "by-cycle", cycleId],
     queryFn: () =>
@@ -1050,13 +1051,19 @@ function WorkspaceCycleExpandedPortfolio({
                   </span>
                   <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
                     {p.workflowStatusInsight ? (
-                      <WorkflowStatusRow insight={p.workflowStatusInsight} />
+                      <WorkflowStatusRow
+                        insight={p.workflowStatusInsight}
+                        tableChipWidthPx={CYCLE_PORTFOLIO_STATUS_CHIP_WIDTH_PX}
+                      />
                     ) : (
                       <span className="rounded-md border border-border/70 bg-muted/40 px-2 py-0.5 text-xs text-muted-foreground">
                         {p.status}
                       </span>
                     )}
-                    <ProjectHealthRow insight={p.healthInsight} />
+                    <ProjectHealthRow
+                      insight={p.healthInsight}
+                      tableChipWidthPx={CYCLE_PORTFOLIO_STATUS_CHIP_WIDTH_PX}
+                    />
                   </div>
                 </Link>
               </li>
