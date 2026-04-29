@@ -49,6 +49,7 @@ import {
 } from "@/features/okr/lib/okr-okrs-list-sort";
 import { deriveOkrWorkflowStatusInsight } from "@/features/okr/lib/okr-workflow-status";
 import { reconcileOkrHealthInsightForDisplay } from "@/features/okr/lib/okr-pace-health-local";
+import { formatOkrProgressPercent } from "@/features/okr/lib/okr-progress-format";
 import { cn } from "@/lib/utils/cn";
 import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resizable-grid-columns";
 import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
@@ -1049,7 +1050,7 @@ function ObjectiveBlock({
             className="min-w-0 flex-1"
           />
           <span className="w-9 shrink-0 text-right text-xs font-medium tabular-nums text-foreground/70">
-            {Math.round(objective.progressPercent)}%
+            {formatOkrProgressPercent(objective.progressPercent)}
           </span>
         </div>
 
@@ -1273,7 +1274,7 @@ function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete
           className="min-w-0 flex-1"
         />
         <span className="w-9 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
-          {Math.round(kr.progressPercent)}%
+          {formatOkrProgressPercent(kr.progressPercent)}
         </span>
       </div>
 

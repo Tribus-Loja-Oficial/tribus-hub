@@ -324,8 +324,12 @@ export function workflowStatusForMilestoneRow(
   taskProgressPercent?: number,
 ) {
   const w = resolveMilestoneWindow(milestone, projectRaw);
-  const progress =
-    String(milestone.status ?? "") === "completed" ? 100 : Number(taskProgressPercent ?? 0);
+  const hasTaskProgress = taskProgressPercent !== undefined && taskProgressPercent !== null;
+  const progress = hasTaskProgress
+    ? Number(taskProgressPercent)
+    : String(milestone.status ?? "") === "completed"
+      ? 100
+      : 0;
   return computeWorkflowStatus({
     kind: "milestone",
     dbStatus: String(milestone.status ?? "pending"),

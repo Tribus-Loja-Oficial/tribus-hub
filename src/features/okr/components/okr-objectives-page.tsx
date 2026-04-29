@@ -30,6 +30,7 @@ import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resiza
 import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
 import { cn } from "@/lib/utils/cn";
 import { deriveOkrWorkflowStatusInsight } from "@/features/okr/lib/okr-workflow-status";
+import { formatOkrProgressPercent } from "@/features/okr/lib/okr-progress-format";
 import {
   TABLE_HEALTH_CHIP_PX,
   TABLE_HEALTH_CHIP_WIDTH_CLASS,
@@ -520,7 +521,7 @@ function ObjectiveRow({
             className="min-w-0 flex-1"
           />
           <span className="w-8 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
-            {Math.round(objective.progressPercent)}%
+            {formatOkrProgressPercent(objective.progressPercent)}
           </span>
         </div>
 
@@ -651,7 +652,7 @@ function KrSubRow({
           className="min-w-0 flex-1"
         />
         <span className="w-8 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
-          {Math.round(kr.progressPercent)}%
+          {formatOkrProgressPercent(kr.progressPercent)}
         </span>
       </div>
 

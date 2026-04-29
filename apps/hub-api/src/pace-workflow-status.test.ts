@@ -244,4 +244,22 @@ describe("workflowStatusForMilestoneRow", () => {
     );
     expect(result.slug).toBe("blocked");
   });
+
+  it("returns successful for in_progress milestone when task progress is 100%", () => {
+    const result = workflowStatusForMilestoneRow(
+      { status: "in_progress", due_date: "2026-06-30" },
+      { status: "active", start_date: "2026-01-01", target_date: "2026-12-31", title: "P" },
+      100,
+    );
+    expect(result.slug).toBe("successful");
+  });
+
+  it("reopens completed milestone when progress drops below 100% (during window)", () => {
+    const result = workflowStatusForMilestoneRow(
+      { status: "completed", due_date: "2099-12-31" },
+      { status: "active", start_date: "2020-01-01", target_date: "2099-12-31", title: "P" },
+      65,
+    );
+    expect(result.slug).toBe("in_progress");
+  });
 });
