@@ -8,7 +8,6 @@ import {
   CheckCircle,
   ChevronRight,
   Clock,
-  ExternalLink,
   Filter,
   FolderKanban,
   Loader2,
@@ -18,7 +17,6 @@ import {
   RotateCcw,
   Search,
   Sparkles,
-  Target,
   Trash2,
   XCircle,
 } from "lucide-react";
@@ -387,7 +385,7 @@ export function ProjectsCyclesPage() {
           </SummaryCard>
           <SummaryCard
             title="Execução no ciclo em andamento"
-            icon={Target}
+            icon={FolderKanban}
             iconClass="text-violet-600 dark:text-violet-400"
             empty={!activeCycle}
             emptyLabel="Sem ciclo em andamento"
@@ -522,6 +520,11 @@ export function ProjectsCyclesPage() {
                       <button
                         type="button"
                         aria-expanded={expandedCycleId === cycle.id}
+                        aria-label={
+                          expandedCycleId === cycle.id
+                            ? "Recolher projetos do ciclo"
+                            : "Expandir projetos do ciclo"
+                        }
                         onClick={() =>
                           setExpandedCycleId((id) => (id === cycle.id ? null : cycle.id))
                         }
@@ -540,12 +543,9 @@ export function ProjectsCyclesPage() {
                       </button>
                       <div className="min-w-0 flex-1 space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
-                          <Link
-                            href={`/okr/cycles/${cycle.id}`}
-                            className="text-lg font-semibold text-foreground transition-colors hover:text-primary"
-                          >
+                          <span className="text-lg font-semibold text-foreground">
                             {cycle.title}
-                          </Link>
+                          </span>
                           <CycleGovernanceBadge status={cycle.status} />
                         </div>
                         <p className="text-sm text-muted-foreground">
@@ -558,13 +558,9 @@ export function ProjectsCyclesPage() {
                             {cycle.description}
                           </p>
                         )}
-                        <Link
-                          href={`/okr/cycles/${cycle.id}`}
-                          className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                        >
-                          Ver detalhes do ciclo
-                          <ExternalLink className="h-3 w-3" />
-                        </Link>
+                        <p className="text-xs text-muted-foreground">
+                          Expanda o cartão para ver os projetos deste ciclo.
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -593,11 +589,23 @@ export function ProjectsCyclesPage() {
                     </p>
                     <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
                       <StatChip label="Projetos" value={projectCount} />
-                      <StatChip label="Objetivos" value={row?.summary?.objectiveCount ?? 0} />
                       <StatChip label="Bloqueados" value={blockedCount} warn={blockedCount > 0} />
                       <StatChip
                         label="Ativos"
                         value={row?.projects?.filter((p) => p.status === "active").length ?? 0}
+                      />
+                      <StatChip
+                        label="Média progresso"
+                        value={
+                          row?.projects?.length
+                            ? `${Math.round(
+                                row.projects.reduce(
+                                  (s, p) => s + Number(p.progressPercent ?? 0),
+                                  0,
+                                ) / row.projects.length,
+                              )}%`
+                            : "—"
+                        }
                       />
                     </div>
                   </div>
@@ -652,14 +660,17 @@ export function ProjectsCyclesPage() {
                       </Button>
                       {menuOpen === cycle.id && (
                         <div className="absolute right-0 top-full z-[100] mt-1 w-52 rounded-lg border border-border bg-popover py-1 shadow-lg">
-                          <Link
-                            href={`/okr/cycles/${cycle.id}`}
-                            className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted/60"
-                            onClick={() => setMenuOpen(null)}
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted/60"
+                            onClick={() => {
+                              setExpandedCycleId(cycle.id);
+                              setMenuOpen(null);
+                            }}
                           >
                             <ChevronRight className="h-3.5 w-3.5" />
-                            Ver detalhes
-                          </Link>
+                            Ver projetos neste ciclo
+                          </button>
                           <button
                             type="button"
                             className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted/60"
