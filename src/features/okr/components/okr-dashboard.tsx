@@ -316,7 +316,9 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
                   <span className="text-sm font-semibold text-foreground">
                     Health dos objetivos
                   </span>
-                  <span className="text-xs text-muted-foreground">(status no escopo atual)</span>
+                  <span className="text-xs text-muted-foreground">
+                    (health por ritmo no escopo atual; concluídos à parte)
+                  </span>
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
                   <HealthPill label="No rumo" value={stats.onTrackObjectives} tone="emerald" />
@@ -327,7 +329,7 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
                 </div>
                 <p className="mt-3 border-t border-border/60 pt-3 text-[11px] text-muted-foreground">
                   KRs: {stats.onTrackKrs} no rumo · {stats.atRiskKrs} em risco · {stats.offTrackKrs}{" "}
-                  fora · {stats.draftKrs} planejados (cadastro)
+                  fora · {stats.draftKrs} planejados / sem ritmo / antes do início
                 </p>
               </div>
 
@@ -631,7 +633,12 @@ function KrPerformanceSection({ objectives }: { objectives: ObjectiveWithKRsForD
       }
     }
     const now = new Date();
-    const atRisk = flat.filter(({ kr }) => kr.status === "at_risk" || kr.status === "off_track");
+    const krIsPaceRisk = (kr: OkrKeyResult) => {
+      const slug = kr.healthInsight?.slug;
+      if (slug === "at_risk" || slug === "off_track") return true;
+      return kr.status === "at_risk" || kr.status === "off_track";
+    };
+    const atRisk = flat.filter(({ kr }) => krIsPaceRisk(kr));
     const topProgress = [...flat]
       .filter(({ kr }) => kr.status !== "completed")
       .sort((a, b) => b.kr.progressPercent - a.kr.progressPercent)

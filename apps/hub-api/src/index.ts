@@ -5,6 +5,7 @@ import {
   resolveProjectWindow,
 } from "./pace-health";
 import { workflowStatusForProjectRow } from "./pace-workflow-status";
+import { countKrPaceRisk, countObjectivePaceRisk } from "./okr-health-insights";
 import { enrichObjectiveWithHealth, handleV1OkrWriteRoutes } from "./v1-okr-write";
 import {
   ensureExternalRef,
@@ -1965,25 +1966,25 @@ async function getOkrCyclesWithStats(db: D1DatabaseLike, workspaceId: string) {
     db
       .prepare(
         `
-        SELECT id, cycle_id, status
+        SELECT *
         FROM okr_objectives
         WHERE workspace_id = ?
           AND deleted_at IS NULL
       `,
       )
       .bind(workspaceId)
-      .all<{ id: string; cycle_id: string | null; status: string }>(),
+      .all<OkrObjectiveRow>(),
     db
       .prepare(
         `
-        SELECT id, cycle_id, status, progress_percent
+        SELECT *
         FROM okr_key_results
         WHERE workspace_id = ?
           AND deleted_at IS NULL
       `,
       )
       .bind(workspaceId)
-      .all<{ id: string; cycle_id: string | null; status: string; progress_percent: number }>(),
+      .all<OkrKeyResultRow>(),
   ]);
 
   if (!cyclesResult.success) throw new Error(cyclesResult.error ?? "Failed to query cycles");
@@ -1994,10 +1995,24 @@ async function getOkrCyclesWithStats(db: D1DatabaseLike, workspaceId: string) {
 
   const objectives = objectivesResult.results ?? [];
   const keyResults = keyResultsResult.results ?? [];
+  const cycleRows = cyclesResult.results ?? [];
+  const cycleById = new Map<string, Record<string, unknown>>(
+    cycleRows.map((c) => [String(c.id), { ...c } as Record<string, unknown>]),
+  );
+  const objectiveById = new Map<string, Record<string, unknown>>(
+    objectives.map((o) => [String(o.id), { ...o } as Record<string, unknown>]),
+  );
 
-  return (cyclesResult.results ?? []).map((cycle) => {
+  return cycleRows.map((cycle) => {
     const cObjectives = objectives.filter((o) => o.cycle_id === cycle.id);
     const cKrs = keyResults.filter((k) => k.cycle_id === cycle.id);
+    const cObjectivesRec = cObjectives.map((o) => ({ ...o }) as Record<string, unknown>);
+    const cKrsRec = cKrs.map((k) => ({ ...k }) as Record<string, unknown>);
+    const { objectivesAtRisk, objectivesOffTrack } = countObjectivePaceRisk(
+      cObjectivesRec,
+      cycleById,
+    );
+    const { krsAtRisk, krsOffTrack } = countKrPaceRisk(cKrsRec, objectiveById, cycleById);
     const avgKrProgress =
       cKrs.length === 0
         ? 0
@@ -2026,10 +2041,10 @@ async function getOkrCyclesWithStats(db: D1DatabaseLike, workspaceId: string) {
         keyResultCount: cKrs.length,
         objectivesCompleted: cObjectives.filter((o) => o.status === "completed").length,
         krsCompleted: cKrs.filter((k) => k.status === "completed").length,
-        objectivesAtRisk: cObjectives.filter((o) => o.status === "at_risk").length,
-        objectivesOffTrack: cObjectives.filter((o) => o.status === "off_track").length,
-        krsAtRisk: cKrs.filter((k) => k.status === "at_risk").length,
-        krsOffTrack: cKrs.filter((k) => k.status === "off_track").length,
+        objectivesAtRisk,
+        objectivesOffTrack,
+        krsAtRisk,
+        krsOffTrack,
         avgKrProgress,
       },
     };

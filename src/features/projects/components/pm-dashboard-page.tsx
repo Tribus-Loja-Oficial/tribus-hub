@@ -10,6 +10,7 @@ import {
   Ban,
   CalendarX,
   CheckCircle2,
+  Gauge,
   Plus,
   ChevronRight,
   List,
@@ -48,6 +49,8 @@ interface DashboardStats {
   totalProjects: number;
   activeProjects: number;
   atRisk: number;
+  /** Projetos ativos com health por ritmo no rumo ou adiantado (mesmo motor da hierarquia). */
+  paceOnTrackActive?: number;
   blocked: number;
   overdueMilestones: number;
   completedProjects: number;
@@ -306,13 +309,13 @@ export function PmDashboardPage() {
 
       {/* Stats */}
       {view === "overview" && statsLoading ? (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-          {Array.from({ length: 6 }).map((_, i) => (
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
+          {Array.from({ length: 7 }).map((_, i) => (
             <div key={i} className="h-20 animate-pulse rounded-xl bg-muted" />
           ))}
         </div>
       ) : view === "overview" && stats ? (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
           <StatCard
             icon={FolderKanban}
             label="Total"
@@ -325,6 +328,14 @@ export function PmDashboardPage() {
             label="Ativos"
             value={stats.activeProjects}
             color="bg-emerald-50 text-emerald-600"
+            href="/projects/list?status=in_progress"
+          />
+          <StatCard
+            icon={Gauge}
+            label="No rumo (ritmo)"
+            value={stats.paceOnTrackActive ?? 0}
+            color="bg-teal-50 text-teal-600"
+            sub="Ativos · health por datas + progresso"
             href="/projects/list?status=in_progress"
           />
           <StatCard

@@ -8,16 +8,20 @@ import { ensureExternalRef } from "./external-refs";
 import {
   buildCompletionSnapshotFromPreCompleteRow,
   calcElapsedPercent,
-  computePaceHealth,
   resolveOkrKrWindow,
   resolveOkrObjectiveWindow,
 } from "./pace-health";
-import { workflowStatusForOkrKr, workflowStatusForOkrObjective } from "./pace-workflow-status";
 import {
-  effectiveHealthSnapshotForOkrPace,
-  effectiveOkrStatusForPaceAndWorkflow,
-  resolveOkrStatusAfterProgress,
-} from "./okr-pace-integrity";
+  countKrDashboardPaceBuckets,
+  countObjectiveDashboardPaceBuckets,
+  countOkrCompletedKeyResults,
+  countOkrCompletedObjectives,
+  healthInsightForKr,
+  healthInsightForObjective,
+  isOkrPaceRiskSlug,
+} from "./okr-health-insights";
+import { workflowStatusForOkrKr, workflowStatusForOkrObjective } from "./pace-workflow-status";
+import { resolveOkrStatusAfterProgress } from "./okr-pace-integrity";
 import {
   deriveCycleGovernanceStatusFromDates,
   resolveCycleStatusAfterPatch,
@@ -268,53 +272,6 @@ async function loadOkrCycleRow(
   return r.results?.[0] ?? null;
 }
 
-function healthInsightForObjective(
-  o: Record<string, unknown>,
-  cycle: Record<string, unknown> | null,
-) {
-  const w = resolveOkrObjectiveWindow(o, cycle);
-  const raw = String(o.status ?? "draft");
-  const p = Number(o.progress_percent ?? 0);
-  return computePaceHealth({
-    kind: "okr_objective",
-    status: effectiveOkrStatusForPaceAndWorkflow(raw, p),
-    progressPercent: p,
-    windowStart: w.start,
-    windowEnd: w.end,
-    dateSourcePt: w.dateSourcePt,
-    completedAt: (o.completed_at as string | null) ?? null,
-    healthSnapshotJson: effectiveHealthSnapshotForOkrPace(
-      raw,
-      p,
-      (o.health_snapshot_json as string | null) ?? null,
-    ),
-  });
-}
-
-function healthInsightForKr(
-  kr: Record<string, unknown>,
-  objective: Record<string, unknown>,
-  cycle: Record<string, unknown> | null,
-) {
-  const w = resolveOkrKrWindow(kr, objective, cycle);
-  const raw = String(kr.status ?? "draft");
-  const p = Number(kr.progress_percent ?? 0);
-  return computePaceHealth({
-    kind: "okr_key_result",
-    status: effectiveOkrStatusForPaceAndWorkflow(raw, p),
-    progressPercent: p,
-    windowStart: w.start,
-    windowEnd: w.end,
-    dateSourcePt: w.dateSourcePt,
-    completedAt: (kr.completed_at as string | null) ?? null,
-    healthSnapshotJson: effectiveHealthSnapshotForOkrPace(
-      raw,
-      p,
-      (kr.health_snapshot_json as string | null) ?? null,
-    ),
-  });
-}
-
 export async function enrichKrList(
   db: D1DatabaseLike,
   workspaceId: string,
@@ -485,54 +442,6 @@ export async function handleV1OkrWriteRoutes(
         activeCycle = a.results?.[0] ?? null;
       }
       const resolvedCycleId = cycleId ?? (activeCycle?.id as string | undefined);
-      const whereObj = ["workspace_id = ?", "deleted_at IS NULL"];
-      const argsObj: unknown[] = [workspaceId];
-      if (resolvedCycleId) {
-        whereObj.push("cycle_id = ?");
-        argsObj.push(resolvedCycleId);
-      }
-      const objs = await db
-        .prepare(`SELECT status FROM okr_objectives WHERE ${whereObj.join(" AND ")}`)
-        .bind(...argsObj)
-        .all<{ status: string }>();
-      const whereKr = ["workspace_id = ?", "deleted_at IS NULL"];
-      const argsKr: unknown[] = [workspaceId];
-      if (resolvedCycleId) {
-        whereKr.push("cycle_id = ?");
-        argsKr.push(resolvedCycleId);
-      }
-      const krs = await db
-        .prepare(
-          `SELECT status, progress_percent FROM okr_key_results WHERE ${whereKr.join(" AND ")}`,
-        )
-        .bind(...argsKr)
-        .all<{ status: string; progress_percent: number }>();
-      const oc = (s: string) => (objs.results ?? []).filter((o) => o.status === s).length;
-      const kc = (s: string) => (krs.results ?? []).filter((k) => k.status === s).length;
-      const krList = krs.results ?? [];
-      const avgKrProgress =
-        krList.length === 0
-          ? 0
-          : Math.round(
-              (krList.reduce((sum, kr) => sum + Number(kr.progress_percent ?? 0), 0) /
-                krList.length) *
-                10,
-            ) / 10;
-      const stats = {
-        totalObjectives: (objs.results ?? []).length,
-        draftObjectives: oc("draft"),
-        onTrackObjectives: oc("on_track"),
-        atRiskObjectives: oc("at_risk"),
-        offTrackObjectives: oc("off_track"),
-        completedObjectives: oc("completed"),
-        totalKeyResults: krList.length,
-        avgKrProgress,
-        draftKrs: kc("draft"),
-        onTrackKrs: kc("on_track"),
-        atRiskKrs: kc("at_risk"),
-        offTrackKrs: kc("off_track"),
-        completedKrs: kc("completed"),
-      };
       const objFull = await db
         .prepare(
           `SELECT o.*, er.external_ref
@@ -547,6 +456,26 @@ export async function handleV1OkrWriteRoutes(
         .bind(...(resolvedCycleId ? [workspaceId, resolvedCycleId] : [workspaceId]))
         .all<Record<string, unknown>>();
       const olist = objFull.results ?? [];
+      const cycleById = new Map<string, Record<string, unknown>>();
+      if (activeCycle?.id) {
+        cycleById.set(String(activeCycle.id), activeCycle);
+      }
+      const neededCycleIds = [
+        ...new Set(olist.map((o) => String(o.cycle_id ?? "")).filter((id) => id.length > 0)),
+      ].filter((id) => !cycleById.has(id));
+      if (neededCycleIds.length > 0) {
+        const phc = neededCycleIds.map(() => "?").join(", ");
+        const cycExtra = await db
+          .prepare(
+            `SELECT * FROM okr_cycles WHERE workspace_id = ? AND deleted_at IS NULL AND id IN (${phc})`,
+          )
+          .bind(workspaceId, ...neededCycleIds)
+          .all<Record<string, unknown>>();
+        for (const c of cycExtra.results ?? []) {
+          cycleById.set(String(c.id), c);
+        }
+      }
+      const objectiveById = new Map(olist.map((o) => [String(o.id), o]));
       const oids = olist.map((o) => o.id as string);
       const krByObj = new Map<string, Record<string, unknown>[]>();
       if (oids.length) {
@@ -571,16 +500,54 @@ export async function handleV1OkrWriteRoutes(
           krByObj.set(oid, list);
         }
       }
-      const objectives = olist.map((o) => ({
-        ...mapObjective(o),
-        keyResults: (krByObj.get(o.id as string) ?? []).map(mapKr),
-      }));
+      const allKrsFlat: Record<string, unknown>[] = [];
+      for (const list of krByObj.values()) {
+        for (const kr of list) allKrsFlat.push(kr);
+      }
+      const objB = countObjectiveDashboardPaceBuckets(
+        olist as Record<string, unknown>[],
+        cycleById,
+      );
+      const krB = countKrDashboardPaceBuckets(allKrsFlat, objectiveById, cycleById);
+      const avgKrProgress =
+        allKrsFlat.length === 0
+          ? 0
+          : Math.round(
+              (allKrsFlat.reduce((sum, kr) => sum + Number(kr.progress_percent ?? 0), 0) /
+                allKrsFlat.length) *
+                10,
+            ) / 10;
+      const stats = {
+        totalObjectives: olist.length,
+        draftObjectives: objB.planejado,
+        onTrackObjectives: objB.onTrack,
+        atRiskObjectives: objB.atRisk,
+        offTrackObjectives: objB.offTrack,
+        completedObjectives: countOkrCompletedObjectives(olist as Record<string, unknown>[]),
+        totalKeyResults: allKrsFlat.length,
+        avgKrProgress,
+        draftKrs: krB.planejado,
+        onTrackKrs: krB.onTrack,
+        atRiskKrs: krB.atRisk,
+        offTrackKrs: krB.offTrack,
+        completedKrs: countOkrCompletedKeyResults(allKrsFlat),
+      };
       const users = await db
         .prepare(`SELECT id, name FROM users WHERE workspace_id = ? AND is_active = 1`)
         .bind(workspaceId)
         .all<{ id: string; name: string }>();
       const nameBy = new Map((users.results ?? []).map((u) => [u.id, u.name]));
-      const objectivesForDashboard = objectives.map((o) => ({
+      const enrichedObjectives = await Promise.all(
+        olist.map((o) =>
+          enrichObjectiveWithHealth(
+            db,
+            workspaceId!,
+            o,
+            (krByObj.get(o.id as string) ?? []) as Record<string, unknown>[],
+          ),
+        ),
+      );
+      const objectivesForDashboard = enrichedObjectives.map((o) => ({
         ...o,
         ownerDisplayName: o.ownerUserId ? (nameBy.get(o.ownerUserId as string) ?? null) : null,
       }));
@@ -591,22 +558,7 @@ export async function handleV1OkrWriteRoutes(
           activeCycle: activeCycle ? mapCycle(activeCycle) : null,
           allCycles,
           stats,
-          attentionItems: buildAttention(
-            objectives as Array<{
-              id: string;
-              title: string;
-              status: string;
-              progressPercent: number;
-              keyResults: Array<{
-                id: string;
-                title: string;
-                status: string;
-                progressPercent: number;
-                confidence: number | null;
-                updatedAt: string;
-              }>;
-            }>,
-          ),
+          attentionItems: buildAttention(enrichedObjectives),
           recentUpdates,
           objectives: objectivesForDashboard,
           cyclePace: activeCycle ? buildCyclePace(stats.avgKrProgress, activeCycle) : null,
@@ -1574,6 +1526,7 @@ function buildAttention(
     title: string;
     status: string;
     progressPercent: number;
+    healthInsight?: { slug: string; labelPt: string };
     keyResults: {
       status: string;
       title: string;
@@ -1581,36 +1534,41 @@ function buildAttention(
       progressPercent: number;
       confidence: number | null;
       updatedAt: string;
+      healthInsight?: { slug: string; labelPt: string };
     }[];
   }[],
 ) {
   const items: unknown[] = [];
   for (const o of objectives) {
-    if (o.status === "off_track") {
+    const objSlug = o.healthInsight?.slug;
+    if (objSlug && isOkrPaceRiskSlug(objSlug)) {
       items.push({
         kind: "objective",
         id: o.id,
         title: o.title,
-        reason: "Objetivo fora do rumo",
+        reason: o.healthInsight?.labelPt ?? (objSlug === "off_track" ? "Fora do rumo" : "Em risco"),
         href: `/okr/objectives/${o.id}`,
-        severity: "high",
-        score: 100,
+        severity: objSlug === "off_track" ? "high" : "medium",
+        score: objSlug === "off_track" ? 100 : 85,
         progressPercent: o.progressPercent,
-        status: o.status,
+        status: objSlug,
       });
     }
     for (const kr of o.keyResults ?? []) {
-      if (kr.status === "off_track") {
+      const krSlug = kr.healthInsight?.slug;
+      if (krSlug && isOkrPaceRiskSlug(krSlug)) {
         items.push({
           kind: "key_result",
           id: kr.id,
           title: kr.title,
-          reason: "KR fora do rumo",
+          reason:
+            kr.healthInsight?.labelPt ??
+            (krSlug === "off_track" ? "KR fora do rumo" : "KR em risco"),
           href: `/okr/key-results/${kr.id}`,
-          severity: "high",
-          score: 92,
+          severity: krSlug === "off_track" ? "high" : "medium",
+          score: krSlug === "off_track" ? 92 : 78,
           progressPercent: kr.progressPercent,
-          status: kr.status,
+          status: krSlug,
           objectiveTitle: o.title,
         });
       }

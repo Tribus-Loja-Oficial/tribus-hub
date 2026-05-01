@@ -38,7 +38,7 @@ import { ProjectHealthRow } from "@/features/projects/components/project-badges"
 import { cn } from "@/lib/utils/cn";
 import { formatCivilDate, parseCivilDateInput } from "@/lib/date/civil-date";
 import { differenceInDays, isAfter, isBefore } from "date-fns";
-import type { OkrCycle, Project } from "@/lib/types/domain";
+import type { OkrCycle, OkrObjective, Project } from "@/lib/types/domain";
 import type {
   CycleCardStats,
   ObjectiveWithKRs,
@@ -69,6 +69,8 @@ type WorkspacePortfolioRow = {
     progressPercent: number;
     startDate: string | null;
     targetDate: string | null;
+    healthInsight?: OkrObjective["healthInsight"];
+    workflowStatusInsight?: OkrObjective["workflowStatusInsight"];
   }>;
   projects: Array<{
     id: string;

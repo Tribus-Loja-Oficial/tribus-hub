@@ -9,7 +9,12 @@ import {
   resolveMilestoneWindow,
   resolveProjectWindow,
 } from "./pace-health";
-import { workflowStatusForMilestoneRow, workflowStatusForProjectRow } from "./pace-workflow-status";
+import {
+  workflowStatusForMilestoneRow,
+  workflowStatusForOkrObjective,
+  workflowStatusForProjectRow,
+} from "./pace-workflow-status";
+import { healthInsightForObjective } from "./okr-health-insights";
 
 type D1PreparedStatement = {
   bind: (...values: unknown[]) => D1PreparedStatement;
@@ -500,18 +505,14 @@ export async function handleV1ExtraRoutes(
     try {
       const proj = await db
         .prepare(
-          `SELECT id, status, health_status, target_date FROM projects WHERE workspace_id = ? AND deleted_at IS NULL`,
+          `SELECT id, status, health_status, start_date, target_date, progress_percent, completed_at, health_snapshot_json
+           FROM projects WHERE workspace_id = ? AND deleted_at IS NULL`,
         )
         .bind(workspaceId)
-        .all<{
-          id: string;
-          status: string;
-          health_status: string | null;
-          target_date: string | null;
-        }>();
+        .all<Record<string, unknown>>();
       if (!proj.success) throw new Error(proj.error ?? "projects");
       const allProjects = proj.results ?? [];
-      const active = allProjects.filter((p) => p.status === "active");
+      const active = allProjects.filter((p) => String(p.status) === "active");
       const today = new Date().toISOString().slice(0, 10);
       const ms = await db
         .prepare(
@@ -529,8 +530,18 @@ export async function handleV1ExtraRoutes(
         data: {
           totalProjects: allProjects.length,
           activeProjects: active.length,
-          atRisk: active.filter((p) => p.health_status === "at_risk").length,
-          blocked: active.filter((p) => p.health_status === "blocked").length,
+          atRisk: active.filter((p) => {
+            const slug = healthInsightForProjectRow(p).slug;
+            return slug === "at_risk" || slug === "off_track";
+          }).length,
+          paceOnTrackActive: active.filter((p) => {
+            const slug = healthInsightForProjectRow(p).slug;
+            return slug === "on_track" || slug === "ahead";
+          }).length,
+          /** Inclui `on_hold` (Bloqueado no cadastro); não filtrar só em `active` pois pausa remove de active. */
+          blocked: allProjects.filter(
+            (p) => String(p.status) === "on_hold" || String(p.health_status ?? "") === "blocked",
+          ).length,
           overdueMilestones,
           completedProjects: allProjects.filter((p) => p.status === "completed").length,
         },
@@ -713,14 +724,20 @@ export async function handleV1ExtraRoutes(
                   String(p.status) === "on_hold" || String(p.health_status ?? "") === "blocked",
               ).length,
             },
-            objectives: objectives.map((o) => ({
-              id: o.id,
-              title: o.title,
-              status: o.status,
-              progressPercent: Number(o.progress_percent ?? 0),
-              startDate: o.start_date ?? null,
-              targetDate: o.target_date ?? null,
-            })),
+            objectives: objectives.map((o) => {
+              const cycleRow = c as Record<string, unknown>;
+              const orow = o as Record<string, unknown>;
+              return {
+                id: o.id,
+                title: o.title,
+                status: o.status,
+                progressPercent: Number(o.progress_percent ?? 0),
+                startDate: o.start_date ?? null,
+                targetDate: o.target_date ?? null,
+                healthInsight: healthInsightForObjective(orow, cycleRow),
+                workflowStatusInsight: workflowStatusForOkrObjective(orow, cycleRow),
+              };
+            }),
             projects: projects.map((p) => ({
               id: p.id,
               title: p.title,

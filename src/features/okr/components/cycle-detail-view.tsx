@@ -134,8 +134,17 @@ export function CycleDetailView({ cycleId }: CycleDetailViewProps) {
     (s, o) => s + o.keyResults.filter((kr) => kr.status === "completed").length,
     0,
   );
-  const onTrackObj = objectives.filter((o) => o.status === "on_track").length;
-  const atRiskObj = objectives.filter((o) => o.status === "at_risk").length;
+  const objPaceSlug = (o: OkrObjective) => o.healthInsight?.slug;
+  const onTrackObj = objectives.filter((o) => {
+    const s = objPaceSlug(o);
+    if (s) return s === "on_track" || s === "ahead";
+    return o.status === "on_track";
+  }).length;
+  const atRiskObj = objectives.filter((o) => {
+    const s = objPaceSlug(o);
+    if (s === "at_risk" || s === "off_track") return true;
+    return o.status === "at_risk" || o.status === "off_track";
+  }).length;
   const avgProgress =
     objectives.length > 0
       ? Math.round(

@@ -95,8 +95,17 @@ export function ObjectiveDetailView({ objectiveId, embedded }: ObjectiveDetailVi
     ? (cycles.find((c) => c.id === objective.cycleId)?.title ?? "—")
     : "—";
   const krs = objective.keyResults;
-  const onTrackKrs = krs.filter((kr) => kr.status === "on_track").length;
-  const atRiskKrs = krs.filter((kr) => kr.status === "at_risk").length;
+  const krPaceSlug = (kr: (typeof krs)[number]) => kr.healthInsight?.slug;
+  const onTrackKrs = krs.filter((kr) => {
+    const s = krPaceSlug(kr);
+    if (s) return s === "on_track" || s === "ahead";
+    return kr.status === "on_track";
+  }).length;
+  const atRiskKrs = krs.filter((kr) => {
+    const s = krPaceSlug(kr);
+    if (s === "at_risk" || s === "off_track") return true;
+    return kr.status === "at_risk" || kr.status === "off_track";
+  }).length;
   const completedKrs = krs.filter((kr) => kr.status === "completed").length;
 
   return (
