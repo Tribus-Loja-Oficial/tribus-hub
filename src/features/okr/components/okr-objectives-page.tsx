@@ -427,6 +427,7 @@ function ObjectiveRow({
           "cursor-pointer border-l-[3px] transition-colors [&>*]:py-2.5",
           healthRowAccentClass(objective.healthInsight?.slug),
           isExpanded ? "bg-muted/20" : "hover:bg-muted/20",
+          menuOpen && "relative z-[100]",
         )}
         style={{ gridTemplateColumns: gridTpl }}
         onClick={(e) => {
@@ -533,7 +534,7 @@ function ObjectiveRow({
             <MoreHorizontal className="h-4 w-4" />
           </Button>
           {menuOpen && (
-            <div className="absolute right-0 top-8 z-10 w-40 rounded-lg border border-border bg-popover py-1 shadow-md">
+            <div className="absolute right-0 top-8 z-50 w-40 rounded-lg border border-border bg-popover py-1 shadow-md">
               <Link
                 href={`/okr/objectives/${objective.id}`}
                 className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted/50"

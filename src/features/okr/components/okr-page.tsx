@@ -953,9 +953,11 @@ function ObjectiveBlock({
 
   return (
     <div
-      className={`rounded-xl border border-border transition-shadow ${
-        isExpanded ? "shadow-sm" : ""
-      }`}
+      className={cn(
+        "rounded-xl border border-border transition-shadow",
+        isExpanded && "shadow-sm",
+        (objMenuOpen || krMenuOpen != null) && "relative z-[100]",
+      )}
     >
       {/* Objective header row — mesmo grid do cabeçalho da tabela */}
       <div
@@ -963,6 +965,7 @@ function ObjectiveBlock({
           OKR_LIST_GRID_BASE,
           "cursor-pointer select-none overflow-visible rounded-xl px-4 py-3 transition-colors",
           isExpanded ? "rounded-b-none bg-muted/30" : "bg-card hover:bg-muted/20",
+          objMenuOpen && "relative z-[100]",
         )}
         style={{
           borderLeft: `3px solid ${accentColor}`,
@@ -1203,6 +1206,7 @@ function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete
         OKR_LIST_GRID_BASE,
         "overflow-visible bg-muted/5 py-2.5 transition-colors hover:bg-muted/15",
         !isLast ? "border-b border-border/30" : "",
+        menuOpen && "relative z-[100]",
       )}
       style={{ gridTemplateColumns: gridTpl }}
     >

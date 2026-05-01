@@ -22,6 +22,7 @@ import { OkrProgressBar } from "./okr-progress-bar";
 import { CreateKeyResultDialog } from "./create-key-result-dialog";
 import { UpdateKeyResultDialog } from "./update-key-result-dialog";
 import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
+import { cn } from "@/lib/utils/cn";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -350,7 +351,12 @@ function KrRow({
   const isBoolean = kr.metricType === "boolean";
 
   return (
-    <div className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-muted/20">
+    <div
+      className={cn(
+        "flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-muted/20",
+        menuOpen && "relative z-[100]",
+      )}
+    >
       {/* Title */}
       <div className="min-w-0 flex-1">
         <Link
@@ -425,7 +431,7 @@ function KrRow({
           <MoreHorizontal className="h-4 w-4" />
         </Button>
         {menuOpen && (
-          <div className="absolute right-0 top-8 z-10 w-40 rounded-lg border border-border bg-popover py-1 shadow-md">
+          <div className="absolute right-0 top-8 z-50 w-40 rounded-lg border border-border bg-popover py-1 shadow-md">
             <Link
               href={`/okr/key-results/${kr.id}`}
               className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted/50"
