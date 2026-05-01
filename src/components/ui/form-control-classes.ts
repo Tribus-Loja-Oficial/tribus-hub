@@ -32,7 +32,7 @@ export const nativeSelectClassName = cn(
   hover,
   focusNeutral,
   disabled,
-  "h-9 w-full appearance-none bg-[length:12px] bg-[position:right_12px_center] pr-8 pl-3 text-sm",
+  "h-9 w-full px-3 pr-8 text-sm",
 );
 
 /** `<select>` compacto (filtros, toolbars) */
@@ -41,7 +41,7 @@ export const nativeSelectSmClassName = cn(
   hover,
   focusNeutral,
   disabled,
-  "h-8 w-full appearance-none bg-[position:right_10px_center] pr-7 pl-2.5 text-sm",
+  "h-8 w-full pl-2.5 pr-7 text-sm",
 );
 
 /** `<textarea>` nativo */
