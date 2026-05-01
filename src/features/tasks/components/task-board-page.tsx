@@ -83,13 +83,17 @@ function matchesDueFilter(task: BoardTask, dueFilter: string): boolean {
 
 export function TaskBoardPage() {
   const searchParams = useSearchParams();
+  /** Primitivos: o objeto `searchParams` pode manter a mesma referência quando só a query muda — efeitos com `[searchParams]` não correm. */
+  const projectIdFromUrl = searchParams.get("projectId") ?? "";
+  const dueFilterFromUrl = searchParams.get("dueFilter") ?? "";
+
   const [view, setView] = useState<"board" | "list">("board");
-  const [projectFilter, setProjectFilter] = useState("");
+  const [projectFilter, setProjectFilter] = useState(projectIdFromUrl);
   const [milestoneFilter, setMilestoneFilter] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("");
   const [labelFilter, setLabelFilter] = useState("");
   const [assigneeFilter, setAssigneeFilter] = useState("");
-  const [dueFilter, setDueFilter] = useState("");
+  const [dueFilter, setDueFilter] = useState(dueFilterFromUrl);
   const [searchQuery, setSearchQuery] = useState("");
 
   const [formOpen, setFormOpen] = useState(false);
@@ -98,14 +102,17 @@ export function TaskBoardPage() {
   const [defaultColumnId, setDefaultColumnId] = useState<string | null>(null);
 
   useEffect(() => {
-    const pid = searchParams.get("projectId");
-    if (pid) {
-      setProjectFilter(pid);
+    if (projectIdFromUrl) {
+      setProjectFilter(projectIdFromUrl);
       setMilestoneFilter("");
     }
-    const due = searchParams.get("dueFilter");
-    if (due) setDueFilter(due);
-  }, [searchParams]);
+  }, [projectIdFromUrl]);
+
+  useEffect(() => {
+    if (dueFilterFromUrl) {
+      setDueFilter(dueFilterFromUrl);
+    }
+  }, [dueFilterFromUrl]);
 
   const { data, isLoading, error } = useQuery<{ data: BoardPayload }>({
     queryKey: ["board"],

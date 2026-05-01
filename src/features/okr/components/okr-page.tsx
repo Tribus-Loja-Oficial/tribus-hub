@@ -966,6 +966,7 @@ function ObjectiveBlock({
           "cursor-pointer select-none overflow-visible rounded-xl px-4 py-3 transition-colors",
           isExpanded ? "rounded-b-none bg-muted/30" : "bg-card hover:bg-muted/20",
           objMenuOpen && "relative z-[100]",
+          krMenuOpen != null && !objMenuOpen && isExpanded && "relative z-0",
         )}
         style={{
           borderLeft: `3px solid ${accentColor}`,
@@ -1069,7 +1070,10 @@ function ObjectiveBlock({
 
         <div
           data-menu
-          className="relative z-30 flex min-w-0 shrink-0 items-center justify-start gap-1.5 overflow-visible"
+          className={cn(
+            "relative flex min-w-0 shrink-0 items-center justify-start gap-1.5 overflow-visible",
+            objMenuOpen ? "z-30" : "z-0",
+          )}
           onClick={(e) => e.stopPropagation()}
         >
           <Button
@@ -1118,7 +1122,13 @@ function ObjectiveBlock({
 
       {/* KR rows (expanded) */}
       {isExpanded && (
-        <div className="overflow-visible rounded-b-xl border-t border-border/60">
+        <div
+          className={cn(
+            "overflow-visible rounded-b-xl border-t border-border/60",
+            krMenuOpen != null && !objMenuOpen && "relative z-[60]",
+            objMenuOpen && "relative z-0",
+          )}
+        >
           {krs.length === 0 ? (
             <div className="flex items-center gap-3 bg-muted/10 px-4 py-4 pl-12">
               <TrendingUp className="h-4 w-4 shrink-0 text-muted-foreground/40" />
@@ -1294,7 +1304,10 @@ function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete
 
       <div
         data-menu
-        className="relative z-30 flex min-w-0 shrink-0 items-center justify-start gap-1.5 overflow-visible"
+        className={cn(
+          "relative flex min-w-0 shrink-0 items-center justify-start gap-1.5 overflow-visible",
+          menuOpen ? "z-50" : "z-0",
+        )}
       >
         <Button
           size="sm"

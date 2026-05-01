@@ -877,7 +877,7 @@ export function ProjectDetailView({
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-foreground">Tasks recentes</h2>
                 <Link
-                  href={`/tasks?projectId=${projectId}`}
+                  href={`/tasks?projectId=${encodeURIComponent(projectId)}`}
                   className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
                 >
                   Ver todas <ExternalLink className="h-3 w-3" />
@@ -969,9 +969,9 @@ export function ProjectDetailView({
             </div>
           ) : (
             <div className="overflow-hidden rounded-xl border border-border">
-              <div className="grid hidden grid-cols-[1fr_90px_80px_80px_90px_80px_72px] gap-0 border-b border-border bg-muted/30 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 sm:grid">
+              <div className="grid hidden grid-cols-[minmax(0,1fr)_minmax(9.5rem,11rem)_5rem_5rem_5.5rem_5rem_4.5rem] gap-0 border-b border-border bg-muted/30 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 sm:grid">
                 <span>Milestone</span>
-                <span>Status</span>
+                <span className="whitespace-nowrap">Status</span>
                 <span>Prioridade</span>
                 <span>Prazo</span>
                 <span>Tasks</span>
@@ -985,7 +985,7 @@ export function ProjectDetailView({
                   <div
                     key={m.id}
                     className={cn(
-                      "flex flex-col border-b border-border/60 px-4 py-3 last:border-b-0 sm:grid sm:grid-cols-[1fr_90px_80px_80px_90px_80px_72px] sm:gap-0",
+                      "flex flex-col border-b border-border/60 px-4 py-3 last:border-b-0 sm:grid sm:grid-cols-[minmax(0,1fr)_minmax(9.5rem,11rem)_5rem_5rem_5.5rem_5rem_4.5rem] sm:items-center sm:gap-0",
                       msOverdue && m.status !== "completed"
                         ? "bg-orange-50/30"
                         : "hover:bg-accent/10",
@@ -1012,9 +1012,9 @@ export function ProjectDetailView({
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 sm:block">
+                    <div className="flex min-w-0 items-center gap-2 sm:block sm:min-w-[9.5rem]">
                       <select
-                        className={cn(nativeSelectSmClassName, "h-7 text-xs")}
+                        className={cn(nativeSelectSmClassName, "h-7 w-full min-w-0 text-xs")}
                         value={m.status}
                         onChange={(e) =>
                           patchMilestoneMutation.mutate({
@@ -1091,7 +1091,7 @@ export function ProjectDetailView({
             </p>
             <div className="flex gap-2">
               <Button size="sm" variant="outline" asChild>
-                <Link href={`/tasks?projectId=${projectId}`}>
+                <Link href={`/tasks?projectId=${encodeURIComponent(projectId)}`}>
                   <Kanban className="h-3.5 w-3.5" />
                   Abrir no board
                   <ExternalLink className="ml-1 h-3 w-3" />
@@ -1106,7 +1106,9 @@ export function ProjectDetailView({
                 Nenhuma tarefa vinculada a este projeto.
               </p>
               <Button variant="outline" size="sm" className="mt-3" asChild>
-                <Link href={`/tasks?projectId=${projectId}`}>Criar task no board</Link>
+                <Link href={`/tasks?projectId=${encodeURIComponent(projectId)}`}>
+                  Criar task no board
+                </Link>
               </Button>
             </div>
           ) : (
@@ -1126,7 +1128,7 @@ export function ProjectDetailView({
                   <div
                     key={t.id}
                     className={cn(
-                      "flex items-center gap-3 border-b border-border/60 px-4 py-2.5 last:border-b-0 sm:grid sm:grid-cols-[1fr_80px_80px_90px_90px_56px]",
+                      "flex items-center gap-3 border-b border-border/60 px-4 py-2.5 last:border-b-0 sm:grid sm:grid-cols-[1fr_80px_80px_90px_90px_56px] sm:gap-0",
                       "transition-colors hover:bg-accent/10",
                     )}
                   >
