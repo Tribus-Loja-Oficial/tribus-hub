@@ -1,5 +1,6 @@
 import { createHmac, randomUUID } from "crypto";
 import { env } from "@/lib/config/env";
+import { AppError, ValidationError } from "@/lib/errors";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -80,7 +81,11 @@ export async function hubApiFetch<T>(input: {
 
   if (!res.ok) {
     const message = payload?.error?.message ?? `hub-api request failed: ${res.status}`;
-    throw new Error(message);
+    if (res.status === 400) {
+      throw new ValidationError(message);
+    }
+    const status = res.status >= 400 && res.status < 600 ? res.status : 502;
+    throw new AppError(message, "HUB_API_ERROR", status);
   }
 
   return (payload?.data ?? payload) as T;

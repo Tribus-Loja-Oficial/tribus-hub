@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils/cn";
 import type { PaceHealthSlug } from "@/lib/types/domain";
+import { formatOkrProgressPercent } from "@/features/okr/lib/okr-progress-format";
 
 interface OkrProgressBarProps {
   percent: number;
@@ -61,8 +62,8 @@ export function OkrProgressBar({
         />
       </div>
       {showLabel && (
-        <span className="w-9 shrink-0 text-right text-xs font-medium tabular-nums text-muted-foreground">
-          {Math.round(clamped)}%
+        <span className="min-w-[2.75rem] shrink-0 text-right text-xs font-medium tabular-nums text-muted-foreground">
+          {formatOkrProgressPercent(clamped)}
         </span>
       )}
     </div>

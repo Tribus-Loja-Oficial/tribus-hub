@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils/cn";
 import type { OkrCycle, OkrKeyResult, OkrObjective } from "@/lib/types/domain";
+import { formatCivilDate } from "@/lib/date/civil-date";
 import { invalidateAfterKeyResultMutation } from "@/lib/query/invalidate-hub-cache";
 
 type ObjectiveWithKRs = OkrObjective & { keyResults: unknown[] };
@@ -45,7 +46,24 @@ function calcKrProgress(
   return Math.min(100, Math.max(0, ((current - start) / range) * 100));
 }
 
-type DateErrors = { order?: string; startInCycle?: string; targetInCycle?: string };
+type DateErrors = {
+  order?: string;
+  startInCycle?: string;
+  targetInCycle?: string;
+  krStartBeforeObjective?: string;
+  krTargetAfterObjective?: string;
+};
+
+/** Mensagem legível em PT para erros conhecidos do hub-api (inglês). */
+function formatHubKrDateError(message: string): string {
+  if (message.includes("KR targetDate cannot be later than objective targetDate")) {
+    return "A data-alvo deste KR não pode ser posterior à data-alvo do objetivo. Escolha uma data igual ou anterior à do objetivo.";
+  }
+  if (message.includes("KR startDate cannot be earlier than objective startDate")) {
+    return "A data de início deste KR não pode ser anterior à data de início do objetivo.";
+  }
+  return message;
+}
 
 export function EditKeyResultDialog({
   open,
@@ -69,6 +87,7 @@ export function EditKeyResultDialog({
   const [showAdvanced, setShowAdvanced] = useState(true);
   const [dateErrors, setDateErrors] = useState<DateErrors>({});
   const [valueError, setValueError] = useState("");
+  const [saveError, setSaveError] = useState("");
   const prevStartRef = useRef("0");
 
   const { data: objectivesRes } = useQuery<{ data: ObjectiveWithKRs[] }>({
@@ -97,9 +116,17 @@ export function EditKeyResultDialog({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error("Falha ao atualizar key result");
-      return res.json();
+      const json = (await res.json().catch(() => null)) as {
+        data?: unknown;
+        error?: { message?: string };
+      } | null;
+      if (!res.ok) {
+        const msg = json?.error?.message ?? "Falha ao atualizar key result";
+        throw new Error(msg);
+      }
+      return json;
     },
+    onMutate: () => setSaveError(""),
     onSuccess: () => {
       if (!keyResult) return;
       invalidateAfterKeyResultMutation(queryClient, {
@@ -108,6 +135,10 @@ export function EditKeyResultDialog({
         cycleId: keyResult.cycleId,
       });
       emitOpenChange(false);
+    },
+    onError: (err) => {
+      setSaveError(err instanceof Error ? err.message : "Falha ao salvar.");
+      setShowAdvanced(true);
     },
   });
 
@@ -127,6 +158,7 @@ export function EditKeyResultDialog({
     setShowAdvanced(true);
     setDateErrors({});
     setValueError("");
+    setSaveError("");
     prevStartRef.current = "0";
   }
 
@@ -153,6 +185,7 @@ export function EditKeyResultDialog({
     );
     setDateErrors({});
     setValueError("");
+    setSaveError("");
     prevStartRef.current = String(keyResult.startValue);
   }, [open, keyResult]);
 
@@ -234,6 +267,17 @@ export function EditKeyResultDialog({
         next.targetInCycle = `A data-alvo deve ficar entre ${cycle.startDate} e ${cycle.endDate} (ciclo do objetivo).`;
       }
     }
+    const od = linkedObjective;
+    if (od) {
+      if (od.startDate && startDate && startDate < od.startDate) {
+        const refFmt = formatCivilDate(od.startDate, "dd/MM/yyyy") || od.startDate;
+        next.krStartBeforeObjective = `O início do KR não pode ser antes do início do objetivo (${refFmt}).`;
+      }
+      if (od.targetDate && targetDate && targetDate > od.targetDate) {
+        const refFmt = formatCivilDate(od.targetDate, "dd/MM/yyyy") || od.targetDate;
+        next.krTargetAfterObjective = `A data-alvo do KR não pode ser depois da data-alvo do objetivo (${refFmt}).`;
+      }
+    }
     setDateErrors(next);
     if (Object.keys(next).length > 0) setShowAdvanced(true);
     return Object.keys(next).length === 0;
@@ -241,6 +285,7 @@ export function EditKeyResultDialog({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setSaveError("");
     if (!title.trim() || !keyResult) return;
 
     if (!isBoolean) {
@@ -485,10 +530,16 @@ export function EditKeyResultDialog({
                       onChange={(e) => {
                         setStartDate(e.target.value);
                         setDateErrors({});
+                        setSaveError("");
                       }}
                     />
                     {dateErrors.startInCycle && (
                       <p className="text-xs text-destructive">{dateErrors.startInCycle}</p>
+                    )}
+                    {dateErrors.krStartBeforeObjective && (
+                      <p className="text-xs text-destructive">
+                        {dateErrors.krStartBeforeObjective}
+                      </p>
                     )}
                   </div>
                   <div className="space-y-1.5">
@@ -498,10 +549,16 @@ export function EditKeyResultDialog({
                       onChange={(e) => {
                         setTargetDate(e.target.value);
                         setDateErrors({});
+                        setSaveError("");
                       }}
                     />
                     {dateErrors.targetInCycle && (
                       <p className="text-xs text-destructive">{dateErrors.targetInCycle}</p>
+                    )}
+                    {dateErrors.krTargetAfterObjective && (
+                      <p className="text-xs text-destructive">
+                        {dateErrors.krTargetAfterObjective}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -527,6 +584,12 @@ export function EditKeyResultDialog({
               </div>
             )}
           </div>
+
+          {saveError && (
+            <p className="text-sm text-destructive" role="alert">
+              {formatHubKrDateError(saveError)}
+            </p>
+          )}
 
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" type="button" onClick={() => emitOpenChange(false)}>

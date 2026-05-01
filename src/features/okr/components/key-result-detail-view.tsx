@@ -16,6 +16,7 @@ import { EditKeyResultDialog } from "./edit-key-result-dialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatCivilDate } from "@/lib/date/civil-date";
+import { formatOkrProgressPercent } from "@/features/okr/lib/okr-progress-format";
 
 type ObjectiveWithKRs = OkrObjective & { keyResults: OkrKeyResult[] };
 
@@ -211,7 +212,9 @@ export function KeyResultDetailView({ keyResultId, embedded }: KeyResultDetailVi
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Progresso</span>
-            <span className="font-bold tabular-nums">{Math.round(kr.progressPercent)}%</span>
+            <span className="font-bold tabular-nums">
+              {formatOkrProgressPercent(kr.progressPercent)}
+            </span>
           </div>
           <OkrProgressBar percent={kr.progressPercent} status={kr.status} size="md" />
         </div>

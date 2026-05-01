@@ -18,6 +18,7 @@ import {
   invalidateAfterKeyResultMutation,
   invalidateAfterObjectiveMutation,
 } from "@/lib/query/invalidate-hub-cache";
+import { formatOkrProgressPercent } from "@/features/okr/lib/okr-progress-format";
 
 type ObjectiveWithKRs = OkrObjective & { keyResults: OkrKeyResult[] };
 
@@ -199,7 +200,7 @@ export function ObjectiveDetailView({ objectiveId, embedded }: ObjectiveDetailVi
           <MetaItem label="Ciclo" value={cycleName} />
           <MetaItem label="Início" value={formatDate(objective.startDate)} />
           <MetaItem label="Data meta" value={formatDate(objective.targetDate)} />
-          <MetaItem label="Progresso" value={`${Math.round(objective.progressPercent)}%`} />
+          <MetaItem label="Progresso" value={formatOkrProgressPercent(objective.progressPercent)} />
         </div>
 
         {/* Progress bar */}

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { OkrKeyResult } from "@/lib/types/domain";
 import { invalidateAfterKeyResultMutation } from "@/lib/query/invalidate-hub-cache";
+import { formatOkrProgressPercent } from "@/features/okr/lib/okr-progress-format";
 import { OkrProgressBar } from "./okr-progress-bar";
 
 interface UpdateKeyResultDialogProps {
@@ -109,7 +110,7 @@ export function UpdateKeyResultDialog({
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>Progresso atual</span>
               <span className="font-semibold tabular-nums text-foreground">
-                {Math.round(keyResult.progressPercent)}%
+                {formatOkrProgressPercent(keyResult.progressPercent)}
               </span>
             </div>
             <OkrProgressBar
@@ -187,7 +188,7 @@ export function UpdateKeyResultDialog({
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>Preview</span>
                 <span className="font-semibold tabular-nums text-foreground">
-                  {Math.round(previewProgress)}%
+                  {formatOkrProgressPercent(previewProgress)}
                 </span>
               </div>
               <OkrProgressBar percent={previewProgress} size="sm" />
