@@ -148,7 +148,6 @@ Alternativa: usar `*_id` com **UUID real** já existente no D1 (não inventar).
 | `start_value`   | Não         | number | default `0`                                                                |
 | `current_value` | Não         | number | default igual a `start_value`                                              |
 | `status`        | Não         | enum   | `draft`, `on_track`, `at_risk`, `off_track`, `completed` — default `draft` |
-| `confidence`    | Não         | int    | 0–100                                                                      |
 | `start_date`    | Não         | string | `YYYY-MM-DD`                                                               |
 | `target_date`   | Não         | string | `YYYY-MM-DD`                                                               |
 

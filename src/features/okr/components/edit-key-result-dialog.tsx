@@ -81,11 +81,8 @@ export function EditKeyResultDialog({
   const [startValue, setStartValue] = useState("0");
   const [currentValue, setCurrentValue] = useState("0");
   const [targetValue, setTargetValue] = useState("100");
-  /** Cadastro: planejado (draft) vs incluído no acompanhamento (`on_track` ao ativar). */
-  const [cadastroTracking, setCadastroTracking] = useState<"draft" | "active">("draft");
   const [startDate, setStartDate] = useState("");
   const [targetDate, setTargetDate] = useState("");
-  const [confidence, setConfidence] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(true);
   const [dateErrors, setDateErrors] = useState<DateErrors>({});
   const [valueError, setValueError] = useState("");
@@ -153,10 +150,8 @@ export function EditKeyResultDialog({
     setStartValue("0");
     setCurrentValue("0");
     setTargetValue("100");
-    setCadastroTracking("draft");
     setStartDate("");
     setTargetDate("");
-    setConfidence("");
     setShowAdvanced(true);
     setDateErrors({});
     setValueError("");
@@ -179,12 +174,8 @@ export function EditKeyResultDialog({
     setStartValue(String(keyResult.startValue));
     setCurrentValue(String(keyResult.currentValue));
     setTargetValue(String(keyResult.targetValue));
-    setCadastroTracking(keyResult.status === "draft" ? "draft" : "active");
     setStartDate(keyResult.startDate ?? "");
     setTargetDate(keyResult.targetDate ?? "");
-    setConfidence(
-      keyResult.confidence != null && keyResult.confidence >= 0 ? String(keyResult.confidence) : "",
-    );
     setDateErrors({});
     setValueError("");
     setSaveError("");
@@ -310,15 +301,6 @@ export function EditKeyResultDialog({
     setValueError("");
     if (!applyDateValidation()) return;
 
-    const confParsed = confidence.trim() === "" ? undefined : parseInt(confidence, 10);
-    if (
-      confParsed !== undefined &&
-      (Number.isNaN(confParsed) || confParsed < 0 || confParsed > 100)
-    ) {
-      setShowAdvanced(true);
-      return;
-    }
-
     const payload: Record<string, unknown> = {
       title: title.trim(),
       descriptionText: description.trim() || undefined,
@@ -330,10 +312,9 @@ export function EditKeyResultDialog({
       targetValue: isBoolean ? 1 : parseFloat(targetValue),
       startDate: startDate || undefined,
       targetDate: targetDate || undefined,
-      confidence: confParsed,
     };
     if (keyResult.status === "draft") {
-      payload.status = cadastroTracking === "draft" ? "draft" : "on_track";
+      payload.status = "on_track";
     }
     mutation.mutate(payload);
   }
@@ -524,38 +505,24 @@ export function EditKeyResultDialog({
             {showAdvanced && (
               <div className="mt-3 space-y-4 rounded-lg border border-border/70 bg-muted/25 p-3 shadow-inset">
                 <div className="space-y-2">
-                  <Label>Cadastro no acompanhamento</Label>
                   {keyResult.status === "completed" ? (
                     <p className="text-sm text-muted-foreground">
                       Este KR está <span className="font-medium text-foreground">concluído</span> no
                       cadastro. Para alterar o estado operacional ou valores, use &quot;Atualizar
                       progresso&quot; ou reabra itens específicos conforme as regras do workspace.
                     </p>
-                  ) : (
-                    <select
-                      className={nativeSelectClassName}
-                      value={cadastroTracking}
-                      onChange={(e) =>
-                        setCadastroTracking(e.target.value === "draft" ? "draft" : "active")
-                      }
-                    >
-                      <option value="draft">
-                        Planejado (health por ritmo completo após incluir no acompanhamento)
-                      </option>
-                      <option value="active">Incluído no acompanhamento</option>
-                    </select>
-                  )}
+                  ) : null}
+                  <Label>Status operacional (por datas)</Label>
                   <div className="rounded-md border border-border/80 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-                    <p className="font-medium text-foreground">Status operacional (por datas)</p>
-                    <p className="mt-1">
+                    <p className="mt-1 font-medium text-foreground">
                       {workflowPreview?.labelPt ?? "—"}{" "}
-                      <span className="text-muted-foreground/80">
-                        (segue início, meta e progresso atual)
+                      <span className="font-normal text-muted-foreground/80">
+                        (início, meta e progresso atual)
                       </span>
                     </p>
                     <p className="mt-2 text-[11px] leading-relaxed">
-                      O health (Adiantado, No rumo, Em risco, …) é calculado automaticamente na
-                      lista com base no progresso e no tempo na janela — não é este campo.
+                      O health (Adiantado, No rumo, Em risco, …) na lista segue o ritmo face ao
+                      tempo na janela — não é um campo manual aqui.
                     </p>
                   </div>
                 </div>
@@ -601,24 +568,6 @@ export function EditKeyResultDialog({
                   </div>
                 </div>
                 {dateErrors.order && <p className="text-xs text-destructive">{dateErrors.order}</p>}
-
-                <div className="space-y-1.5">
-                  <Label>
-                    Confiança{" "}
-                    <span className="text-xs text-muted-foreground">(opcional, 0–100)</span>
-                  </Label>
-                  <select
-                    className={nativeSelectClassName}
-                    value={confidence}
-                    onChange={(e) => setConfidence(e.target.value)}
-                  >
-                    <option value="">Não informar</option>
-                    <option value="25">Baixa (25)</option>
-                    <option value="50">Média (50)</option>
-                    <option value="75">Alta (75)</option>
-                    <option value="90">Muito alta (90)</option>
-                  </select>
-                </div>
               </div>
             )}
           </div>

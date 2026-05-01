@@ -173,10 +173,9 @@ export function KeyResultDetailView({ keyResultId, embedded }: KeyResultDetailVi
         </div>
 
         {/* Meta grid */}
-        <div className="grid grid-cols-2 gap-4 border-t border-border pt-2 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 border-t border-border pt-2 sm:grid-cols-3">
           <MetaItem label="Início" value={formatDate(kr.startDate)} />
           <MetaItem label="Data meta" value={formatDate(kr.targetDate)} />
-          <MetaItem label="Confiança" value={`${kr.confidence ?? 50}%`} />
           <MetaItem
             label="Atualizado"
             value={format(new Date(kr.updatedAt), "dd MMM yyyy", { locale: ptBR })}

@@ -148,7 +148,6 @@ export interface OkrKeyResult {
   targetValue: number;
   progressPercent: number;
   status: OkrKeyResultStatus;
-  confidence: number | null;
   sortOrder: number;
   startDate: string | null;
   targetDate: string | null;

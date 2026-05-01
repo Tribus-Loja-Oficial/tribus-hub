@@ -473,7 +473,6 @@ async function createKeyResult(
       currentValue: data.current_value ?? data.start_value ?? 0,
       targetValue: data.target_value,
       status: data.status ?? "draft",
-      confidence: data.confidence ?? null,
       startDate: data.start_date ?? null,
       targetDate: data.target_date ?? null,
     },

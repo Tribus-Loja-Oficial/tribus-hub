@@ -120,7 +120,6 @@ describe("createKeyResultSchema", () => {
       startValue: 0,
       currentValue: 3,
       status: "on_track",
-      confidence: 70,
       startDate: "2025-01-01",
       targetDate: "2025-03-31",
       sortOrder: 0,
@@ -136,18 +135,6 @@ describe("createKeyResultSchema", () => {
     expect(createKeyResultSchema.safeParse({ title: "KR", objectiveId: "obj-1" }).success).toBe(
       false,
     );
-  });
-
-  it("rejects confidence below 0", () => {
-    expect(createKeyResultSchema.safeParse({ ...base, confidence: -1 }).success).toBe(false);
-  });
-
-  it("rejects confidence above 100", () => {
-    expect(createKeyResultSchema.safeParse({ ...base, confidence: 101 }).success).toBe(false);
-  });
-
-  it("rejects confidence as float", () => {
-    expect(createKeyResultSchema.safeParse({ ...base, confidence: 75.5 }).success).toBe(false);
   });
 
   it("rejects invalid metricType", () => {

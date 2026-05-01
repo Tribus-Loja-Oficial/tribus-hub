@@ -45,7 +45,6 @@ const okrKeyResultDataSchema = z
     current_value: z.number().optional(),
     target_value: z.number({ required_error: "target_value é obrigatório" }),
     status: z.enum(["draft", "on_track", "at_risk", "off_track", "completed"]).optional(),
-    confidence: z.number().int().min(0).max(100).optional(),
     start_date: z.string().date().optional(),
     target_date: z.string().date().optional(),
   })

@@ -206,12 +206,6 @@ export const INGESTION_TYPE_REFERENCES: IngestionTypeReference[] = [
         enumValues: ["draft", "on_track", "at_risk", "off_track", "completed"],
         default: "draft",
       },
-      {
-        key: "confidence",
-        requirement: "optional",
-        valueType: "integer",
-        hint: "0–100",
-      },
       { key: "start_date", requirement: "optional", valueType: "string (YYYY-MM-DD)" },
       { key: "target_date", requirement: "optional", valueType: "string (YYYY-MM-DD)" },
     ],

@@ -48,7 +48,6 @@ export const createKeyResultSchema = z.object({
   currentValue: z.number().optional(),
   targetValue: z.number(),
   status: z.enum(["draft", "on_track", "at_risk", "off_track", "completed"]).optional(),
-  confidence: z.number().int().min(0).max(100).optional(),
   startDate: z.string().date().optional(),
   targetDate: z.string().date().optional(),
   sortOrder: z.number().int().optional(),

@@ -139,7 +139,6 @@
             "start_value",
             "current_value",
             "status",
-            "confidence",
             "start_date",
             "target_date"
           ],
@@ -170,7 +169,6 @@
                   "type": "string",
                   "enum": ["draft", "on_track", "at_risk", "off_track", "completed"]
                 },
-                "confidence": { "type": "integer", "minimum": 0, "maximum": 100 },
                 "start_date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
                 "target_date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }
               }

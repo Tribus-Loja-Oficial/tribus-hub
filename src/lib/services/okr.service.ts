@@ -277,7 +277,6 @@ export async function createKeyResult(
       currentValue: input.currentValue,
       targetValue: input.targetValue,
       status: input.status,
-      confidence: input.confidence,
       startDate: input.startDate,
       targetDate: input.targetDate,
       sortOrder: input.sortOrder,
