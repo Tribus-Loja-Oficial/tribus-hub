@@ -46,7 +46,7 @@ export const nativeSelectSmClassName = cn(
   focusNeutral,
   disabled,
   selectArrow,
-  "h-8 w-full pl-2.5 pr-9 text-sm",
+  "h-8 w-auto max-w-full pl-2.5 pr-9 text-sm",
 );
 
 /** `<textarea>` nativo */
