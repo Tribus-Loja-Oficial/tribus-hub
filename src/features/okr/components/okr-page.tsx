@@ -8,7 +8,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import Link from "next/link";
 import {
@@ -847,9 +847,9 @@ export function OkrPage() {
                     isExpanded={expanded.has(obj.id)}
                     onToggle={() => toggle(obj.id)}
                     objMenuOpen={objMenu === obj.id}
-                    onObjMenuToggle={() => setObjMenu(objMenu === obj.id ? null : obj.id)}
+                    onObjMenuOpenChange={(open) => setObjMenu(open ? obj.id : null)}
                     krMenuOpen={krMenu}
-                    onKrMenuToggle={(id) => setKrMenu(krMenu === id ? null : id)}
+                    onKrMenuOpenChange={(open, krId) => setKrMenu(open ? krId : null)}
                     onDeleteObj={() => {
                       if (confirm("Remover este objetivo e todos seus key results?"))
                         deleteObjMutation.mutate(obj.id);
@@ -916,9 +916,9 @@ interface ObjectiveBlockProps {
   isExpanded: boolean;
   onToggle: () => void;
   objMenuOpen: boolean;
-  onObjMenuToggle: () => void;
+  onObjMenuOpenChange: (open: boolean) => void;
   krMenuOpen: string | null;
-  onKrMenuToggle: (id: string) => void;
+  onKrMenuOpenChange: (open: boolean, krId: string) => void;
   onDeleteObj: () => void;
   onDeleteKr: (id: string) => void;
   onAddKr: () => void;
@@ -932,14 +932,15 @@ function ObjectiveBlock({
   isExpanded,
   onToggle,
   objMenuOpen,
-  onObjMenuToggle,
+  onObjMenuOpenChange,
   krMenuOpen,
-  onKrMenuToggle,
+  onKrMenuOpenChange,
   onDeleteObj,
   onDeleteKr,
   onAddKr,
   onUpdateKr,
 }: ObjectiveBlockProps) {
+  const router = useRouter();
   const krs = objective.keyResults;
   const krCount = krs.length;
   const completedKrs = krs.filter((k) => k.status === "completed").length;
@@ -1086,12 +1087,7 @@ function ObjectiveBlock({
           >
             <Plus className="h-3.5 w-3.5" />
           </Button>
-          <DropdownMenu.Root
-            open={objMenuOpen}
-            onOpenChange={(open) => {
-              if (open !== objMenuOpen) onObjMenuToggle();
-            }}
-          >
+          <DropdownMenu.Root modal={false} open={objMenuOpen} onOpenChange={onObjMenuOpenChange}>
             <DropdownMenu.Trigger asChild>
               <Button
                 type="button"
@@ -1109,14 +1105,12 @@ function ObjectiveBlock({
                 align="end"
                 className="z-[300] min-w-[11rem] rounded-lg border border-border/90 bg-popover p-1 shadow-popover"
               >
-                <DropdownMenu.Item asChild>
-                  <Link
-                    href={`/okr/objectives/${objective.id}`}
-                    className="flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none data-[highlighted]:bg-accent"
-                  >
-                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
-                    Ver detalhes
-                  </Link>
+                <DropdownMenu.Item
+                  className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none data-[highlighted]:bg-accent"
+                  onSelect={() => router.push(`/okr/objectives/${objective.id}`)}
+                >
+                  <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                  Ver detalhes
                 </DropdownMenu.Item>
                 <DropdownMenu.Item
                   className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none data-[highlighted]:bg-accent"
@@ -1184,7 +1178,7 @@ function ObjectiveBlock({
                   kr={kr}
                   isLast={idx === krs.length - 1}
                   menuOpen={krMenuOpen === kr.id}
-                  onMenuToggle={() => onKrMenuToggle(kr.id)}
+                  onKrMenuOpenChange={(open) => onKrMenuOpenChange(open, kr.id)}
                   onUpdate={() => onUpdateKr(kr)}
                   onDelete={() => onDeleteKr(kr.id)}
                 />
@@ -1214,12 +1208,21 @@ interface KrRowProps {
   kr: OkrKeyResult;
   isLast: boolean;
   menuOpen: boolean;
-  onMenuToggle: () => void;
+  onKrMenuOpenChange: (open: boolean) => void;
   onUpdate: () => void;
   onDelete: () => void;
 }
 
-function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete }: KrRowProps) {
+function KrRow({
+  gridTpl,
+  kr,
+  isLast,
+  menuOpen,
+  onKrMenuOpenChange,
+  onUpdate,
+  onDelete,
+}: KrRowProps) {
+  const router = useRouter();
   const metric = fmtMetric(kr);
   const targetDate = fmtDate(kr.targetDate);
   const krWorkflow = deriveOkrWorkflowStatusInsight({
@@ -1337,12 +1340,7 @@ function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete
         >
           <RefreshCw className="h-3.5 w-3.5" />
         </Button>
-        <DropdownMenu.Root
-          open={menuOpen}
-          onOpenChange={(open) => {
-            if (open !== menuOpen) onMenuToggle();
-          }}
-        >
+        <DropdownMenu.Root modal={false} open={menuOpen} onOpenChange={onKrMenuOpenChange}>
           <DropdownMenu.Trigger asChild>
             <Button
               type="button"
@@ -1360,14 +1358,12 @@ function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete
               align="end"
               className="z-[300] min-w-[11rem] rounded-lg border border-border/90 bg-popover p-1 shadow-popover"
             >
-              <DropdownMenu.Item asChild>
-                <Link
-                  href={`/okr/key-results/${kr.id}`}
-                  className="flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none data-[highlighted]:bg-accent"
-                >
-                  <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
-                  Ver detalhes
-                </Link>
+              <DropdownMenu.Item
+                className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none data-[highlighted]:bg-accent"
+                onSelect={() => router.push(`/okr/key-results/${kr.id}`)}
+              >
+                <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                Ver detalhes
               </DropdownMenu.Item>
               <DropdownMenu.Item
                 className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none data-[highlighted]:bg-accent"
