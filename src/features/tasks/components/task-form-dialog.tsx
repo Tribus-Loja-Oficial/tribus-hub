@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { DateField } from "@/components/ui/date-field";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils/cn";
+import { nativeSelectClassName } from "@/components/ui/form-control-classes";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -88,9 +89,6 @@ function FieldLabel({
     </label>
   );
 }
-
-const selectClass =
-  "w-full h-9 rounded-md border border-input bg-background px-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed";
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -391,7 +389,7 @@ export function TaskFormDialog({
                 <FieldLabel htmlFor="task-project">Projeto</FieldLabel>
                 <select
                   id="task-project"
-                  className={selectClass}
+                  className={nativeSelectClassName}
                   value={projectId}
                   onChange={(e) => {
                     setProjectId(e.target.value);
@@ -411,7 +409,7 @@ export function TaskFormDialog({
                 <FieldLabel htmlFor="task-milestone">Milestone</FieldLabel>
                 <select
                   id="task-milestone"
-                  className={selectClass}
+                  className={nativeSelectClassName}
                   value={milestoneId}
                   onChange={(e) => setMilestoneId(e.target.value)}
                   disabled={!milestoneQueryProjectId}
@@ -447,7 +445,7 @@ export function TaskFormDialog({
                   <FieldLabel htmlFor="task-assignee">Responsável</FieldLabel>
                   <select
                     id="task-assignee"
-                    className={selectClass}
+                    className={nativeSelectClassName}
                     value={assigneeUserId}
                     onChange={(e) => setAssigneeUserId(e.target.value)}
                   >
@@ -493,7 +491,7 @@ export function TaskFormDialog({
                     value={estimateValue}
                     onChange={(e) => setEstimateValue(e.target.value)}
                     placeholder={estimationUnit === "hours" ? "Ex.: 6" : "Ex.: 5"}
-                    className={selectClass}
+                    className={nativeSelectClassName}
                   />
                 </div>
               ) : null}
@@ -506,7 +504,7 @@ export function TaskFormDialog({
                   </FieldLabel>
                   <select
                     id="task-column"
-                    className={selectClass}
+                    className={nativeSelectClassName}
                     value={columnId}
                     onChange={(e) => setColumnId(e.target.value)}
                   >

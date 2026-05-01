@@ -11,6 +11,7 @@ import type { TaskColumn } from "@/lib/types/domain";
 import type { BoardTask } from "@/lib/services/task-board.service";
 import { KanbanBoard } from "@/components/board/kanban-board";
 import { Button } from "@/components/ui/button";
+import { nativeSelectSmClassName } from "@/components/ui/form-control-classes";
 import { TaskFormDialog } from "./task-form-dialog";
 
 interface BoardPayload {
@@ -296,7 +297,7 @@ export function TaskBoardPage() {
               Projeto
             </span>
             <select
-              className="h-9 min-w-[160px] rounded-md border border-input bg-background px-2 text-sm"
+              className={cn(nativeSelectSmClassName, "h-9 min-w-[160px]")}
               value={projectFilter}
               onChange={(e) => {
                 setProjectFilter(e.target.value);
@@ -316,7 +317,7 @@ export function TaskBoardPage() {
               Milestone
             </span>
             <select
-              className="h-9 min-w-[160px] rounded-md border border-input bg-background px-2 text-sm"
+              className={cn(nativeSelectSmClassName, "h-9 min-w-[160px]")}
               value={milestoneFilter}
               onChange={(e) => setMilestoneFilter(e.target.value)}
               disabled={!projectFilter}
@@ -334,7 +335,7 @@ export function TaskBoardPage() {
               Prioridade
             </span>
             <select
-              className="h-9 min-w-[120px] rounded-md border border-input bg-background px-2 text-sm"
+              className={cn(nativeSelectSmClassName, "h-9 min-w-[120px]")}
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
             >
@@ -350,7 +351,7 @@ export function TaskBoardPage() {
               Etiqueta
             </span>
             <select
-              className="h-9 min-w-[140px] rounded-md border border-input bg-background px-2 text-sm"
+              className={cn(nativeSelectSmClassName, "h-9 min-w-[140px]")}
               value={labelFilter}
               onChange={(e) => setLabelFilter(e.target.value)}
             >
@@ -367,7 +368,7 @@ export function TaskBoardPage() {
               Responsável
             </span>
             <select
-              className="h-9 min-w-[160px] rounded-md border border-input bg-background px-2 text-sm"
+              className={cn(nativeSelectSmClassName, "h-9 min-w-[160px]")}
               value={assigneeFilter}
               onChange={(e) => setAssigneeFilter(e.target.value)}
             >
@@ -384,7 +385,7 @@ export function TaskBoardPage() {
               Vencimento
             </span>
             <select
-              className="h-9 min-w-[140px] rounded-md border border-input bg-background px-2 text-sm"
+              className={cn(nativeSelectSmClassName, "h-9 min-w-[140px]")}
               value={dueFilter}
               onChange={(e) => setDueFilter(e.target.value)}
             >
