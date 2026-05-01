@@ -296,8 +296,14 @@ export function KeyResultDetailView({ keyResultId, embedded }: KeyResultDetailVi
         open={editOpen}
         onOpenChange={setEditOpen}
         keyResult={editOpen ? kr : null}
+        nested={embedded}
       />
-      <UpdateKeyResultDialog open={updateOpen} onOpenChange={setUpdateOpen} keyResult={kr} />
+      <UpdateKeyResultDialog
+        open={updateOpen}
+        onOpenChange={setUpdateOpen}
+        keyResult={kr}
+        nested={embedded}
+      />
     </div>
   );
 }

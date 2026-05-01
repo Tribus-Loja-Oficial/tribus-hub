@@ -16,12 +16,14 @@ interface UpdateKeyResultDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   keyResult: OkrKeyResult | null;
+  nested?: boolean;
 }
 
 export function UpdateKeyResultDialog({
   open,
   onOpenChange,
   keyResult,
+  nested = false,
 }: UpdateKeyResultDialogProps) {
   const queryClient = useQueryClient();
   const [newValue, setNewValue] = useState("");
@@ -95,7 +97,7 @@ export function UpdateKeyResultDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent nested={nested} className="max-w-sm">
         <DialogHeader>
           <DialogTitle>Atualizar progresso</DialogTitle>
         </DialogHeader>

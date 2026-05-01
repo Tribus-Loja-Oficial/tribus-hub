@@ -29,6 +29,8 @@ interface EditKeyResultDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   keyResult: OkrKeyResult | null;
+  /** Quick view / outro Dialog por cima — evita z-index e cliques bloqueados. */
+  nested?: boolean;
 }
 
 function calcKrProgress(
@@ -45,7 +47,12 @@ function calcKrProgress(
 
 type DateErrors = { order?: string; startInCycle?: string; targetInCycle?: string };
 
-export function EditKeyResultDialog({ open, onOpenChange, keyResult }: EditKeyResultDialogProps) {
+export function EditKeyResultDialog({
+  open,
+  onOpenChange,
+  keyResult,
+  nested = false,
+}: EditKeyResultDialogProps) {
   const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -277,7 +284,7 @@ export function EditKeyResultDialog({ open, onOpenChange, keyResult }: EditKeyRe
 
   return (
     <Dialog open={open} onOpenChange={emitOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
+      <DialogContent nested={nested} className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar key result</DialogTitle>
         </DialogHeader>
