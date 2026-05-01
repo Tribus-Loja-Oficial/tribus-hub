@@ -5,8 +5,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { ArrowLeft, Target, TrendingUp, Plus, RefreshCw, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { nativeSelectSmClassName } from "@/components/ui/form-control-classes";
-import { cn } from "@/lib/utils/cn";
 import type { OkrObjective, OkrKeyResult, OkrCycle } from "@/lib/types/domain";
 import { OkrEntityStatusRow, OkrPriorityBadge } from "./okr-status-badge";
 import { OkrProgressBar, MiniProgressRing } from "./okr-progress-bar";
@@ -39,8 +37,6 @@ export function ObjectiveDetailView({ objectiveId, embedded }: ObjectiveDetailVi
   const [editObjectiveOpen, setEditObjectiveOpen] = useState(false);
   const [updateKrOpen, setUpdateKrOpen] = useState(false);
   const [selectedKr, setSelectedKr] = useState<OkrKeyResult | null>(null);
-  const [editingStatus, setEditingStatus] = useState(false);
-
   const { data, isLoading } = useQuery<{ data: ObjectiveWithKRs }>({
     queryKey: ["okr-objective", objectiveId],
     queryFn: async (): Promise<{ data: ObjectiveWithKRs }> => {
@@ -54,25 +50,6 @@ export function ObjectiveDetailView({ objectiveId, embedded }: ObjectiveDetailVi
   const { data: cyclesRes } = useQuery<{ data: OkrCycle[] }>({
     queryKey: ["okr-cycles"],
     queryFn: () => fetch("/api/okr/cycles").then((r) => r.json()),
-  });
-
-  const patchMutation = useMutation({
-    mutationFn: async (body: Record<string, unknown>) => {
-      const res = await fetch(`/api/okr/objectives/${objectiveId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error("Falha ao atualizar objetivo");
-      return res.json();
-    },
-    onSuccess: () => {
-      invalidateAfterObjectiveMutation(queryClient, {
-        objectiveId,
-        cycleId: data?.data?.cycleId ?? null,
-      });
-      setEditingStatus(false);
-    },
   });
 
   const deleteMutation = useMutation({
@@ -164,32 +141,14 @@ export function ObjectiveDetailView({ objectiveId, embedded }: ObjectiveDetailVi
               <p className="mt-1 text-sm text-muted-foreground">{objective.descriptionText}</p>
             )}
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              {editingStatus ? (
-                <select
-                  autoFocus
-                  className={cn(nativeSelectSmClassName, "h-7 text-xs")}
-                  defaultValue={objective.status}
-                  onChange={(e) => patchMutation.mutate({ status: e.target.value })}
-                  onBlur={() => setEditingStatus(false)}
-                >
-                  <option value="draft">Rascunho</option>
-                  <option value="on_track">No rumo</option>
-                  <option value="at_risk">Em risco</option>
-                  <option value="off_track">Fora do rumo</option>
-                  <option value="completed">Concluído</option>
-                </select>
-              ) : (
-                <button onClick={() => setEditingStatus(true)}>
-                  <OkrEntityStatusRow
-                    status={objective.status}
-                    workflowStatusInsight={objective.workflowStatusInsight}
-                    healthInsight={objective.healthInsight}
-                    startDate={objective.startDate}
-                    targetDate={objective.targetDate}
-                    progressPercent={objective.progressPercent}
-                  />
-                </button>
-              )}
+              <OkrEntityStatusRow
+                status={objective.status}
+                workflowStatusInsight={objective.workflowStatusInsight}
+                healthInsight={objective.healthInsight}
+                startDate={objective.startDate}
+                targetDate={objective.targetDate}
+                progressPercent={objective.progressPercent}
+              />
               <OkrPriorityBadge priority={objective.priority} />
             </div>
           </div>

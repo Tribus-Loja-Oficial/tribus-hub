@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/form-control-classes";
 import { Label } from "@/components/ui/label";
 import type { OkrCycle, OkrObjective } from "@/lib/types/domain";
+import { deriveOkrWorkflowStatusInsight } from "@/features/okr/lib/okr-workflow-status";
 
 type ObjectiveForEdit = OkrObjective & { keyResults?: unknown[] };
 
@@ -44,7 +45,7 @@ export function UpdateObjectiveDialog({
   const [title, setTitle] = useState("");
   const [cycleId, setCycleId] = useState("");
   const [ownerUserId, setOwnerUserId] = useState("");
-  const [status, setStatus] = useState("draft");
+  const [cadastroTracking, setCadastroTracking] = useState<"draft" | "active">("draft");
   const [priority, setPriority] = useState("medium");
   const [startDate, setStartDate] = useState("");
   const [targetDate, setTargetDate] = useState("");
@@ -89,7 +90,7 @@ export function UpdateObjectiveDialog({
     setTitle("");
     setCycleId("");
     setOwnerUserId("");
-    setStatus("draft");
+    setCadastroTracking("draft");
     setPriority("medium");
     setStartDate("");
     setTargetDate("");
@@ -108,7 +109,7 @@ export function UpdateObjectiveDialog({
     setTitle(objective.title);
     setCycleId(objective.cycleId ?? "");
     setOwnerUserId(objective.ownerUserId ?? "");
-    setStatus(objective.status);
+    setCadastroTracking(objective.status === "draft" ? "draft" : "active");
     setPriority(objective.priority);
     setStartDate(objective.startDate ?? "");
     setTargetDate(objective.targetDate ?? "");
@@ -120,6 +121,23 @@ export function UpdateObjectiveDialog({
   const members = membersRes?.data ?? [];
 
   const selectedCycle = useMemo(() => cycles.find((c) => c.id === cycleId), [cycles, cycleId]);
+
+  const previewCadastroStatus = useMemo(() => {
+    if (cadastroTracking === "draft") return "draft";
+    if (objective?.status === "draft") return "on_track";
+    return objective?.status ?? "on_track";
+  }, [cadastroTracking, objective?.status]);
+
+  const workflowPreview = useMemo(() => {
+    if (!objective) return null;
+    return deriveOkrWorkflowStatusInsight({
+      workflowStatusInsight: objective.workflowStatusInsight,
+      startDate,
+      targetDate,
+      progressPercent: objective.progressPercent,
+      okrCadastroStatus: previewCadastroStatus,
+    });
+  }, [objective, startDate, targetDate, previewCadastroStatus]);
 
   function applyDateValidation(): boolean {
     const next: DateFieldErrors = {};
@@ -146,16 +164,19 @@ export function UpdateObjectiveDialog({
     e.preventDefault();
     if (!title.trim() || !objective) return;
     if (!applyDateValidation()) return;
-    mutation.mutate({
+    const payload: Record<string, unknown> = {
       title: title.trim(),
       descriptionText: description.trim() || undefined,
       cycleId: cycleId || undefined,
       ownerUserId: ownerUserId || undefined,
-      status,
       priority,
       startDate: startDate || undefined,
       targetDate: targetDate || undefined,
-    });
+    };
+    if (objective.status === "draft") {
+      payload.status = cadastroTracking === "draft" ? "draft" : "on_track";
+    }
+    mutation.mutate(payload);
   }
 
   if (!objective) return null;
@@ -245,19 +266,35 @@ export function UpdateObjectiveDialog({
             {showAdvanced && (
               <div className="mt-3 space-y-4 rounded-lg border border-border/70 bg-muted/25 p-3 shadow-inset">
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label>Status</Label>
-                    <select
-                      className={nativeSelectClassName}
-                      value={status}
-                      onChange={(e) => setStatus(e.target.value)}
-                    >
-                      <option value="draft">Rascunho</option>
-                      <option value="on_track">No rumo</option>
-                      <option value="at_risk">Em risco</option>
-                      <option value="off_track">Fora do rumo</option>
-                      <option value="completed">Concluído</option>
-                    </select>
+                  <div className="space-y-2">
+                    <Label>Cadastro no acompanhamento</Label>
+                    {objective.status === "completed" ? (
+                      <p className="text-sm text-muted-foreground">
+                        Objetivo <span className="font-medium text-foreground">concluído</span> no
+                        cadastro.
+                      </p>
+                    ) : (
+                      <select
+                        className={nativeSelectClassName}
+                        value={cadastroTracking}
+                        onChange={(e) =>
+                          setCadastroTracking(e.target.value === "draft" ? "draft" : "active")
+                        }
+                      >
+                        <option value="draft">
+                          Rascunho (health por ritmo não corre até incluir)
+                        </option>
+                        <option value="active">Incluído no acompanhamento</option>
+                      </select>
+                    )}
+                    <div className="rounded-md border border-border/80 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                      <p className="font-medium text-foreground">Status operacional (por datas)</p>
+                      <p className="mt-1">{workflowPreview?.labelPt ?? "—"}</p>
+                      <p className="mt-2 text-[11px] leading-relaxed">
+                        O health na lista é calculado automaticamente (progresso vs tempo na
+                        janela).
+                      </p>
+                    </div>
                   </div>
 
                   <div className="space-y-1.5">

@@ -13,8 +13,9 @@ import {
 } from "@/components/ui/form-control-classes";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { OkrCycle } from "@/lib/types/domain";
+import type { OkrCycle, WorkflowStatusInsight } from "@/lib/types/domain";
 import { invalidateAfterObjectiveMutation } from "@/lib/query/invalidate-hub-cache";
+import { deriveOkrWorkflowStatusInsight } from "@/features/okr/lib/okr-workflow-status";
 
 interface MemberRow {
   id: string;
@@ -44,7 +45,7 @@ export function CreateObjectiveDialog({
   const [title, setTitle] = useState("");
   const [cycleId, setCycleId] = useState(defaultCycleId ?? "");
   const [ownerUserId, setOwnerUserId] = useState("");
-  const [status, setStatus] = useState("draft");
+  const [cadastroTracking, setCadastroTracking] = useState<"draft" | "active">("draft");
   const [priority, setPriority] = useState("medium");
   const [startDate, setStartDate] = useState("");
   const [targetDate, setTargetDate] = useState("");
@@ -91,7 +92,7 @@ export function CreateObjectiveDialog({
     setTitle("");
     setCycleId(defaultCycleId ?? "");
     setOwnerUserId("");
-    setStatus("draft");
+    setCadastroTracking("draft");
     setPriority("medium");
     setStartDate("");
     setTargetDate("");
@@ -116,6 +117,30 @@ export function CreateObjectiveDialog({
   const members = membersRes?.data ?? [];
 
   const selectedCycle = useMemo(() => cycles.find((c) => c.id === cycleId), [cycles, cycleId]);
+
+  const syntheticWorkflowBase = useMemo((): WorkflowStatusInsight => {
+    return {
+      slug: "planned",
+      labelPt: "Planejado",
+      dateSourcePt: "Pré-visualização",
+      windowStart: startDate || null,
+      windowEnd: targetDate || null,
+      locked: false,
+      explanationPt: "",
+    };
+  }, [startDate, targetDate]);
+
+  const previewCadastroStatus = cadastroTracking === "draft" ? "draft" : "on_track";
+
+  const workflowPreview = useMemo(() => {
+    return deriveOkrWorkflowStatusInsight({
+      workflowStatusInsight: syntheticWorkflowBase,
+      startDate,
+      targetDate,
+      progressPercent: 0,
+      okrCadastroStatus: previewCadastroStatus,
+    });
+  }, [syntheticWorkflowBase, startDate, targetDate, previewCadastroStatus]);
 
   function applyDateValidation(): boolean {
     const next: DateFieldErrors = {};
@@ -151,7 +176,7 @@ export function CreateObjectiveDialog({
       descriptionText: description.trim() || undefined,
       cycleId: cycleId || undefined,
       ownerUserId: ownerUserId || undefined,
-      status,
+      status: cadastroTracking === "draft" ? "draft" : "on_track",
       priority,
       startDate: startDate || undefined,
       targetDate: targetDate || undefined,
@@ -243,19 +268,28 @@ export function CreateObjectiveDialog({
             {showAdvanced && (
               <div className="mt-3 space-y-4 rounded-lg border border-border/70 bg-muted/25 p-3 shadow-inset">
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label>Status</Label>
+                  <div className="space-y-2">
+                    <Label>Cadastro no acompanhamento</Label>
                     <select
                       className={nativeSelectClassName}
-                      value={status}
-                      onChange={(e) => setStatus(e.target.value)}
+                      value={cadastroTracking}
+                      onChange={(e) =>
+                        setCadastroTracking(e.target.value === "draft" ? "draft" : "active")
+                      }
                     >
-                      <option value="draft">Rascunho</option>
-                      <option value="on_track">No rumo</option>
-                      <option value="at_risk">Em risco</option>
-                      <option value="off_track">Fora do rumo</option>
-                      <option value="completed">Concluído</option>
+                      <option value="draft">
+                        Rascunho (health por ritmo não corre até incluir)
+                      </option>
+                      <option value="active">Incluído no acompanhamento</option>
                     </select>
+                    <div className="rounded-md border border-border/80 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                      <p className="font-medium text-foreground">Status operacional (por datas)</p>
+                      <p className="mt-1">{workflowPreview?.labelPt ?? "—"}</p>
+                      <p className="mt-2 text-[11px] leading-relaxed">
+                        O health na lista é calculado automaticamente (progresso vs tempo na
+                        janela).
+                      </p>
+                    </div>
                   </div>
 
                   <div className="space-y-1.5">

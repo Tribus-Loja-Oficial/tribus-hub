@@ -106,6 +106,7 @@ export function OkrEntityStatusRow({
     startDate,
     targetDate,
     progressPercent,
+    okrCadastroStatus: status,
   });
   const health = reconcileOkrHealthInsightForDisplay(healthInsight, {
     startDate,

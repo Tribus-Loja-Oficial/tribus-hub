@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils/cn";
 import type { OkrCycle, OkrKeyResult, OkrObjective } from "@/lib/types/domain";
 import { formatCivilDate } from "@/lib/date/civil-date";
 import { invalidateAfterKeyResultMutation } from "@/lib/query/invalidate-hub-cache";
+import { deriveOkrWorkflowStatusInsight } from "@/features/okr/lib/okr-workflow-status";
 
 type ObjectiveWithKRs = OkrObjective & { keyResults: unknown[] };
 
@@ -80,7 +81,8 @@ export function EditKeyResultDialog({
   const [startValue, setStartValue] = useState("0");
   const [currentValue, setCurrentValue] = useState("0");
   const [targetValue, setTargetValue] = useState("100");
-  const [status, setStatus] = useState("draft");
+  /** Cadastro: rascunho vs incluído no acompanhamento (`on_track` ao sair do rascunho). */
+  const [cadastroTracking, setCadastroTracking] = useState<"draft" | "active">("draft");
   const [startDate, setStartDate] = useState("");
   const [targetDate, setTargetDate] = useState("");
   const [confidence, setConfidence] = useState("");
@@ -151,7 +153,7 @@ export function EditKeyResultDialog({
     setStartValue("0");
     setCurrentValue("0");
     setTargetValue("100");
-    setStatus("draft");
+    setCadastroTracking("draft");
     setStartDate("");
     setTargetDate("");
     setConfidence("");
@@ -177,7 +179,7 @@ export function EditKeyResultDialog({
     setStartValue(String(keyResult.startValue));
     setCurrentValue(String(keyResult.currentValue));
     setTargetValue(String(keyResult.targetValue));
-    setStatus(keyResult.status);
+    setCadastroTracking(keyResult.status === "draft" ? "draft" : "active");
     setStartDate(keyResult.startDate ?? "");
     setTargetDate(keyResult.targetDate ?? "");
     setConfidence(
@@ -213,6 +215,25 @@ export function EditKeyResultDialog({
   const progressPreview = numsOk
     ? Math.round(calcKrProgress(startNum, currentNum, targetNum, metricType) * 10) / 10
     : null;
+
+  /** Efetivo para derivar a coluna operacional: rascunho, ou o que seria após ativar. */
+  const previewCadastroStatus = useMemo(() => {
+    if (cadastroTracking === "draft") return "draft";
+    if (keyResult?.status === "draft") return "on_track";
+    return keyResult?.status ?? "on_track";
+  }, [cadastroTracking, keyResult?.status]);
+
+  const workflowPreview = useMemo(() => {
+    if (!keyResult) return null;
+    const p = progressPreview !== null && numsOk ? progressPreview : keyResult.progressPercent;
+    return deriveOkrWorkflowStatusInsight({
+      workflowStatusInsight: keyResult.workflowStatusInsight,
+      startDate,
+      targetDate,
+      progressPercent: p,
+      okrCadastroStatus: previewCadastroStatus,
+    });
+  }, [keyResult, startDate, targetDate, progressPreview, numsOk, previewCadastroStatus]);
 
   const valueHint = useMemo(() => {
     if (!numsOk || isBoolean) return null;
@@ -306,7 +327,7 @@ export function EditKeyResultDialog({
       return;
     }
 
-    mutation.mutate({
+    const payload: Record<string, unknown> = {
       title: title.trim(),
       descriptionText: description.trim() || undefined,
       ownerUserId: ownerUserId || undefined,
@@ -315,11 +336,14 @@ export function EditKeyResultDialog({
       startValue: parseFloat(startValue) || 0,
       currentValue: isBoolean ? parseFloat(currentValue) || 0 : parseFloat(currentValue) || 0,
       targetValue: isBoolean ? 1 : parseFloat(targetValue),
-      status,
       startDate: startDate || undefined,
       targetDate: targetDate || undefined,
       confidence: confParsed,
-    });
+    };
+    if (keyResult.status === "draft") {
+      payload.status = cadastroTracking === "draft" ? "draft" : "on_track";
+    }
+    mutation.mutate(payload);
   }
 
   const valueStep =
@@ -507,19 +531,41 @@ export function EditKeyResultDialog({
             </button>
             {showAdvanced && (
               <div className="mt-3 space-y-4 rounded-lg border border-border/70 bg-muted/25 p-3 shadow-inset">
-                <div className="space-y-1.5">
-                  <Label>Status</Label>
-                  <select
-                    className={nativeSelectClassName}
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                  >
-                    <option value="draft">Rascunho</option>
-                    <option value="on_track">No rumo</option>
-                    <option value="at_risk">Em risco</option>
-                    <option value="off_track">Fora do rumo</option>
-                    <option value="completed">Concluído</option>
-                  </select>
+                <div className="space-y-2">
+                  <Label>Cadastro no acompanhamento</Label>
+                  {keyResult.status === "completed" ? (
+                    <p className="text-sm text-muted-foreground">
+                      Este KR está <span className="font-medium text-foreground">concluído</span> no
+                      cadastro. Para alterar o estado operacional ou valores, use &quot;Atualizar
+                      progresso&quot; ou reabra itens específicos conforme as regras do workspace.
+                    </p>
+                  ) : (
+                    <select
+                      className={nativeSelectClassName}
+                      value={cadastroTracking}
+                      onChange={(e) =>
+                        setCadastroTracking(e.target.value === "draft" ? "draft" : "active")
+                      }
+                    >
+                      <option value="draft">
+                        Rascunho (health por ritmo não corre até incluir)
+                      </option>
+                      <option value="active">Incluído no acompanhamento</option>
+                    </select>
+                  )}
+                  <div className="rounded-md border border-border/80 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                    <p className="font-medium text-foreground">Status operacional (por datas)</p>
+                    <p className="mt-1">
+                      {workflowPreview?.labelPt ?? "—"}{" "}
+                      <span className="text-muted-foreground/80">
+                        (segue início, meta e progresso atual)
+                      </span>
+                    </p>
+                    <p className="mt-2 text-[11px] leading-relaxed">
+                      O health (Adiantado, No rumo, Em risco, …) é calculado automaticamente na
+                      lista com base no progresso e no tempo na janela — não é este campo.
+                    </p>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">

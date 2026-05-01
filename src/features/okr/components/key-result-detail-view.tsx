@@ -1,14 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { ArrowLeft, TrendingUp, RefreshCw, Activity, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { nativeSelectSmClassName } from "@/components/ui/form-control-classes";
-import { cn } from "@/lib/utils/cn";
 import type { OkrKeyResult, OkrKeyResultUpdate, OkrObjective } from "@/lib/types/domain";
-import { invalidateAfterKeyResultMutation } from "@/lib/query/invalidate-hub-cache";
 import { OkrEntityStatusRow } from "./okr-status-badge";
 import { OkrProgressBar, MiniProgressRing } from "./okr-progress-bar";
 import { UpdateKeyResultDialog } from "./update-key-result-dialog";
@@ -40,11 +37,8 @@ interface KeyResultDetailViewProps {
 }
 
 export function KeyResultDetailView({ keyResultId, embedded }: KeyResultDetailViewProps) {
-  const queryClient = useQueryClient();
   const [updateOpen, setUpdateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [editingStatus, setEditingStatus] = useState(false);
-
   const { data, isLoading } = useQuery<{ data: OkrKeyResult }>({
     queryKey: ["okr-key-result", keyResultId],
     queryFn: () => fetch(`/api/okr/key-results/${keyResultId}`).then((r) => r.json()),
@@ -60,29 +54,6 @@ export function KeyResultDetailView({ keyResultId, embedded }: KeyResultDetailVi
   const { data: objectivesRes } = useQuery<{ data: ObjectiveWithKRs[] }>({
     queryKey: ["okr-objectives"],
     queryFn: () => fetch("/api/okr/objectives").then((r) => r.json()),
-  });
-
-  const patchMutation = useMutation({
-    mutationFn: async (body: Record<string, unknown>) => {
-      const res = await fetch(`/api/okr/key-results/${keyResultId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error("Falha ao atualizar KR");
-      return res.json();
-    },
-    onSuccess: (json: { data?: OkrKeyResult }) => {
-      const k = json?.data;
-      if (k) {
-        invalidateAfterKeyResultMutation(queryClient, {
-          keyResultId: k.id,
-          objectiveId: k.objectiveId,
-          cycleId: k.cycleId,
-        });
-      }
-      setEditingStatus(false);
-    },
   });
 
   if (isLoading) {
@@ -148,32 +119,14 @@ export function KeyResultDetailView({ keyResultId, embedded }: KeyResultDetailVi
               </Link>
             )}
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              {editingStatus ? (
-                <select
-                  autoFocus
-                  className={cn(nativeSelectSmClassName, "h-7 text-xs")}
-                  defaultValue={kr.status}
-                  onChange={(e) => patchMutation.mutate({ status: e.target.value })}
-                  onBlur={() => setEditingStatus(false)}
-                >
-                  <option value="draft">Rascunho</option>
-                  <option value="on_track">No rumo</option>
-                  <option value="at_risk">Em risco</option>
-                  <option value="off_track">Fora do rumo</option>
-                  <option value="completed">Concluído</option>
-                </select>
-              ) : (
-                <button onClick={() => setEditingStatus(true)}>
-                  <OkrEntityStatusRow
-                    status={kr.status}
-                    workflowStatusInsight={kr.workflowStatusInsight}
-                    healthInsight={kr.healthInsight}
-                    startDate={kr.startDate}
-                    targetDate={kr.targetDate}
-                    progressPercent={kr.progressPercent}
-                  />
-                </button>
-              )}
+              <OkrEntityStatusRow
+                status={kr.status}
+                workflowStatusInsight={kr.workflowStatusInsight}
+                healthInsight={kr.healthInsight}
+                startDate={kr.startDate}
+                targetDate={kr.targetDate}
+                progressPercent={kr.progressPercent}
+              />
               <span className="text-xs text-muted-foreground">{METRIC_LABELS[kr.metricType]}</span>
               {kr.unit && <span className="text-xs text-muted-foreground">· {kr.unit}</span>}
             </div>

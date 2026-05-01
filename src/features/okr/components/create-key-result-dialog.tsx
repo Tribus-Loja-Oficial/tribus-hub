@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils/cn";
 import type { OkrCycle, OkrKeyResult, OkrObjective } from "@/lib/types/domain";
 import { invalidateAfterKeyResultMutation } from "@/lib/query/invalidate-hub-cache";
+import { deriveOkrWorkflowStatusInsight } from "@/features/okr/lib/okr-workflow-status";
 
 type ObjectiveWithKRs = OkrObjective & { keyResults: unknown[] };
 
@@ -62,7 +63,7 @@ export function CreateKeyResultDialog({
   const [startValue, setStartValue] = useState("0");
   const [currentValue, setCurrentValue] = useState("0");
   const [targetValue, setTargetValue] = useState("100");
-  const [status, setStatus] = useState("draft");
+  const [cadastroTracking, setCadastroTracking] = useState<"draft" | "active">("draft");
   const [startDate, setStartDate] = useState("");
   const [targetDate, setTargetDate] = useState("");
   const [confidence, setConfidence] = useState("");
@@ -121,7 +122,7 @@ export function CreateKeyResultDialog({
     setStartValue("0");
     setCurrentValue("0");
     setTargetValue("100");
-    setStatus("draft");
+    setCadastroTracking("draft");
     setStartDate("");
     setTargetDate("");
     setConfidence("");
@@ -192,6 +193,28 @@ export function CreateKeyResultDialog({
   const progressPreview = numsOk
     ? Math.round(calcKrProgress(startNum, currentNum, targetNum, metricType) * 10) / 10
     : null;
+
+  const previewCadastroStatus = cadastroTracking === "draft" ? "draft" : "on_track";
+
+  const workflowPreview = useMemo(() => {
+    const base = selectedObjective?.workflowStatusInsight;
+    if (!base) return null;
+    const p = progressPreview !== null && numsOk ? progressPreview : 0;
+    return deriveOkrWorkflowStatusInsight({
+      workflowStatusInsight: base,
+      startDate,
+      targetDate,
+      progressPercent: p,
+      okrCadastroStatus: previewCadastroStatus,
+    });
+  }, [
+    selectedObjective?.workflowStatusInsight,
+    startDate,
+    targetDate,
+    progressPreview,
+    numsOk,
+    previewCadastroStatus,
+  ]);
 
   const valueHint = useMemo(() => {
     if (!numsOk || isBoolean) return null;
@@ -266,7 +289,7 @@ export function CreateKeyResultDialog({
       startValue: parseFloat(startValue) || 0,
       currentValue: isBoolean ? parseFloat(currentValue) || 0 : parseFloat(currentValue) || 0,
       targetValue: isBoolean ? 1 : parseFloat(targetValue),
-      status,
+      status: cadastroTracking === "draft" ? "draft" : "on_track",
       startDate: startDate || undefined,
       targetDate: targetDate || undefined,
       confidence: confParsed,
@@ -480,19 +503,32 @@ export function CreateKeyResultDialog({
             </button>
             {showAdvanced && (
               <div className="mt-3 space-y-4 rounded-lg border border-border/70 bg-muted/25 p-3 shadow-inset">
-                <div className="space-y-1.5">
-                  <Label>Status</Label>
+                <div className="space-y-2">
+                  <Label>Cadastro no acompanhamento</Label>
                   <select
                     className={nativeSelectClassName}
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
+                    value={cadastroTracking}
+                    onChange={(e) =>
+                      setCadastroTracking(e.target.value === "draft" ? "draft" : "active")
+                    }
                   >
-                    <option value="draft">Rascunho</option>
-                    <option value="on_track">No rumo</option>
-                    <option value="at_risk">Em risco</option>
-                    <option value="off_track">Fora do rumo</option>
-                    <option value="completed">Concluído</option>
+                    <option value="draft">Rascunho (health por ritmo não corre até incluir)</option>
+                    <option value="active">Incluído no acompanhamento</option>
                   </select>
+                  <div className="rounded-md border border-border/80 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                    <p className="font-medium text-foreground">
+                      Pré-visualização do status operacional
+                    </p>
+                    <p className="mt-1">
+                      {workflowPreview?.labelPt ??
+                        (selectedObjective
+                          ? "Defina datas nas opções avançadas para ver Planejado / Em progresso."
+                          : "Escolha um objetivo primeiro.")}{" "}
+                    </p>
+                    <p className="mt-2 text-[11px] leading-relaxed">
+                      O health na lista é calculado automaticamente (progresso vs tempo na janela).
+                    </p>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
