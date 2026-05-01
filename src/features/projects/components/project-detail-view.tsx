@@ -45,7 +45,6 @@ import { WorkflowStatusRow } from "@/components/workflow-status-badge";
 import { ProjectHealthRow, PriorityBadge, MilestoneHealthRow } from "./project-badges";
 import type { OkrObjective, OkrKeyResult } from "@/lib/types/domain";
 import { EditProjectDialog } from "./edit-project-dialog";
-import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -87,7 +86,7 @@ interface MilestoneWithStats extends Milestone {
 
 /** Grid da aba Milestones: coluna de título limitada + espaço horizontal uniforme (evita “vão” enorme até ao status). */
 const MILESTONE_TABLE_GRID =
-  "gap-x-3 gap-y-2 sm:grid-cols-[minmax(0,17rem)_minmax(9rem,11rem)_5.5rem_6rem_5rem_5.5rem_4.5rem] sm:gap-y-0";
+  "gap-x-3 gap-y-2 sm:grid-cols-[minmax(0,17rem)_minmax(9rem,11rem)_5.5rem_6rem_5rem_5.5rem_3rem] sm:gap-y-0";
 
 function milestoneOperationalLabel(status: string): string {
   const map: Record<string, string> = {
@@ -968,7 +967,7 @@ export function ProjectDetailView({
                 <span>Prazo</span>
                 <span>Tasks</span>
                 <span>Owner</span>
-                <span className="text-center">Ver</span>
+                <span className="sr-only">Eliminar</span>
               </div>
               {(milestones as MilestoneWithStats[]).map((m) => {
                 const msOverdue = isOverdue(m.dueDate, m.completedAt ?? undefined);
@@ -1005,7 +1004,7 @@ export function ProjectDetailView({
                         </span>
                       )}
                     </div>
-                    <div className="flex min-w-0 items-center sm:min-w-0">
+                    <div className="flex min-w-0 items-center pr-4 sm:min-w-0">
                       {m.workflowStatusInsight ? (
                         <WorkflowStatusRow
                           insight={m.workflowStatusInsight}
@@ -1042,17 +1041,16 @@ export function ProjectDetailView({
                     <div className="hidden items-center truncate text-xs text-muted-foreground sm:flex">
                       {owner ? owner.name.split(" ")[0] : "—"}
                     </div>
-                    <div className="hidden items-center justify-center gap-1 sm:flex">
-                      <EntityQuickViewEyeButton
-                        entity={{ kind: "milestone", projectId, milestoneId: m.id }}
-                        className="h-7 w-7"
-                      />
+                    <div className="hidden items-center justify-end sm:flex">
                       <button
+                        type="button"
+                        title="Eliminar milestone"
+                        aria-label="Eliminar milestone"
                         onClick={() => {
                           if (confirm("Remover este milestone?"))
                             deleteMilestoneMutation.mutate(m.id);
                         }}
-                        className="text-muted-foreground/40 transition-colors hover:text-destructive"
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground/40 transition-colors hover:text-destructive"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
