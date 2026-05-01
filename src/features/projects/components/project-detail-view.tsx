@@ -572,6 +572,8 @@ export function ProjectDetailView({
 
   const { project, milestones, objectives, stats, linkedPages, linkedAssets, recentTasks } =
     data.data;
+  /** UUID canónico do projeto (tasks usam este id; a rota pode ser slug, ex. /projects/qqqq). */
+  const taskBoardProjectId = project.id;
 
   const today = new Date().toISOString().split("T")[0]!;
   const completedTasks = recentTasks.filter((t) => !!t.completedAt).length;
@@ -877,7 +879,7 @@ export function ProjectDetailView({
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-foreground">Tasks recentes</h2>
                 <Link
-                  href={`/tasks?projectId=${encodeURIComponent(projectId)}`}
+                  href={`/tasks?projectId=${encodeURIComponent(taskBoardProjectId)}`}
                   className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
                 >
                   Ver todas <ExternalLink className="h-3 w-3" />
@@ -1091,7 +1093,7 @@ export function ProjectDetailView({
             </p>
             <div className="flex gap-2">
               <Button size="sm" variant="outline" asChild>
-                <Link href={`/tasks?projectId=${encodeURIComponent(projectId)}`}>
+                <Link href={`/tasks?projectId=${encodeURIComponent(taskBoardProjectId)}`}>
                   <Kanban className="h-3.5 w-3.5" />
                   Abrir no board
                   <ExternalLink className="ml-1 h-3 w-3" />
@@ -1106,7 +1108,7 @@ export function ProjectDetailView({
                 Nenhuma tarefa vinculada a este projeto.
               </p>
               <Button variant="outline" size="sm" className="mt-3" asChild>
-                <Link href={`/tasks?projectId=${encodeURIComponent(projectId)}`}>
+                <Link href={`/tasks?projectId=${encodeURIComponent(taskBoardProjectId)}`}>
                   Criar task no board
                 </Link>
               </Button>

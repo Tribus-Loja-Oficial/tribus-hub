@@ -28,6 +28,7 @@ import {
   ArrowUpDown,
   RotateCcw,
 } from "lucide-react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { nativeSelectSmClassName } from "@/components/ui/form-control-classes";
 import { Input } from "@/components/ui/input";
@@ -1085,38 +1086,56 @@ function ObjectiveBlock({
           >
             <Plus className="h-3.5 w-3.5" />
           </Button>
-          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={onObjMenuToggle}>
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-          {objMenuOpen && (
-            <div
-              data-menu
-              className="absolute right-0 top-8 z-[220] w-44 rounded-lg border border-border bg-popover py-1 shadow-lg"
-            >
-              <Link
-                href={`/okr/objectives/${objective.id}`}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm transition-colors hover:bg-muted/60"
+          <DropdownMenu.Root
+            open={objMenuOpen}
+            onOpenChange={(open) => {
+              if (open !== objMenuOpen) onObjMenuToggle();
+            }}
+          >
+            <DropdownMenu.Trigger asChild>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-7 w-7 p-0"
+                aria-label="Menu do objetivo"
               >
-                <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
-                Ver detalhes
-              </Link>
-              <button
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors hover:bg-muted/60"
-                onClick={onAddKr}
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content
+                sideOffset={6}
+                align="end"
+                className="z-[300] min-w-[11rem] rounded-lg border border-border/90 bg-popover p-1 shadow-popover"
               >
-                <Plus className="h-3.5 w-3.5 text-muted-foreground" />
-                Adicionar KR
-              </button>
-              <div className="my-1 border-t border-border" />
-              <button
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-destructive transition-colors hover:bg-muted/60"
-                onClick={onDeleteObj}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Remover objetivo
-              </button>
-            </div>
-          )}
+                <DropdownMenu.Item asChild>
+                  <Link
+                    href={`/okr/objectives/${objective.id}`}
+                    className="flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none data-[highlighted]:bg-accent"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                    Ver detalhes
+                  </Link>
+                </DropdownMenu.Item>
+                <DropdownMenu.Item
+                  className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none data-[highlighted]:bg-accent"
+                  onSelect={() => onAddKr()}
+                >
+                  <Plus className="h-3.5 w-3.5 text-muted-foreground" />
+                  Adicionar KR
+                </DropdownMenu.Item>
+                <DropdownMenu.Separator className="my-1 h-px bg-border" />
+                <DropdownMenu.Item
+                  className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive outline-none data-[highlighted]:bg-destructive/10"
+                  onSelect={() => onDeleteObj()}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Remover objetivo
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
         </div>
       </div>
 
@@ -1318,38 +1337,56 @@ function KrRow({ gridTpl, kr, isLast, menuOpen, onMenuToggle, onUpdate, onDelete
         >
           <RefreshCw className="h-3.5 w-3.5" />
         </Button>
-        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={onMenuToggle}>
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
-        {menuOpen && (
-          <div
-            data-menu
-            className="absolute right-0 top-8 z-[220] w-44 rounded-lg border border-border bg-popover py-1 shadow-lg"
-          >
-            <Link
-              href={`/okr/key-results/${kr.id}`}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm transition-colors hover:bg-muted/60"
+        <DropdownMenu.Root
+          open={menuOpen}
+          onOpenChange={(open) => {
+            if (open !== menuOpen) onMenuToggle();
+          }}
+        >
+          <DropdownMenu.Trigger asChild>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="h-7 w-7 p-0"
+              aria-label="Menu do key result"
             >
-              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
-              Ver detalhes
-            </Link>
-            <button
-              className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors hover:bg-muted/60"
-              onClick={onUpdate}
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content
+              sideOffset={6}
+              align="end"
+              className="z-[300] min-w-[11rem] rounded-lg border border-border/90 bg-popover p-1 shadow-popover"
             >
-              <RefreshCw className="h-3.5 w-3.5 text-muted-foreground" />
-              Atualizar progresso
-            </button>
-            <div className="my-1 border-t border-border" />
-            <button
-              className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-destructive transition-colors hover:bg-muted/60"
-              onClick={onDelete}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Remover KR
-            </button>
-          </div>
-        )}
+              <DropdownMenu.Item asChild>
+                <Link
+                  href={`/okr/key-results/${kr.id}`}
+                  className="flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none data-[highlighted]:bg-accent"
+                >
+                  <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                  Ver detalhes
+                </Link>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item
+                className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none data-[highlighted]:bg-accent"
+                onSelect={() => onUpdate()}
+              >
+                <RefreshCw className="h-3.5 w-3.5 text-muted-foreground" />
+                Atualizar progresso
+              </DropdownMenu.Item>
+              <DropdownMenu.Separator className="my-1 h-px bg-border" />
+              <DropdownMenu.Item
+                className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive outline-none data-[highlighted]:bg-destructive/10"
+                onSelect={() => onDelete()}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Remover KR
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
       </div>
     </div>
   );

@@ -145,6 +145,16 @@ export function TaskBoardPage() {
   const labels = labelsRes?.data ?? [];
   const members = membersRes?.data ?? [];
 
+  /** Links antigos usavam o segmento da rota (ex. título/slug); tasks guardam sempre `project.id` (UUID). */
+  useEffect(() => {
+    if (!projects.length || !projectFilter.trim()) return;
+    if (projects.some((p) => p.id === projectFilter)) return;
+    const byTitle = projects.find(
+      (p) => p.title.trim().toLowerCase() === projectFilter.trim().toLowerCase(),
+    );
+    if (byTitle) setProjectFilter(byTitle.id);
+  }, [projects, projectFilter]);
+
   const filteredBoard = useMemo(() => {
     if (!data?.data) return null;
     return {
