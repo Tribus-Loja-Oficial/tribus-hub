@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { nativeSelectSmClassName } from "@/components/ui/form-control-classes";
 import { PageGuide, GuideSection, GuideList } from "@/components/ui/page-guide";
 import { DateField } from "@/components/ui/date-field";
 import { Input } from "@/components/ui/input";
@@ -490,7 +491,7 @@ export function ProjectsListPage() {
             />
           </div>
           <select
-            className="h-8 rounded-md border border-input bg-background px-2.5 text-sm"
+            className={nativeSelectSmClassName}
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
           >
@@ -501,7 +502,7 @@ export function ProjectsListPage() {
             ))}
           </select>
           <select
-            className="h-8 rounded-md border border-input bg-background px-2.5 text-sm"
+            className={nativeSelectSmClassName}
             value={filterPriority}
             onChange={(e) => setFilterPriority(e.target.value)}
           >
@@ -571,7 +572,7 @@ export function ProjectsListPage() {
         {showMoreFilters && (
           <div className="flex flex-wrap items-center gap-2 pl-0.5">
             <select
-              className="h-8 rounded-md border border-input bg-background px-2.5 text-sm"
+              className={nativeSelectSmClassName}
               value={filterHealth}
               onChange={(e) => setFilterHealth(e.target.value)}
             >
@@ -582,7 +583,7 @@ export function ProjectsListPage() {
               ))}
             </select>
             <select
-              className="h-8 rounded-md border border-input bg-background px-2.5 text-sm"
+              className={nativeSelectSmClassName}
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
             >
@@ -593,7 +594,7 @@ export function ProjectsListPage() {
               ))}
             </select>
             <select
-              className="h-8 rounded-md border border-input bg-background px-2.5 text-sm"
+              className={nativeSelectSmClassName}
               value={filterCycle}
               onChange={(e) => setFilterCycle(e.target.value)}
             >

@@ -13,6 +13,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { nativeSelectSmClassName } from "@/components/ui/form-control-classes";
 import { Input } from "@/components/ui/input";
 import type { OkrCycle, OkrKeyResult, OkrObjective } from "@/lib/types/domain";
 import { invalidateAfterKeyResultMutation } from "@/lib/query/invalidate-hub-cache";
@@ -153,7 +154,7 @@ export function OkrKeyResultsPage() {
         </div>
 
         <select
-          className="h-8 rounded-md border border-input bg-background px-2.5 text-sm"
+          className={nativeSelectSmClassName}
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
         >
@@ -166,7 +167,7 @@ export function OkrKeyResultsPage() {
         </select>
 
         <select
-          className="h-8 rounded-md border border-input bg-background px-2.5 text-sm"
+          className={nativeSelectSmClassName}
           value={filterCycle}
           onChange={(e) => setFilterCycle(e.target.value)}
         >

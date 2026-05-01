@@ -29,6 +29,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { nativeSelectSmClassName } from "@/components/ui/form-control-classes";
 import { Input } from "@/components/ui/input";
 import { PageGuide, GuideSection, GuideList, GuideExamples } from "@/components/ui/page-guide";
 import type { OkrCycle, OkrKeyResult } from "@/lib/types/domain";
@@ -503,7 +504,7 @@ export function OkrPage() {
           />
         </div>
         <select
-          className="h-8 rounded-md border border-input bg-background px-2.5 text-sm"
+          className={nativeSelectSmClassName}
           value={selectedCycleFilter}
           onChange={(e) => {
             const next = e.target.value;
@@ -518,7 +519,7 @@ export function OkrPage() {
           ))}
         </select>
         <select
-          className="h-8 rounded-md border border-input bg-background px-2.5 text-sm"
+          className={nativeSelectSmClassName}
           value={selectedStatusFilter}
           onChange={(e) => {
             const next = e.target.value;
@@ -533,7 +534,7 @@ export function OkrPage() {
           ))}
         </select>
         <select
-          className="h-8 rounded-md border border-input bg-background px-2.5 text-sm"
+          className={nativeSelectSmClassName}
           value={selectedHealthFilter}
           onChange={(e) => {
             const next = e.target.value;

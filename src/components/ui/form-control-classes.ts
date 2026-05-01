@@ -26,13 +26,17 @@ export const inputControlClassName = cn(
   "flex h-9 w-full px-3 py-1 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground/75",
 );
 
+const selectArrow =
+  "appearance-none [background-image:var(--select-chevron)] bg-no-repeat [background-position:right_0.75rem_center] [background-size:1rem_1rem]";
+
 /** `<select>` nativo (altura padrão de formulário) */
 export const nativeSelectClassName = cn(
   surface,
   hover,
   focusNeutral,
   disabled,
-  "h-9 w-full appearance-none px-3 pr-10 text-sm",
+  selectArrow,
+  "h-9 w-full px-3 pr-10 text-sm",
 );
 
 /** `<select>` compacto (filtros, toolbars) */
@@ -41,7 +45,8 @@ export const nativeSelectSmClassName = cn(
   hover,
   focusNeutral,
   disabled,
-  "h-8 w-full appearance-none pl-2.5 pr-9 text-sm",
+  selectArrow,
+  "h-8 w-full pl-2.5 pr-9 text-sm",
 );
 
 /** `<textarea>` nativo */

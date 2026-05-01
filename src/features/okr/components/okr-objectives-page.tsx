@@ -16,6 +16,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { nativeSelectSmClassName } from "@/components/ui/form-control-classes";
 import { Input } from "@/components/ui/input";
 import type { OkrCycle, OkrObjective, OkrKeyResult } from "@/lib/types/domain";
 import { healthRowAccentClass } from "@/components/pace-health-badge";
@@ -202,7 +203,7 @@ export function OkrObjectivesPage() {
         </div>
 
         <select
-          className="h-8 rounded-md border border-input bg-background px-2.5 text-sm"
+          className={nativeSelectSmClassName}
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
         >
@@ -214,7 +215,7 @@ export function OkrObjectivesPage() {
         </select>
 
         <select
-          className="h-8 rounded-md border border-input bg-background px-2.5 text-sm"
+          className={nativeSelectSmClassName}
           value={filterCycle}
           onChange={(e) => setFilterCycle(e.target.value)}
         >
@@ -226,7 +227,7 @@ export function OkrObjectivesPage() {
           ))}
         </select>
         <select
-          className="h-8 rounded-md border border-input bg-background px-2.5 text-sm"
+          className={nativeSelectSmClassName}
           value={filterHealth}
           onChange={(e) => setFilterHealth(e.target.value)}
         >
@@ -241,7 +242,7 @@ export function OkrObjectivesPage() {
         <div className="ml-auto flex items-center gap-1">
           <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
           <select
-            className="h-8 rounded-md border border-input bg-background px-2.5 text-sm"
+            className={nativeSelectSmClassName}
             value={groupBy}
             onChange={(e) => setGroupBy(e.target.value as typeof groupBy)}
           >
