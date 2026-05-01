@@ -81,7 +81,7 @@ export function EditKeyResultDialog({
   const [startValue, setStartValue] = useState("0");
   const [currentValue, setCurrentValue] = useState("0");
   const [targetValue, setTargetValue] = useState("100");
-  /** Cadastro: rascunho vs incluído no acompanhamento (`on_track` ao sair do rascunho). */
+  /** Cadastro: planejado (draft) vs incluído no acompanhamento (`on_track` ao ativar). */
   const [cadastroTracking, setCadastroTracking] = useState<"draft" | "active">("draft");
   const [startDate, setStartDate] = useState("");
   const [targetDate, setTargetDate] = useState("");
@@ -216,13 +216,6 @@ export function EditKeyResultDialog({
     ? Math.round(calcKrProgress(startNum, currentNum, targetNum, metricType) * 10) / 10
     : null;
 
-  /** Efetivo para derivar a coluna operacional: rascunho, ou o que seria após ativar. */
-  const previewCadastroStatus = useMemo(() => {
-    if (cadastroTracking === "draft") return "draft";
-    if (keyResult?.status === "draft") return "on_track";
-    return keyResult?.status ?? "on_track";
-  }, [cadastroTracking, keyResult?.status]);
-
   const workflowPreview = useMemo(() => {
     if (!keyResult) return null;
     const p = progressPreview !== null && numsOk ? progressPreview : keyResult.progressPercent;
@@ -231,9 +224,8 @@ export function EditKeyResultDialog({
       startDate,
       targetDate,
       progressPercent: p,
-      okrCadastroStatus: previewCadastroStatus,
     });
-  }, [keyResult, startDate, targetDate, progressPreview, numsOk, previewCadastroStatus]);
+  }, [keyResult, startDate, targetDate, progressPreview, numsOk]);
 
   const valueHint = useMemo(() => {
     if (!numsOk || isBoolean) return null;
@@ -548,7 +540,7 @@ export function EditKeyResultDialog({
                       }
                     >
                       <option value="draft">
-                        Rascunho (health por ritmo não corre até incluir)
+                        Planejado (health por ritmo completo após incluir no acompanhamento)
                       </option>
                       <option value="active">Incluído no acompanhamento</option>
                     </select>

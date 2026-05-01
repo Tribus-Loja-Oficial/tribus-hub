@@ -160,7 +160,7 @@ export function OkrKeyResultsPage() {
           onChange={(e) => setFilterStatus(e.target.value)}
         >
           <option value="">Todos os status</option>
-          <option value="draft">Rascunho</option>
+          <option value="draft">Planejado (cadastro)</option>
           <option value="on_track">No rumo</option>
           <option value="at_risk">Em risco</option>
           <option value="off_track">Fora do rumo</option>

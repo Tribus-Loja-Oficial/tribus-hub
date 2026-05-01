@@ -194,8 +194,6 @@ export function CreateKeyResultDialog({
     ? Math.round(calcKrProgress(startNum, currentNum, targetNum, metricType) * 10) / 10
     : null;
 
-  const previewCadastroStatus = cadastroTracking === "draft" ? "draft" : "on_track";
-
   const workflowPreview = useMemo(() => {
     const base = selectedObjective?.workflowStatusInsight;
     if (!base) return null;
@@ -205,16 +203,8 @@ export function CreateKeyResultDialog({
       startDate,
       targetDate,
       progressPercent: p,
-      okrCadastroStatus: previewCadastroStatus,
     });
-  }, [
-    selectedObjective?.workflowStatusInsight,
-    startDate,
-    targetDate,
-    progressPreview,
-    numsOk,
-    previewCadastroStatus,
-  ]);
+  }, [selectedObjective?.workflowStatusInsight, startDate, targetDate, progressPreview, numsOk]);
 
   const valueHint = useMemo(() => {
     if (!numsOk || isBoolean) return null;
@@ -512,7 +502,9 @@ export function CreateKeyResultDialog({
                       setCadastroTracking(e.target.value === "draft" ? "draft" : "active")
                     }
                   >
-                    <option value="draft">Rascunho (health por ritmo não corre até incluir)</option>
+                    <option value="draft">
+                      Planejado (health por ritmo completo após incluir no acompanhamento)
+                    </option>
                     <option value="active">Incluído no acompanhamento</option>
                   </select>
                   <div className="rounded-md border border-border/80 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">

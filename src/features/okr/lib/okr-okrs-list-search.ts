@@ -23,7 +23,7 @@ function normalize(s: string): string {
 
 /** Labels PT-BR alinhados ao que o usuário vê na UI (badges). */
 const OBJECTIVE_STATUS_LABELS: Record<string, string> = {
-  draft: "Rascunho",
+  draft: "Planejado",
   on_track: "No rumo",
   at_risk: "Em risco",
   off_track: "Fora do rumo",

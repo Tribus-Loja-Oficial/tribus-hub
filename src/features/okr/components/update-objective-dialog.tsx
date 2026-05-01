@@ -122,12 +122,6 @@ export function UpdateObjectiveDialog({
 
   const selectedCycle = useMemo(() => cycles.find((c) => c.id === cycleId), [cycles, cycleId]);
 
-  const previewCadastroStatus = useMemo(() => {
-    if (cadastroTracking === "draft") return "draft";
-    if (objective?.status === "draft") return "on_track";
-    return objective?.status ?? "on_track";
-  }, [cadastroTracking, objective?.status]);
-
   const workflowPreview = useMemo(() => {
     if (!objective) return null;
     return deriveOkrWorkflowStatusInsight({
@@ -135,9 +129,8 @@ export function UpdateObjectiveDialog({
       startDate,
       targetDate,
       progressPercent: objective.progressPercent,
-      okrCadastroStatus: previewCadastroStatus,
     });
-  }, [objective, startDate, targetDate, previewCadastroStatus]);
+  }, [objective, startDate, targetDate]);
 
   function applyDateValidation(): boolean {
     const next: DateFieldErrors = {};
@@ -282,7 +275,7 @@ export function UpdateObjectiveDialog({
                         }
                       >
                         <option value="draft">
-                          Rascunho (health por ritmo não corre até incluir)
+                          Planejado (health por ritmo completo após incluir no acompanhamento)
                         </option>
                         <option value="active">Incluído no acompanhamento</option>
                       </select>

@@ -322,12 +322,12 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
                   <HealthPill label="No rumo" value={stats.onTrackObjectives} tone="emerald" />
                   <HealthPill label="Em risco" value={stats.atRiskObjectives} tone="amber" />
                   <HealthPill label="Fora do rumo" value={stats.offTrackObjectives} tone="rose" />
-                  <HealthPill label="Rascunho" value={stats.draftObjectives} tone="slate" />
+                  <HealthPill label="Planejado" value={stats.draftObjectives} tone="slate" />
                   <HealthPill label="Concluídos" value={stats.completedObjectives} tone="sky" />
                 </div>
                 <p className="mt-3 border-t border-border/60 pt-3 text-[11px] text-muted-foreground">
                   KRs: {stats.onTrackKrs} no rumo · {stats.atRiskKrs} em risco · {stats.offTrackKrs}{" "}
-                  fora · {stats.draftKrs} rascunho
+                  fora · {stats.draftKrs} planejados (cadastro)
                 </p>
               </div>
 

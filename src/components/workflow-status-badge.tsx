@@ -43,9 +43,15 @@ function workflowStatusTooltip(insight: WorkflowStatusInsight): string {
     cancelled: "O item foi cancelado manualmente.",
   };
 
+  /** Preferir `explanationPt` do insight: o `slug` sozinho nem sempre descreve o motivo completo. */
+  const explanation =
+    insight.explanationPt?.trim() ||
+    slugLine[insight.slug] ||
+    "Status derivado da janela de datas.";
+
   const bullets = [
-    `• Status atual: ${workflowStatusLabel(insight.slug)}`,
-    `• ${slugLine[insight.slug] ?? "Status derivado da janela de datas."}`,
+    `• Status atual: ${insight.labelPt || workflowStatusLabel(insight.slug)}`,
+    `• ${explanation}`,
     `• Janela programada: ${fmtWindowDate(insight.windowStart)} a ${fmtWindowDate(insight.windowEnd)}`,
   ];
   return bullets.join("\n");

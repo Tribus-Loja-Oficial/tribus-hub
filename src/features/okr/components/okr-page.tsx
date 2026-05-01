@@ -263,7 +263,6 @@ export function OkrPage() {
           startDate: o.startDate,
           targetDate: o.targetDate,
           progressPercent: o.progressPercent,
-          okrCadastroStatus: o.status,
         });
         const slug = derived?.slug ?? o.workflowStatusInsight?.slug ?? "planned";
         return filterStatuses.has(slug);
@@ -952,7 +951,6 @@ function ObjectiveBlock({
     startDate: objective.startDate,
     targetDate: objective.targetDate,
     progressPercent: objective.progressPercent,
-    okrCadastroStatus: objective.status,
   });
 
   return (
@@ -1232,7 +1230,6 @@ function KrRow({
     startDate: kr.startDate,
     targetDate: kr.targetDate,
     progressPercent: kr.progressPercent,
-    okrCadastroStatus: kr.status,
   });
 
   return (

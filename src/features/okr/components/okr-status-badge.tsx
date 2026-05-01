@@ -18,7 +18,7 @@ const ring = "ring-1 ring-inset ring-black/[0.04] dark:ring-white/[0.06]";
 
 const CONFIG: Record<string, { label: string; className: string }> = {
   draft: {
-    label: "Rascunho",
+    label: "Planejado",
     className: `border-border/75 bg-muted/70 text-muted-foreground dark:bg-muted/40 dark:text-muted-foreground ${ring}`,
   },
   planned: {
@@ -106,7 +106,6 @@ export function OkrEntityStatusRow({
     startDate,
     targetDate,
     progressPercent,
-    okrCadastroStatus: status,
   });
   const health = reconcileOkrHealthInsightForDisplay(healthInsight, {
     startDate,

@@ -26,8 +26,6 @@ export function deriveOkrWorkflowStatusInsight(input: {
   targetDate?: string | null;
   progressPercent?: number | null;
   now?: Date;
-  /** `draft` no cadastro: não mostrar "Em Progresso" só por estar dentro da janela de datas. */
-  okrCadastroStatus?: string | null;
 }): WorkflowStatusInsight | null {
   const base = input.workflowStatusInsight;
   if (!base) return null;
@@ -73,7 +71,7 @@ export function deriveOkrWorkflowStatusInsight(input: {
     };
   }
 
-  const inWindow: WorkflowStatusInsight = {
+  return {
     ...base,
     slug: "in_progress",
     labelPt: "Em Progresso",
@@ -82,16 +80,4 @@ export function deriveOkrWorkflowStatusInsight(input: {
     locked: false,
     explanationPt: "Estamos dentro da janela planejada.",
   };
-
-  if (input.okrCadastroStatus === "draft") {
-    return {
-      ...inWindow,
-      slug: "planned",
-      labelPt: "Planejado",
-      explanationPt:
-        "Em rascunho no cadastro: tratamos como planejado até sair do rascunho; depois o status segue as datas.",
-    };
-  }
-
-  return inWindow;
 }

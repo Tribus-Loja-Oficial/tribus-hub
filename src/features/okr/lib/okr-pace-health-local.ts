@@ -125,13 +125,13 @@ export function reconcileOkrHealthInsightForDisplay(
 ): HealthInsight | null {
   if (!insight) return null;
   if (insight.locked) return insight;
-  if (insight.slug === "draft") return insight;
 
   const now = options.now ?? new Date();
   const { start, end } = resolveEffectiveOkrWindowForDisplay(insight, {
     startDate: options.startDate,
     targetDate: options.targetDate,
   });
+  /** Sem janela efetiva, mantemos o payload (ex. API com slug `draft` antes de datas). Com janela, recalculamos ritmo também para `draft`. */
   if (!start || !end) return insight;
 
   return computeOkrPaceWithLocalCivilWindow(insight, start, end, now);

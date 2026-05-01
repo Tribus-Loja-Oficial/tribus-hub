@@ -130,17 +130,14 @@ export function CreateObjectiveDialog({
     };
   }, [startDate, targetDate]);
 
-  const previewCadastroStatus = cadastroTracking === "draft" ? "draft" : "on_track";
-
   const workflowPreview = useMemo(() => {
     return deriveOkrWorkflowStatusInsight({
       workflowStatusInsight: syntheticWorkflowBase,
       startDate,
       targetDate,
       progressPercent: 0,
-      okrCadastroStatus: previewCadastroStatus,
     });
-  }, [syntheticWorkflowBase, startDate, targetDate, previewCadastroStatus]);
+  }, [syntheticWorkflowBase, startDate, targetDate]);
 
   function applyDateValidation(): boolean {
     const next: DateFieldErrors = {};
@@ -278,7 +275,7 @@ export function CreateObjectiveDialog({
                       }
                     >
                       <option value="draft">
-                        Rascunho (health por ritmo não corre até incluir)
+                        Planejado (health por ritmo completo após incluir no acompanhamento)
                       </option>
                       <option value="active">Incluído no acompanhamento</option>
                     </select>
