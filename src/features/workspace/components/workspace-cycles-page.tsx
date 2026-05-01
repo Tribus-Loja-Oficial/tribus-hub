@@ -25,6 +25,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { nativeSelectSmClassName } from "@/components/ui/form-control-classes";
 import { Input } from "@/components/ui/input";
 import { PageGuide, GuideSection, GuideList } from "@/components/ui/page-guide";
 import { WorkflowStatusRow } from "@/components/workflow-status-badge";
@@ -490,7 +491,7 @@ export function WorkspaceCyclesPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Filter className="hidden h-3.5 w-3.5 text-muted-foreground sm:block" />
             <select
-              className="h-9 rounded-lg border border-input bg-background px-2 text-sm"
+              className={cn(nativeSelectSmClassName, "h-9")}
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value as StatusFilter);
@@ -504,7 +505,7 @@ export function WorkspaceCyclesPage() {
               <option value="closed">Encerrado</option>
             </select>
             <select
-              className="h-9 rounded-lg border border-input bg-background px-2 text-sm"
+              className={cn(nativeSelectSmClassName, "h-9")}
               value={qualityFilter}
               onChange={(e) => setQualityFilter(e.target.value as QualityFilter)}
             >
@@ -514,7 +515,7 @@ export function WorkspaceCyclesPage() {
               <option value="without_active_projects">Sem projetos ativos</option>
             </select>
             <select
-              className="h-9 rounded-lg border border-input bg-background px-2 text-sm"
+              className={cn(nativeSelectSmClassName, "h-9")}
               value={sortKey}
               onChange={(e) => setSortKey(e.target.value as SortKey)}
             >

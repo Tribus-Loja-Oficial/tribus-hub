@@ -23,6 +23,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { nativeSelectSmClassName } from "@/components/ui/form-control-classes";
 import { Input } from "@/components/ui/input";
 import { PageGuide, GuideSection, GuideList } from "@/components/ui/page-guide";
 import { OkrProgressBar } from "@/features/okr/components/okr-progress-bar";
@@ -439,7 +440,7 @@ export function ProjectsCyclesPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Filter className="hidden h-3.5 w-3.5 text-muted-foreground sm:block" />
             <select
-              className="h-9 rounded-lg border border-input bg-background px-2 text-sm"
+              className={cn(nativeSelectSmClassName, "h-9")}
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value as StatusFilter);
@@ -453,7 +454,7 @@ export function ProjectsCyclesPage() {
               <option value="closed">Encerrado</option>
             </select>
             <select
-              className="h-9 rounded-lg border border-input bg-background px-2 text-sm"
+              className={cn(nativeSelectSmClassName, "h-9")}
               value={sortKey}
               onChange={(e) => setSortKey(e.target.value as SortKey)}
             >

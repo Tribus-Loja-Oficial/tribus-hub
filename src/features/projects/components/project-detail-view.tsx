@@ -36,6 +36,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { isBefore, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatCivilDate, parseCivilDateInput, startOfLocalDay } from "@/lib/date/civil-date";
+import {
+  nativeSelectClassName,
+  nativeSelectSmClassName,
+} from "@/components/ui/form-control-classes";
 import { cn } from "@/lib/utils/cn";
 import { WorkflowStatusRow } from "@/components/workflow-status-badge";
 import { ProjectHealthRow, PriorityBadge, MilestoneHealthRow } from "./project-badges";
@@ -182,7 +186,7 @@ function CreateMilestoneDialog({
             <div className="space-y-1.5">
               <Label>Status</Label>
               <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                className={nativeSelectClassName}
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
               >
@@ -196,7 +200,7 @@ function CreateMilestoneDialog({
             <div className="space-y-1.5">
               <Label>Prioridade</Label>
               <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                className={nativeSelectClassName}
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
               >
@@ -418,7 +422,7 @@ function OkrLinksTab({ projectId }: { projectId: string }) {
                 onChange={(e) => setKrSearch(e.target.value)}
               />
               <select
-                className="h-8 shrink-0 rounded-md border border-input bg-background px-2.5 text-sm"
+                className={cn(nativeSelectSmClassName, "h-8 shrink-0")}
                 value={relationType}
                 onChange={(e) => setRelationType(e.target.value)}
               >
@@ -1010,7 +1014,7 @@ export function ProjectDetailView({
                     </div>
                     <div className="flex items-center gap-2 sm:block">
                       <select
-                        className="h-7 rounded-md border border-input bg-background px-2 text-xs"
+                        className={cn(nativeSelectSmClassName, "h-7 text-xs")}
                         value={m.status}
                         onChange={(e) =>
                           patchMilestoneMutation.mutate({

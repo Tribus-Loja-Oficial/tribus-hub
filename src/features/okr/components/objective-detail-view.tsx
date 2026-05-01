@@ -5,6 +5,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { ArrowLeft, Target, TrendingUp, Plus, RefreshCw, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { nativeSelectSmClassName } from "@/components/ui/form-control-classes";
+import { cn } from "@/lib/utils/cn";
 import type { OkrObjective, OkrKeyResult, OkrCycle } from "@/lib/types/domain";
 import { OkrEntityStatusRow, OkrPriorityBadge } from "./okr-status-badge";
 import { OkrProgressBar, MiniProgressRing } from "./okr-progress-bar";
@@ -164,7 +166,7 @@ export function ObjectiveDetailView({ objectiveId, embedded }: ObjectiveDetailVi
               {editingStatus ? (
                 <select
                   autoFocus
-                  className="h-7 rounded-md border border-input bg-background px-2 text-xs"
+                  className={cn(nativeSelectSmClassName, "h-7 text-xs")}
                   defaultValue={objective.status}
                   onChange={(e) => patchMutation.mutate({ status: e.target.value })}
                   onBlur={() => setEditingStatus(false)}

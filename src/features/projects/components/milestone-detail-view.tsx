@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import type { Milestone } from "@/lib/types/domain";
 import { WorkflowStatusRow } from "@/components/workflow-status-badge";
 import { MilestoneHealthRow, PriorityBadge } from "./project-badges";
+import { nativeSelectClassName } from "@/components/ui/form-control-classes";
 import { formatCivilDate } from "@/lib/date/civil-date";
 
 interface MilestoneDetailViewProps {
@@ -176,7 +177,7 @@ export function MilestoneDetailView({ paramsPromise, embedded }: MilestoneDetail
               <div className="space-y-1.5">
                 <Label>Status</Label>
                 <select
-                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  className={nativeSelectClassName}
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
                 >
@@ -190,7 +191,7 @@ export function MilestoneDetailView({ paramsPromise, embedded }: MilestoneDetail
               <div className="space-y-1.5">
                 <Label>Prioridade</Label>
                 <select
-                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  className={nativeSelectClassName}
                   value={priority}
                   onChange={(e) => setPriority(e.target.value)}
                 >

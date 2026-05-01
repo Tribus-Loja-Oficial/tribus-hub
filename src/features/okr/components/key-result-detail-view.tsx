@@ -5,6 +5,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { ArrowLeft, TrendingUp, RefreshCw, Activity, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { nativeSelectSmClassName } from "@/components/ui/form-control-classes";
+import { cn } from "@/lib/utils/cn";
 import type { OkrKeyResult, OkrKeyResultUpdate, OkrObjective } from "@/lib/types/domain";
 import { invalidateAfterKeyResultMutation } from "@/lib/query/invalidate-hub-cache";
 import { OkrEntityStatusRow } from "./okr-status-badge";
@@ -148,7 +150,7 @@ export function KeyResultDetailView({ keyResultId, embedded }: KeyResultDetailVi
               {editingStatus ? (
                 <select
                   autoFocus
-                  className="h-7 rounded-md border border-input bg-background px-2 text-xs"
+                  className={cn(nativeSelectSmClassName, "h-7 text-xs")}
                   defaultValue={kr.status}
                   onChange={(e) => patchMutation.mutate({ status: e.target.value })}
                   onBlur={() => setEditingStatus(false)}

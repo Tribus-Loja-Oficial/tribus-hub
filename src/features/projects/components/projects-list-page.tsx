@@ -19,7 +19,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { nativeSelectSmClassName } from "@/components/ui/form-control-classes";
+import {
+  nativeSelectClassName,
+  nativeSelectSmClassName,
+} from "@/components/ui/form-control-classes";
 import { PageGuide, GuideSection, GuideList } from "@/components/ui/page-guide";
 import { DateField } from "@/components/ui/date-field";
 import { Input } from "@/components/ui/input";
@@ -188,7 +191,7 @@ function CreateProjectDialog({ open, onOpenChange, onCreated }: CreateProjectDia
             <div className="space-y-1.5">
               <Label>Status</Label>
               <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                className={nativeSelectClassName}
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
               >
@@ -201,7 +204,7 @@ function CreateProjectDialog({ open, onOpenChange, onCreated }: CreateProjectDia
             <div className="space-y-1.5">
               <Label>Ciclo</Label>
               <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                className={nativeSelectClassName}
                 value={cycleId}
                 onChange={(e) => setCycleId(e.target.value)}
               >
@@ -216,7 +219,7 @@ function CreateProjectDialog({ open, onOpenChange, onCreated }: CreateProjectDia
             <div className="space-y-1.5">
               <Label>Prioridade</Label>
               <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                className={nativeSelectClassName}
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
               >
@@ -229,7 +232,7 @@ function CreateProjectDialog({ open, onOpenChange, onCreated }: CreateProjectDia
             <div className="space-y-1.5">
               <Label>Estimativa do projeto</Label>
               <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                className={nativeSelectClassName}
                 value={estimationUnit}
                 onChange={(e) => setEstimationUnit(e.target.value as "hours" | "story_points")}
               >

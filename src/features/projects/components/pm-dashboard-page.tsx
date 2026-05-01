@@ -21,6 +21,7 @@ import {
   Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { nativeSelectSmClassName } from "@/components/ui/form-control-classes";
 import { Input } from "@/components/ui/input";
 import { PageGuide, GuideSection, GuideList } from "@/components/ui/page-guide";
 import { formatDistanceToNow } from "date-fns";
@@ -621,7 +622,7 @@ export function PmDashboardPage() {
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   <select
-                    className="h-9 rounded-md border border-input bg-background px-2 text-xs"
+                    className={cn(nativeSelectSmClassName, "h-9 text-xs")}
                     value={cycleGovernanceFilter}
                     onChange={(e) =>
                       setCycleGovernanceFilter(e.target.value as typeof cycleGovernanceFilter)
@@ -634,7 +635,7 @@ export function PmDashboardPage() {
                     ))}
                   </select>
                   <select
-                    className="h-9 rounded-md border border-input bg-background px-2 text-xs"
+                    className={cn(nativeSelectSmClassName, "h-9 text-xs")}
                     value={cycleQualityFilter}
                     onChange={(e) =>
                       setCycleQualityFilter(e.target.value as typeof cycleQualityFilter)
@@ -653,7 +654,7 @@ export function PmDashboardPage() {
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   <select
-                    className="h-9 rounded-md border border-input bg-background px-2 text-xs"
+                    className={cn(nativeSelectSmClassName, "h-9 text-xs")}
                     value={projectStatusFilter}
                     onChange={(e) =>
                       setProjectStatusFilter(e.target.value as typeof projectStatusFilter)
@@ -664,7 +665,7 @@ export function PmDashboardPage() {
                     <option value="blocked">Com projeto bloqueado</option>
                   </select>
                   <select
-                    className="h-9 rounded-md border border-input bg-background px-2 text-xs"
+                    className={cn(nativeSelectSmClassName, "h-9 text-xs")}
                     value={projectHealthFilter}
                     onChange={(e) =>
                       setProjectHealthFilter(e.target.value as typeof projectHealthFilter)

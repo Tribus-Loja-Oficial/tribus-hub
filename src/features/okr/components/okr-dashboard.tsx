@@ -19,6 +19,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { nativeSelectSmClassName } from "@/components/ui/form-control-classes";
 import { PageGuide, GuideSection, GuideList } from "@/components/ui/page-guide";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { OkrCycle, OkrKeyResult } from "@/lib/types/domain";
@@ -169,7 +170,7 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
         <div className="flex flex-wrap items-center gap-2">
           {allCycles.length > 0 && (
             <select
-              className="h-9 min-w-[11rem] rounded-lg border border-input bg-background px-3 text-sm text-foreground"
+              className={cn(nativeSelectSmClassName, "h-9 min-w-[11rem]")}
               value={selectedCycleId}
               onChange={(e) => setSelectedCycleId(e.target.value)}
               aria-label="Filtrar por ciclo"
