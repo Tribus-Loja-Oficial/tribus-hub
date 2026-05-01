@@ -27,7 +27,7 @@ export const inputControlClassName = cn(
 );
 
 const selectArrow =
-  "appearance-none [background-image:var(--select-chevron)] bg-no-repeat [background-position:right_0.75rem_center] [background-size:1rem_1rem]";
+  "appearance-none [background-image:var(--select-chevron)] bg-no-repeat [background-position:right_0.5rem_center] [background-size:1rem_1rem]";
 
 /** `<select>` nativo (altura padrão de formulário) */
 export const nativeSelectClassName = cn(
