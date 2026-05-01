@@ -3,7 +3,7 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Project, Milestone, Task, TaskColumn } from "@/lib/types/domain";
+import type { Project, Milestone, Task } from "@/lib/types/domain";
 import type { OkrObjectiveLink, OkrKrLink } from "@/lib/types/pm-hierarchy";
 import {
   FolderKanban,
@@ -25,7 +25,6 @@ import {
   User,
   Kanban,
   Pencil,
-  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DateField } from "@/components/ui/date-field";
@@ -41,12 +40,12 @@ import {
   nativeSelectSmClassName,
 } from "@/components/ui/form-control-classes";
 import { cn } from "@/lib/utils/cn";
+import { TABLE_STATUS_CHIP_PX, TABLE_STATUS_CHIP_WIDTH_CLASS } from "@/lib/ui/chip-width-tokens";
 import { WorkflowStatusRow } from "@/components/workflow-status-badge";
 import { ProjectHealthRow, PriorityBadge, MilestoneHealthRow } from "./project-badges";
 import type { OkrObjective, OkrKeyResult } from "@/lib/types/domain";
 import { EditProjectDialog } from "./edit-project-dialog";
 import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
-import { TaskFormDialog } from "@/features/tasks/components/task-form-dialog";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -84,6 +83,21 @@ interface HubPayload {
 
 interface MilestoneWithStats extends Milestone {
   taskStats?: { total: number; done: number };
+}
+
+/** Grid da aba Milestones: coluna de título limitada + espaço horizontal uniforme (evita “vão” enorme até ao status). */
+const MILESTONE_TABLE_GRID =
+  "gap-x-3 gap-y-2 sm:grid-cols-[minmax(0,17rem)_minmax(9rem,11rem)_5.5rem_6rem_5rem_5.5rem_4.5rem] sm:gap-y-0";
+
+function milestoneOperationalLabel(status: string): string {
+  const map: Record<string, string> = {
+    pending: "Pendente",
+    in_progress: "Em progresso",
+    blocked: "Bloqueado",
+    completed: "Concluído",
+    missed: "Atrasado",
+  };
+  return map[status] ?? status;
 }
 
 interface OkrLinksPayload {
@@ -470,9 +484,6 @@ export function ProjectDetailView({
   const queryClient = useQueryClient();
   const [createMilestoneOpen, setCreateMilestoneOpen] = useState(false);
   const [editProjectOpen, setEditProjectOpen] = useState(false);
-  const [taskEditOpen, setTaskEditOpen] = useState(false);
-  const [taskEditingId, setTaskEditingId] = useState<string | null>(null);
-
   const { data, isLoading, isError, error } = useQuery<{ data: HubPayload }>({
     queryKey: ["project-hub", projectId],
     queryFn: async () => {
@@ -491,37 +502,11 @@ export function ProjectDetailView({
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: boardRes } = useQuery<{ data: { columns: TaskColumn[] } }>({
-    queryKey: ["board"],
-    queryFn: () => fetch("/api/tasks/board").then((r) => r.json()),
-    staleTime: 5 * 60 * 1000,
-  });
-  const boardColumns = boardRes?.data?.columns ?? [];
-
   const membersMap = new Map((membersRes?.data ?? []).map((m) => [m.id, m]));
 
   const deleteMilestoneMutation = useMutation({
     mutationFn: async (milestoneId: string) => {
       await fetch(`/api/projects/${projectId}/milestones/${milestoneId}`, { method: "DELETE" });
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["project-hub", projectId] }),
-  });
-
-  const patchMilestoneMutation = useMutation({
-    mutationFn: async ({
-      milestoneId,
-      body,
-    }: {
-      milestoneId: string;
-      body: Record<string, unknown>;
-    }) => {
-      const res = await fetch(`/api/projects/${projectId}/milestones/${milestoneId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error("Falha ao atualizar milestone");
-      return res.json();
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["project-hub", projectId] }),
   });
@@ -971,7 +956,12 @@ export function ProjectDetailView({
             </div>
           ) : (
             <div className="overflow-hidden rounded-xl border border-border">
-              <div className="grid hidden grid-cols-[minmax(0,1fr)_minmax(9.5rem,11rem)_5rem_5rem_5.5rem_5rem_4.5rem] gap-0 border-b border-border bg-muted/30 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 sm:grid">
+              <div
+                className={cn(
+                  "hidden border-b border-border bg-muted/30 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 sm:grid sm:items-center",
+                  MILESTONE_TABLE_GRID,
+                )}
+              >
                 <span>Milestone</span>
                 <span className="whitespace-nowrap">Status</span>
                 <span>Prioridade</span>
@@ -987,7 +977,8 @@ export function ProjectDetailView({
                   <div
                     key={m.id}
                     className={cn(
-                      "flex flex-col border-b border-border/60 px-4 py-3 last:border-b-0 sm:grid sm:grid-cols-[minmax(0,1fr)_minmax(9.5rem,11rem)_5rem_5rem_5.5rem_5rem_4.5rem] sm:items-center sm:gap-0",
+                      "flex flex-col border-b border-border/60 px-4 py-3 last:border-b-0 sm:grid sm:items-center",
+                      MILESTONE_TABLE_GRID,
                       msOverdue && m.status !== "completed"
                         ? "bg-orange-50/30"
                         : "hover:bg-accent/10",
@@ -1014,23 +1005,19 @@ export function ProjectDetailView({
                         </span>
                       )}
                     </div>
-                    <div className="flex min-w-0 items-center gap-2 sm:block sm:min-w-[9.5rem]">
-                      <select
-                        className={cn(nativeSelectSmClassName, "h-7 w-full min-w-0 text-xs")}
-                        value={m.status}
-                        onChange={(e) =>
-                          patchMilestoneMutation.mutate({
-                            milestoneId: m.id,
-                            body: { status: e.target.value },
-                          })
-                        }
-                      >
-                        <option value="pending">Pendente</option>
-                        <option value="in_progress">Em progresso</option>
-                        <option value="blocked">Bloqueado</option>
-                        <option value="completed">Concluído</option>
-                        <option value="missed">Atrasado</option>
-                      </select>
+                    <div className="flex min-w-0 items-center sm:min-w-0">
+                      {m.workflowStatusInsight ? (
+                        <WorkflowStatusRow
+                          insight={m.workflowStatusInsight}
+                          tableCellLayout
+                          badgeWidthClass={TABLE_STATUS_CHIP_WIDTH_CLASS}
+                          tableChipWidthPx={TABLE_STATUS_CHIP_PX}
+                        />
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          {milestoneOperationalLabel(m.status)}
+                        </span>
+                      )}
                     </div>
                     <div className="hidden items-center sm:flex">
                       <PriorityBadge
@@ -1115,13 +1102,12 @@ export function ProjectDetailView({
             </div>
           ) : (
             <div className="overflow-hidden rounded-xl border border-border">
-              <div className="hidden grid-cols-[1fr_80px_80px_90px_90px_56px] border-b border-border bg-muted/30 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 sm:grid">
+              <div className="hidden grid-cols-[1fr_80px_80px_90px_90px] border-b border-border bg-muted/30 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 sm:grid">
                 <span>Título</span>
                 <span>Prioridade</span>
                 <span>Status</span>
                 <span>Responsável</span>
                 <span>Prazo</span>
-                <span className="text-center">Ver</span>
               </div>
               {recentTasks.map((t) => {
                 const taskOverdue = isOverdue(t.dueDate, t.completedAt ?? undefined);
@@ -1130,7 +1116,7 @@ export function ProjectDetailView({
                   <div
                     key={t.id}
                     className={cn(
-                      "flex items-center gap-3 border-b border-border/60 px-4 py-2.5 last:border-b-0 sm:grid sm:grid-cols-[1fr_80px_80px_90px_90px_56px] sm:gap-0",
+                      "flex items-center gap-3 border-b border-border/60 px-4 py-2.5 last:border-b-0 sm:grid sm:grid-cols-[1fr_80px_80px_90px_90px] sm:gap-0",
                       "transition-colors hover:bg-accent/10",
                     )}
                   >
@@ -1177,22 +1163,6 @@ export function ProjectDetailView({
                       )}
                     >
                       {t.dueDate ? formatCivilDate(t.dueDate, "dd MMM yy") || "—" : "—"}
-                    </div>
-                    <div className="hidden items-center justify-center sm:flex">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                        title="Editar tarefa"
-                        aria-label="Editar tarefa"
-                        onClick={() => {
-                          setTaskEditingId(t.id);
-                          setTaskEditOpen(true);
-                        }}
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                      </Button>
                     </div>
                   </div>
                 );
@@ -1275,20 +1245,6 @@ export function ProjectDetailView({
         onOpenChange={setEditProjectOpen}
         project={project}
         nested={!!embedded}
-      />
-      <TaskFormDialog
-        open={taskEditOpen}
-        onOpenChange={(v) => {
-          setTaskEditOpen(v);
-          if (!v) {
-            setTaskEditingId(null);
-            queryClient.invalidateQueries({ queryKey: ["project-hub", projectId] });
-            queryClient.invalidateQueries({ queryKey: ["board"] });
-          }
-        }}
-        mode="edit"
-        taskId={taskEditingId}
-        columns={boardColumns}
       />
     </div>
   );
