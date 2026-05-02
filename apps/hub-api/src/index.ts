@@ -104,6 +104,7 @@ type TaskRow = {
   deleted_at: string | null;
   project_title?: string | null;
   milestone_title?: string | null;
+  assignee_name?: string | null;
 };
 
 type TaskLabelSummaryRow = {
@@ -842,7 +843,8 @@ async function getTaskBoardData(db: D1DatabaseLike, workspaceId: string) {
         t.archived_at,
         t.deleted_at,
         p.title AS project_title,
-        m.title AS milestone_title
+        m.title AS milestone_title,
+        assignee.name AS assignee_name
       FROM tasks t
       LEFT JOIN entity_external_refs er
         ON er.workspace_id = t.workspace_id
@@ -850,6 +852,8 @@ async function getTaskBoardData(db: D1DatabaseLike, workspaceId: string) {
        AND er.entity_id = t.id
       LEFT JOIN projects p ON p.id = t.project_id
       LEFT JOIN milestones m ON m.id = t.milestone_id
+      LEFT JOIN users assignee
+        ON assignee.id = t.assignee_user_id AND assignee.workspace_id = t.workspace_id
       WHERE t.workspace_id = ?
         AND t.deleted_at IS NULL
       ORDER BY t.column_id ASC, t.sort_order ASC
@@ -933,6 +937,7 @@ async function getTaskBoardData(db: D1DatabaseLike, workspaceId: string) {
         descriptionText: task.description_text,
         priority: task.priority,
         assigneeUserId: task.assignee_user_id,
+        assigneeName: task.assignee_name ?? null,
         reporterUserId: task.reporter_user_id,
         dueDate: task.due_date,
         startDate: task.start_date,

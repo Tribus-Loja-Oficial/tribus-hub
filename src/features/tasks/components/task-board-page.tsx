@@ -54,6 +54,7 @@ function boardTaskTextHaystack(
     task.milestoneTitle ?? "",
     assignee?.name ?? "",
     assignee?.email ?? "",
+    task.assigneeName ?? "",
     ...(task.labels?.map((l) => `${l.name} ${l.slug}`) ?? []),
     task.dueDate
       ? `${formatCivilDate(task.dueDate, "dd/MM/yyyy")} ${String(task.dueDate).slice(0, 10)}`
@@ -548,11 +549,12 @@ export function TaskBoardPage() {
                               : "Baixa"}
                       </span>
                     </td>
-                    <td className="hidden px-4 py-2.5 text-xs text-muted-foreground sm:table-cell">
-                      {task.assigneeUserId
-                        ? (members.find((m) => m.id === task.assigneeUserId)?.name?.split(" ")[0] ??
-                          "—")
-                        : "—"}
+                    <td className="hidden max-w-[160px] truncate px-4 py-2.5 text-xs text-muted-foreground sm:table-cell">
+                      {task.assigneeName?.trim()
+                        ? task.assigneeName
+                        : task.assigneeUserId
+                          ? (members.find((m) => m.id === task.assigneeUserId)?.name ?? "—")
+                          : "—"}
                     </td>
                     <td className="hidden px-4 py-2.5 sm:table-cell">
                       {task.labels?.length ? (

@@ -4,7 +4,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { BoardTask } from "@/lib/services/task-board.service";
 import { cn } from "@/lib/utils/cn";
-import { CalendarDays, Eye, GripVertical } from "lucide-react";
+import { CalendarDays, Eye, GripVertical, Tags, User } from "lucide-react";
 import { formatCivilDate } from "@/lib/date/civil-date";
 import { Button } from "@/components/ui/button";
 
@@ -41,23 +41,22 @@ export function TaskCard({ task, isDragging, onOpen }: TaskCardProps) {
       ref={setNodeRef}
       style={style}
       {...attributes}
+      {...listeners}
       className={cn(
-        "group rounded-md border border-border bg-card p-2.5 shadow-sm transition-all hover:border-border/80 hover:shadow-md",
+        "group cursor-grab touch-none rounded-md border border-border bg-card p-2.5 shadow-sm transition-all hover:border-border/80 hover:shadow-md active:cursor-grabbing",
         (isDragging || isSortableDragging) && "opacity-50 shadow-lg ring-2 ring-primary/20",
       )}
     >
       <div className="flex items-start gap-1.5">
-        <button
-          type="button"
-          className="mt-0.5 shrink-0 cursor-grab touch-none rounded-sm p-0.5 text-muted-foreground/40 outline-none ring-offset-background transition-colors hover:bg-muted/60 hover:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing"
-          aria-label="Arrastar task"
-          {...listeners}
+        <span
+          className="pointer-events-none mt-0.5 shrink-0 select-none text-muted-foreground/40"
+          aria-hidden
         >
           <GripVertical className="h-3.5 w-3.5" />
-        </button>
+        </span>
         <button
           type="button"
-          className="min-w-0 flex-1 rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="min-w-0 flex-1 cursor-pointer rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
           onClick={() => onOpen?.(task)}
         >
           <p className="line-clamp-2 text-sm font-medium leading-snug text-foreground">
@@ -69,39 +68,56 @@ export function TaskCard({ task, isDragging, onOpen }: TaskCardProps) {
             </p>
           )}
 
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            {task.priority && (
-              <span
-                className={cn(
-                  "rounded px-1.5 py-0.5 text-xs font-medium",
-                  priorityColors[task.priority] ?? "",
-                )}
-              >
-                {task.priority}
-              </span>
-            )}
+          <div className="mt-2 space-y-2">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              {task.priority && (
+                <span
+                  className={cn(
+                    "rounded px-1.5 py-0.5 text-xs font-medium",
+                    priorityColors[task.priority] ?? "",
+                  )}
+                >
+                  {task.priority}
+                </span>
+              )}
 
-            {task.dueDate && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <CalendarDays className="h-3 w-3" />
-                <span>{formatCivilDate(task.dueDate, "dd MMM")}</span>
+              {task.dueDate && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <CalendarDays className="h-3 w-3 shrink-0" />
+                  <span>{formatCivilDate(task.dueDate, "dd MMM")}</span>
+                </div>
+              )}
+
+              <div className="flex min-w-0 max-w-full items-center gap-1 text-xs text-muted-foreground">
+                <User className="h-3 w-3 shrink-0" aria-hidden />
+                <span className="truncate" title={task.assigneeName ?? undefined}>
+                  <span className="sr-only">Responsável: </span>
+                  {task.assigneeName?.trim() ? task.assigneeName : "Sem responsável"}
+                </span>
               </div>
-            )}
+            </div>
+
             {task.labels && task.labels.length > 0 && (
-              <div className="mt-1.5 flex flex-wrap gap-1">
-                {task.labels.map((lab) => (
-                  <span
-                    key={lab.id}
-                    className="rounded border border-border/80 bg-muted/50 px-1.5 py-0 text-[10px] font-medium text-muted-foreground"
-                    style={
-                      lab.colorToken
-                        ? { borderColor: lab.colorToken, color: lab.colorToken }
-                        : undefined
-                    }
-                  >
-                    {lab.name}
-                  </span>
-                ))}
+              <div className="space-y-1">
+                <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <Tags className="h-3 w-3 shrink-0" aria-hidden />
+                  Etiquetas
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {task.labels.map((lab) => (
+                    <span
+                      key={lab.id}
+                      className="rounded border border-border/80 bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                      style={
+                        lab.colorToken
+                          ? { borderColor: lab.colorToken, color: lab.colorToken }
+                          : undefined
+                      }
+                    >
+                      {lab.name}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -110,9 +126,10 @@ export function TaskCard({ task, isDragging, onOpen }: TaskCardProps) {
           type="button"
           variant="ghost"
           size="icon"
-          className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+          className="h-7 w-7 shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
           title="Editar tarefa"
           aria-label="Editar tarefa"
+          onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();

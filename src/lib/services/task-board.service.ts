@@ -12,6 +12,8 @@ export type BoardTask = Task & {
   labels: TaskLabelSummary[];
   projectTitle?: string | null;
   milestoneTitle?: string | null;
+  /** Nome do utilizador responsável (GET /v1/tasks/board). */
+  assigneeName?: string | null;
 };
 
 export interface BoardData {
