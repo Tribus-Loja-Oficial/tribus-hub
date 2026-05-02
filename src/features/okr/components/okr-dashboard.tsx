@@ -34,7 +34,13 @@ import { OkrProgressBar, MiniProgressRing } from "./okr-progress-bar";
 import { CreateCycleDialog } from "./create-cycle-dialog";
 import { CreateObjectiveDialog } from "./create-objective-dialog";
 import { CreateKeyResultDialog } from "./create-key-result-dialog";
-import { differenceInDays, isAfter, isBefore, formatDistanceToNow } from "date-fns";
+import {
+  differenceInCalendarDays,
+  differenceInDays,
+  isAfter,
+  isBefore,
+  formatDistanceToNow,
+} from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatCivilDate, parseCivilDateInput, startOfLocalDay } from "@/lib/date/civil-date";
 import { cn } from "@/lib/utils/cn";
@@ -658,6 +664,7 @@ function UpdateRow({ update }: { update: RecentKrUpdateWithContext }) {
   );
 }
 
+/** Dias de calendário locais sem alteração ao registo do KR (> STALE_DAYS = copy "mais de 14 dias"). */
 const STALE_DAYS = 14;
 
 function KrPerformanceSection({ objectives }: { objectives: ObjectiveWithKRsForDashboard[] }) {
@@ -691,7 +698,9 @@ function KrPerformanceSection({ objectives }: { objectives: ObjectiveWithKRsForD
       .slice(0, 5);
     const stale = flat.filter(({ kr }) => {
       if (kr.status === "completed") return false;
-      return differenceInDays(now, new Date(kr.updatedAt)) >= STALE_DAYS;
+      const lastTouch = startOfLocalDay(new Date(kr.updatedAt));
+      const today = startOfLocalDay(now);
+      return differenceInCalendarDays(today, lastTouch) > STALE_DAYS;
     });
     return { atRisk, topProgress, recent, stale };
   }, [objectives]);
@@ -701,7 +710,11 @@ function KrPerformanceSection({ objectives }: { objectives: ObjectiveWithKRsForD
       <div className="border-b border-border px-5 py-4">
         <p className="text-sm font-semibold text-foreground">Performance dos key results</p>
         <p className="mt-0.5 text-xs text-muted-foreground">
-          Segmentos rápidos para acompanhar risco, destaques e frescor das atualizações
+          Segmentos rápidos para acompanhar risco, destaques e frescor das atualizações.
+          <span className="mt-1 block text-[11px] text-muted-foreground/90">
+            “Sem update” usa a última alteração ao KR (progresso ou edição na ficha), há mais de{" "}
+            {STALE_DAYS} dias corridos no calendário local.
+          </span>
         </p>
       </div>
       <Tabs defaultValue="risk" className="w-full">
@@ -716,7 +729,11 @@ function KrPerformanceSection({ objectives }: { objectives: ObjectiveWithKRsForD
             <TabsTrigger value="recent" className="text-xs">
               Atualizados recentemente
             </TabsTrigger>
-            <TabsTrigger value="stale" className="text-xs">
+            <TabsTrigger
+              value="stale"
+              className="text-xs"
+              title={`KRs não concluídos sem alteração ao registo há mais de ${STALE_DAYS} dias (calendário local).`}
+            >
               Sem update ({stale.length})
             </TabsTrigger>
           </TabsList>
@@ -733,7 +750,7 @@ function KrPerformanceSection({ objectives }: { objectives: ObjectiveWithKRsForD
         <TabsContent value="stale" className="mt-0 px-0 pb-0">
           <KrPerfList
             rows={stale}
-            empty="Nenhum KR sem atualização há mais de 14 dias."
+            empty="Nenhum KR não concluído com mais de 14 dias sem alteração ao registo."
             showUpdated
           />
         </TabsContent>

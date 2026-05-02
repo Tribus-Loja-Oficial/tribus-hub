@@ -40,11 +40,22 @@ import {
   nativeSelectSmClassName,
 } from "@/components/ui/form-control-classes";
 import { cn } from "@/lib/utils/cn";
-import { TABLE_STATUS_CHIP_PX, TABLE_STATUS_CHIP_WIDTH_CLASS } from "@/lib/ui/chip-width-tokens";
+import {
+  TABLE_HEALTH_CHIP_PX,
+  TABLE_HEALTH_CHIP_WIDTH_CLASS,
+  TABLE_PRIORITY_CHIP_PX_WIDE,
+  TABLE_PRIORITY_CHIP_WIDTH_CLASS,
+  TABLE_STATUS_CHIP_PX,
+  TABLE_STATUS_CHIP_WIDTH_CLASS,
+} from "@/lib/ui/chip-width-tokens";
 import { WorkflowStatusRow } from "@/components/workflow-status-badge";
 import { ProjectHealthRow, PriorityBadge, MilestoneHealthRow } from "./project-badges";
 import type { OkrObjective, OkrKeyResult } from "@/lib/types/domain";
 import { EditProjectDialog } from "./edit-project-dialog";
+
+/** Faixa para badge + ícone de ajuda (iguais à hierarquia de projeto). */
+const OVERVIEW_WORKFLOW_CHIP_TRACK_PX = 220;
+const OVERVIEW_HEALTH_CHIP_TRACK_PX = 176;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -84,9 +95,12 @@ interface MilestoneWithStats extends Milestone {
   taskStats?: { total: number; done: number };
 }
 
-/** Grid da aba Milestones: coluna de título limitada + espaço horizontal uniforme (evita “vão” enorme até ao status). */
+/**
+ * Grid da aba Milestones: coluna de status ≥ badge (165px) + gap + ícone (~220px);
+ * prioridade com largura fixa para chips uniformes (TABLE_PRIORITY_CHIP_PX_WIDE).
+ */
 const MILESTONE_TABLE_GRID =
-  "gap-x-3 gap-y-2 sm:grid-cols-[minmax(0,17rem)_minmax(9rem,11rem)_5.5rem_6rem_5rem_5.5rem_3rem] sm:gap-y-0";
+  "gap-x-3 gap-y-2 sm:grid-cols-[minmax(0,17rem)_220px_96px_6rem_5rem_5.5rem_3rem] sm:gap-y-0";
 
 function milestoneOperationalLabel(status: string): string {
   const map: Record<string, string> = {
@@ -600,10 +614,28 @@ export function ProjectDetailView({
                 {project.summary}
               </p>
             )}
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <WorkflowStatusRow insight={project.workflowStatusInsight} />
-              <ProjectHealthRow insight={project.healthInsight} />
-              <PriorityBadge priority={project.priority} />
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+              <div className="min-w-0 shrink-0" style={{ width: OVERVIEW_WORKFLOW_CHIP_TRACK_PX }}>
+                <WorkflowStatusRow
+                  insight={project.workflowStatusInsight}
+                  tableCellLayout
+                  badgeWidthClass={TABLE_STATUS_CHIP_WIDTH_CLASS}
+                  tableChipWidthPx={TABLE_STATUS_CHIP_PX}
+                />
+              </div>
+              <div className="min-w-0 shrink-0" style={{ width: OVERVIEW_HEALTH_CHIP_TRACK_PX }}>
+                <ProjectHealthRow
+                  insight={project.healthInsight}
+                  tableCellLayout
+                  badgeWidthClass={TABLE_HEALTH_CHIP_WIDTH_CLASS}
+                  tableChipWidthPx={TABLE_HEALTH_CHIP_PX}
+                />
+              </div>
+              <PriorityBadge
+                priority={project.priority}
+                className={cn("justify-center", TABLE_PRIORITY_CHIP_WIDTH_CLASS)}
+                tableChipWidthPx={TABLE_PRIORITY_CHIP_PX_WIDE}
+              />
               {owner && (
                 <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                   <User className="h-3 w-3" />
@@ -832,11 +864,29 @@ export function ProjectDetailView({
                           {m.externalRef}
                         </span>
                       )}
-                      <div className="flex shrink-0 items-center gap-1.5">
-                        <span className="inline-flex flex-wrap items-center gap-1">
-                          <WorkflowStatusRow insight={m.workflowStatusInsight} />
-                          <MilestoneHealthRow insight={m.healthInsight} />
-                        </span>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <div
+                          className="min-w-0 shrink-0"
+                          style={{ width: OVERVIEW_WORKFLOW_CHIP_TRACK_PX }}
+                        >
+                          <WorkflowStatusRow
+                            insight={m.workflowStatusInsight}
+                            tableCellLayout
+                            badgeWidthClass={TABLE_STATUS_CHIP_WIDTH_CLASS}
+                            tableChipWidthPx={TABLE_STATUS_CHIP_PX}
+                          />
+                        </div>
+                        <div
+                          className="min-w-0 shrink-0"
+                          style={{ width: OVERVIEW_HEALTH_CHIP_TRACK_PX }}
+                        >
+                          <MilestoneHealthRow
+                            insight={m.healthInsight}
+                            tableCellLayout
+                            badgeWidthClass={TABLE_HEALTH_CHIP_WIDTH_CLASS}
+                            tableChipWidthPx={TABLE_HEALTH_CHIP_PX}
+                          />
+                        </div>
                         {m.dueDate && (
                           <span
                             className={cn(
@@ -900,7 +950,11 @@ export function ProjectDetailView({
                           Ref: {t.externalRef}
                         </span>
                       )}
-                      <PriorityBadge priority={t.priority} />
+                      <PriorityBadge
+                        priority={t.priority}
+                        className={cn("justify-center", TABLE_PRIORITY_CHIP_WIDTH_CLASS)}
+                        tableChipWidthPx={TABLE_PRIORITY_CHIP_PX_WIDE}
+                      />
                       {t.dueDate && (
                         <span
                           className={cn(
@@ -1004,7 +1058,7 @@ export function ProjectDetailView({
                         </span>
                       )}
                     </div>
-                    <div className="flex min-w-0 items-center pr-4 sm:min-w-0">
+                    <div className="flex w-full min-w-0 items-center justify-start sm:min-w-0">
                       {m.workflowStatusInsight ? (
                         <WorkflowStatusRow
                           insight={m.workflowStatusInsight}
@@ -1018,9 +1072,11 @@ export function ProjectDetailView({
                         </span>
                       )}
                     </div>
-                    <div className="hidden items-center sm:flex">
+                    <div className="hidden w-full min-w-0 items-center justify-center sm:flex">
                       <PriorityBadge
                         priority={(m as Milestone & { priority: string }).priority ?? "medium"}
+                        className={cn("justify-center", TABLE_PRIORITY_CHIP_WIDTH_CLASS)}
+                        tableChipWidthPx={TABLE_PRIORITY_CHIP_PX_WIDE}
                       />
                     </div>
                     <div className="hidden items-center sm:flex">
@@ -1100,7 +1156,7 @@ export function ProjectDetailView({
             </div>
           ) : (
             <div className="overflow-hidden rounded-xl border border-border">
-              <div className="hidden grid-cols-[1fr_80px_80px_90px_90px] border-b border-border bg-muted/30 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 sm:grid">
+              <div className="hidden grid-cols-[1fr_96px_80px_90px_90px] border-b border-border bg-muted/30 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 sm:grid">
                 <span>Título</span>
                 <span>Prioridade</span>
                 <span>Status</span>
@@ -1114,7 +1170,7 @@ export function ProjectDetailView({
                   <div
                     key={t.id}
                     className={cn(
-                      "flex items-center gap-3 border-b border-border/60 px-4 py-2.5 last:border-b-0 sm:grid sm:grid-cols-[1fr_80px_80px_90px_90px] sm:gap-0",
+                      "flex items-center gap-3 border-b border-border/60 px-4 py-2.5 last:border-b-0 sm:grid sm:grid-cols-[1fr_96px_80px_90px_90px] sm:gap-0",
                       "transition-colors hover:bg-accent/10",
                     )}
                   >
@@ -1145,8 +1201,12 @@ export function ProjectDetailView({
                         </span>
                       )}
                     </div>
-                    <div className="shrink-0">
-                      <PriorityBadge priority={t.priority} />
+                    <div className="flex min-w-0 shrink-0 items-center justify-center overflow-hidden sm:w-full">
+                      <PriorityBadge
+                        priority={t.priority}
+                        className={cn("justify-center", TABLE_PRIORITY_CHIP_WIDTH_CLASS)}
+                        tableChipWidthPx={TABLE_PRIORITY_CHIP_PX_WIDE}
+                      />
                     </div>
                     <div className="hidden text-xs text-muted-foreground sm:block">
                       {t.completedAt ? "Concluída" : taskOverdue ? "Atrasada" : "Em aberto"}

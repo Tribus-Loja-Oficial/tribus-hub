@@ -5,6 +5,8 @@
 export const TABLE_STATUS_CHIP_PX = 165;
 export const TABLE_HEALTH_CHIP_PX = 94;
 export const TABLE_PRIORITY_CHIP_PX = 58;
+/** Prioridade em PT (“Urgente”, “Média”): caixa única um pouco mais larga sem mudar a hierarquia compacta. */
+export const TABLE_PRIORITY_CHIP_PX_WIDE = 76;
 
 export function tableChipBoxStyle(px: number) {
   return {

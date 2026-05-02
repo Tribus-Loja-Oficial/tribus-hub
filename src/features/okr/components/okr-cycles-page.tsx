@@ -322,34 +322,6 @@ export function OkrCyclesPage() {
           </SummaryCard>
 
           <SummaryCard
-            title="Total de ciclos"
-            icon={CalendarRange}
-            iconClass="text-sky-600 dark:text-sky-400"
-          >
-            <p className="text-2xl font-bold tabular-nums text-foreground">{cycles.length}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Inclui planejados, em andamento e encerrados
-            </p>
-          </SummaryCard>
-
-          <SummaryCard
-            title="Próximo planejado"
-            icon={Clock}
-            iconClass="text-amber-600 dark:text-amber-400"
-            empty={!nextPlanned}
-            emptyLabel="Nenhum ciclo planejado"
-          >
-            {nextPlanned && (
-              <>
-                <p className="truncate font-semibold text-foreground">{nextPlanned.title}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  Início previsto {formatD(nextPlanned.startDate)}
-                </p>
-              </>
-            )}
-          </SummaryCard>
-
-          <SummaryCard
             title="Execução no ciclo em andamento"
             icon={Target}
             iconClass="text-violet-600 dark:text-violet-400"
@@ -386,6 +358,34 @@ export function OkrCyclesPage() {
                 </div>
               </div>
             )}
+          </SummaryCard>
+
+          <SummaryCard
+            title="Próximo planejado"
+            icon={Clock}
+            iconClass="text-amber-600 dark:text-amber-400"
+            empty={!nextPlanned}
+            emptyLabel="Nenhum ciclo planejado"
+          >
+            {nextPlanned && (
+              <>
+                <p className="truncate font-semibold text-foreground">{nextPlanned.title}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Início previsto {formatD(nextPlanned.startDate)}
+                </p>
+              </>
+            )}
+          </SummaryCard>
+
+          <SummaryCard
+            title="Total de ciclos"
+            icon={CalendarRange}
+            iconClass="text-sky-600 dark:text-sky-400"
+          >
+            <p className="text-2xl font-bold tabular-nums text-foreground">{cycles.length}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Inclui planejados, em andamento e encerrados
+            </p>
           </SummaryCard>
         </div>
       )}
