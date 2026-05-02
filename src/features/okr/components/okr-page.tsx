@@ -1087,7 +1087,8 @@ function ObjectiveBlock({
           >
             <Plus className="h-3.5 w-3.5" />
           </Button>
-          <DropdownMenu.Root modal={false} open={objMenuOpen} onOpenChange={onObjMenuOpenChange}>
+          {/* Uncontrolled open: controlled `open` + portal levava a cliques nos itens sem efeito (Radix/dismiss). Estado só via onOpenChange para z-index. */}
+          <DropdownMenu.Root modal onOpenChange={onObjMenuOpenChange}>
             <DropdownMenu.Trigger asChild>
               <Button
                 type="button"
@@ -1340,7 +1341,7 @@ function KrRow({
         >
           <RefreshCw className="h-3.5 w-3.5" />
         </Button>
-        <DropdownMenu.Root modal={false} open={menuOpen} onOpenChange={onKrMenuOpenChange}>
+        <DropdownMenu.Root modal onOpenChange={onKrMenuOpenChange}>
           <DropdownMenu.Trigger asChild>
             <Button
               type="button"
