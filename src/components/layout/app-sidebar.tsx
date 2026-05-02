@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -136,8 +137,25 @@ const bottomItems = [{ href: "/settings", label: "Configurações", icon: Settin
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
+const PREFETCH_ROUTES = [
+  "/tasks",
+  "/projects",
+  "/projects/list",
+  "/projects/cycles",
+  "/okr",
+  "/okr/okrs",
+  "/okr/cycles",
+  "/observatory",
+  "/observatory/cycles",
+  "/knowledge",
+  "/assets",
+  "/settings",
+  "/profile",
+] as const;
+
 export function AppSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [sidebarWidth, setSidebarWidth] = useState(232);
   const dragging = useRef(false);
   const lastX = useRef(0);
@@ -170,6 +188,16 @@ export function AppSidebar() {
   const showOkrSub = isOkrActive || okrOpen;
   const showPmSub = isPmActive || pmOpen;
   const showKnowledgeSub = isKnowledgeActive || knowledgeOpen;
+
+  useEffect(() => {
+    for (const href of PREFETCH_ROUTES) {
+      try {
+        router.prefetch(href);
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [router]);
 
   const { data: treeRes, isLoading: treeLoading } = useQuery<{ data: KnowledgeNode[] }>({
     queryKey: ["knowledge-tree-sidebar"],

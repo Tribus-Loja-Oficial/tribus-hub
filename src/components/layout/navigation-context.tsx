@@ -3,6 +3,18 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
 
+const NAV_PERF = process.env.NEXT_PUBLIC_NAV_PERF === "1";
+
+function fullPathFromHref(href: string): string {
+  if (typeof window === "undefined") return href;
+  try {
+    const u = new URL(href, window.location.href);
+    return u.pathname + u.search;
+  } catch {
+    return href;
+  }
+}
+
 interface NavigationState {
   pendingPathname: string | null;
   clearPendingPathname: () => void;
@@ -33,19 +45,58 @@ export function NavigationStateProvider({ children }: { children: React.ReactNod
         href.startsWith("http") ||
         href.startsWith("#") ||
         href.startsWith("mailto:") ||
-        href.startsWith("tel:") ||
-        href === pathname
-      )
+        href.startsWith("tel:")
+      ) {
         return;
+      }
+
+      if (typeof window !== "undefined") {
+        const targetFull = fullPathFromHref(href);
+        const currentFull = window.location.pathname + window.location.search;
+        if (targetFull === currentFull) return;
+      }
+
+      if (NAV_PERF && typeof performance !== "undefined") {
+        try {
+          performance.clearMarks("nav-click");
+          performance.mark("nav-click");
+        } catch {
+          /* ignore */
+        }
+      }
 
       setPendingPathname(href);
     }
 
     document.addEventListener("click", handleClick, true);
     return () => document.removeEventListener("click", handleClick, true);
-  }, [pathname]);
+  }, []);
 
-  // Fallback: if navigation takes too long, clear skeleton
+  /** Breadcrumbs: limpar `pending` quando pathname + query coincidem com o link clicado. */
+  useEffect(() => {
+    if (!pendingPathname || typeof window === "undefined") return;
+    try {
+      const pending = new URL(pendingPathname, window.location.href);
+      if (pending.pathname !== pathname) return;
+      const pendingSearch = pending.search || "";
+      const currentSearch = window.location.search || "";
+      if (pendingSearch !== currentSearch) return;
+      if (NAV_PERF && typeof performance !== "undefined") {
+        try {
+          performance.mark("nav-route");
+          performance.measure("nav-click-to-route", "nav-click", "nav-route");
+        } catch {
+          /* ignore */
+        }
+      }
+      setPendingPathname(null);
+    } catch {
+      if (pendingPathname.split("?")[0] === pathname) {
+        setPendingPathname(null);
+      }
+    }
+  }, [pathname, pendingPathname]);
+
   useEffect(() => {
     if (!pendingPathname) return;
     const t = setTimeout(clearPendingPathname, 8000);
