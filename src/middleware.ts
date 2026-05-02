@@ -10,8 +10,16 @@ const PUBLIC_PATHS = ["/login", "/api/auth", "/api/health"];
  * Para medir impacto: `NEXT_PUBLIC_NAV_PERF=1` no cliente + DevTools Performance;
  * otimizações (cache de sessão no edge, etc.) exigem revisão de segurança explícita.
  */
+const STATIC_PUBLIC_PATH_RE =
+  /\.(?:svg|png|jpe?g|gif|webp|ico|json|woff2?|ttf|eot|webmanifest|txt|map)$/i;
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Ficheiros em `public/` — não exigir sessão (evita redirect HTML no `next/image` / login sem cookie)
+  if (STATIC_PUBLIC_PATH_RE.test(pathname)) {
+    return NextResponse.next();
+  }
 
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
   if (isPublic) return NextResponse.next();
