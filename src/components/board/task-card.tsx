@@ -68,7 +68,7 @@ export function TaskCard({ task, isDragging, onOpen }: TaskCardProps) {
             </p>
           )}
 
-          <div className="mt-2 space-y-2">
+          <div className="mt-2 space-y-3">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               {task.priority && (
                 <span
@@ -87,14 +87,14 @@ export function TaskCard({ task, isDragging, onOpen }: TaskCardProps) {
                   <span>{formatCivilDate(task.dueDate, "dd MMM")}</span>
                 </div>
               )}
+            </div>
 
-              <div className="flex min-w-0 max-w-full items-center gap-1 text-xs text-muted-foreground">
-                <User className="h-3 w-3 shrink-0" aria-hidden />
-                <span className="truncate" title={task.assigneeName ?? undefined}>
-                  <span className="sr-only">Responsável: </span>
-                  {task.assigneeName?.trim() ? task.assigneeName : "Sem responsável"}
-                </span>
-              </div>
+            <div className="flex items-start gap-1.5 text-xs text-muted-foreground">
+              <User className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
+              <span className="min-w-0 flex-1 break-words leading-snug">
+                <span className="sr-only">Responsável: </span>
+                {task.assigneeName?.trim() ? task.assigneeName : "Sem responsável"}
+              </span>
             </div>
 
             {task.labels && task.labels.length > 0 && (
