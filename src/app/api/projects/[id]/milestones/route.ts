@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/permissions";
 import { hubApiFetch } from "@/lib/integrations/hub-api/client";
 import { createMilestoneSchema } from "@/lib/schemas/projects.schemas";
@@ -37,6 +38,7 @@ export async function POST(request: NextRequest, { params }: Params) {
         title: input.title,
         description: input.description ?? null,
         status: input.status ?? "pending",
+        priority: input.priority ?? "medium",
         dueDate: input.dueDate ?? null,
         ownerUserId: input.ownerUserId ?? null,
         sortOrder: input.sortOrder ?? 0,

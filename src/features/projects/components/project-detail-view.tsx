@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Project, Milestone, Task } from "@/lib/types/domain";
@@ -133,9 +133,20 @@ function CreateMilestoneDialog({
   onCreated: () => void;
 }) {
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [status, setStatus] = useState("pending");
   const [priority, setPriority] = useState("medium");
+
+  useEffect(() => {
+    if (!open) {
+      setTitle("");
+      setDescription("");
+      setDueDate("");
+      setStatus("pending");
+      setPriority("medium");
+    }
+  }, [open]);
 
   const createMutation = useMutation({
     mutationFn: async (payload: Record<string, unknown>) => {
@@ -151,6 +162,7 @@ function CreateMilestoneDialog({
       onCreated();
       onOpenChange(false);
       setTitle("");
+      setDescription("");
       setDueDate("");
       setStatus("pending");
       setPriority("medium");
@@ -169,6 +181,7 @@ function CreateMilestoneDialog({
             if (!title.trim()) return;
             createMutation.mutate({
               title: title.trim(),
+              description: description.trim() || undefined,
               status,
               priority,
               dueDate: dueDate || undefined,
@@ -185,6 +198,15 @@ function CreateMilestoneDialog({
               placeholder="Ex: Landing page publicada"
             />
           </div>
+          <div className="space-y-1.5">
+            <Label>Descrição</Label>
+            <textarea
+              className="min-h-[5rem] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Opcional"
+            />
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Status</Label>
@@ -197,7 +219,7 @@ function CreateMilestoneDialog({
                 <option value="in_progress">Em progresso</option>
                 <option value="blocked">Bloqueado</option>
                 <option value="completed">Concluído</option>
-                <option value="missed">Atrasado</option>
+                <option value="missed">Perdido</option>
               </select>
             </div>
             <div className="space-y-1.5">

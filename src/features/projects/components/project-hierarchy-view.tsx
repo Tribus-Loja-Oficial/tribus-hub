@@ -27,15 +27,18 @@ import {
   ArrowUp,
   ArrowDown,
   ArrowUpDown,
+  Trash2,
 } from "lucide-react";
 import { isBefore } from "date-fns";
 import { formatCivilDate, parseCivilDateInput, startOfLocalDay } from "@/lib/date/civil-date";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/components/ui/button";
 import { DateField } from "@/components/ui/date-field";
+import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { nativeSelectClassName } from "@/components/ui/form-control-classes";
 import { ProjectHealthRow, PriorityBadge, MilestoneHealthRow } from "./project-badges";
 import { paceHealthBadgeToneSlug } from "@/lib/pace-health-display";
 import { healthRowAccentClass } from "@/components/pace-health-badge";
@@ -128,6 +131,12 @@ function milestonePath(project: { id: string; slug: string }, milestoneId: strin
   return `${projectPath(project)}/milestones/${encodeURIComponent(milestoneId)}`;
 }
 
+type HierarchyDeleteConfirm =
+  | null
+  | { kind: "project"; id: string; title: string }
+  | { kind: "milestone"; projectId: string; milestoneId: string; title: string }
+  | { kind: "task"; taskId: string; title: string };
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function isOverdue(
@@ -187,11 +196,13 @@ function TaskRow({
   task,
   members,
   onEditTask,
+  onRequestDeleteTask,
   hierarchyGridTpl,
 }: {
   task: HierarchyTask;
   members: Map<string, MemberRow>;
   onEditTask: (taskId: string) => void;
+  onRequestDeleteTask: (taskId: string, title: string) => void;
   hierarchyGridTpl: string;
 }) {
   const done = !!task.completedAt || String(task.columnSlug ?? "").toLowerCase() === "done";
@@ -309,6 +320,19 @@ function TaskRow({
         >
           <ExternalLink className="h-3.5 w-3.5" />
         </Link>
+        <button
+          type="button"
+          title="Eliminar tarefa"
+          aria-label="Eliminar tarefa"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onRequestDeleteTask(task.id, task.title);
+          }}
+          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground/40 transition-colors hover:text-destructive"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
       </div>
     </div>
   );
@@ -323,6 +347,8 @@ function MilestoneRow({
   members,
   onCreateTask,
   onEditTask,
+  onRequestDeleteMilestone,
+  onRequestDeleteTask,
   hierarchyGridTpl,
 }: {
   milestone: HierarchyMilestone;
@@ -331,6 +357,8 @@ function MilestoneRow({
   members: Map<string, MemberRow>;
   onCreateTask: (projectId: string, milestoneId: string) => void;
   onEditTask: (taskId: string) => void;
+  onRequestDeleteMilestone: (projectId: string, milestoneId: string, title: string) => void;
+  onRequestDeleteTask: (taskId: string, title: string) => void;
   hierarchyGridTpl: string;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -447,7 +475,20 @@ function MilestoneRow({
               <span className="text-[10px] text-muted-foreground/40">—</span>
             )}
           </div>
-          <div className="min-w-0" aria-hidden />
+          <div className="flex min-w-0 items-center justify-end">
+            <button
+              type="button"
+              title="Eliminar milestone"
+              aria-label="Eliminar milestone"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRequestDeleteMilestone(projectId, milestone.id, milestone.title);
+              }}
+              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground/40 transition-colors hover:text-destructive"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -476,6 +517,7 @@ function MilestoneRow({
                     task={task}
                     members={members}
                     onEditTask={onEditTask}
+                    onRequestDeleteTask={onRequestDeleteTask}
                     hierarchyGridTpl={hierarchyGridTpl}
                   />
                 ))}
@@ -509,6 +551,9 @@ function ProjectRow({
   onCreateTask,
   onEditTask,
   onEditProject,
+  onRequestDeleteProject,
+  onRequestDeleteMilestone,
+  onRequestDeleteTask,
   expandSignal,
   hierarchyGridTpl,
   cycleTitle,
@@ -519,6 +564,9 @@ function ProjectRow({
   onCreateTask: (projectId: string, milestoneId: string) => void;
   onEditTask: (taskId: string) => void;
   onEditProject?: (p: ProjectHierarchyItem) => void;
+  onRequestDeleteProject: (projectId: string, title: string) => void;
+  onRequestDeleteMilestone: (projectId: string, milestoneId: string, title: string) => void;
+  onRequestDeleteTask: (taskId: string, title: string) => void;
   expandSignal: boolean;
   hierarchyGridTpl: string;
   cycleTitle: string | null;
@@ -554,7 +602,20 @@ function ProjectRow({
   });
 
   const [msTitle, setMsTitle] = useState("");
+  const [msDescription, setMsDescription] = useState("");
+  const [msStatus, setMsStatus] = useState("pending");
+  const [msPriority, setMsPriority] = useState("medium");
   const [msDueDate, setMsDueDate] = useState("");
+
+  useEffect(() => {
+    if (!createMilestoneOpen) {
+      setMsTitle("");
+      setMsDescription("");
+      setMsStatus("pending");
+      setMsPriority("medium");
+      setMsDueDate("");
+    }
+  }, [createMilestoneOpen]);
 
   return (
     <div
@@ -708,6 +769,18 @@ function ProjectRow({
             >
               <ExternalLink className="h-3.5 w-3.5" />
             </Link>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRequestDeleteProject(project.id, project.title);
+              }}
+              title="Eliminar projeto"
+              aria-label="Eliminar projeto"
+              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground/40 transition-colors hover:text-destructive"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
           </div>
         </div>
       </div>
@@ -750,7 +823,9 @@ function ProjectRow({
                 <div className="flex items-center justify-start">Progresso</div>
                 <div className="flex items-center justify-start">Ciclo</div>
                 <div className="flex items-center justify-start">Prazo</div>
-                <div className="min-w-0" aria-hidden />
+                <div className="flex items-center justify-end text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Ações
+                </div>
               </div>
               {project.milestones.map((milestone) => (
                 <MilestoneRow
@@ -761,6 +836,8 @@ function ProjectRow({
                   members={members}
                   onCreateTask={onCreateTask}
                   onEditTask={onEditTask}
+                  onRequestDeleteMilestone={onRequestDeleteMilestone}
+                  onRequestDeleteTask={onRequestDeleteTask}
                   hierarchyGridTpl={hierarchyGridTpl}
                 />
               ))}
@@ -793,7 +870,9 @@ function ProjectRow({
               if (!msTitle.trim()) return;
               createMilestoneMutation.mutate({
                 title: msTitle.trim(),
-                status: "pending",
+                description: msDescription.trim() || undefined,
+                status: msStatus,
+                priority: msPriority,
                 dueDate: msDueDate || undefined,
               });
             }}
@@ -807,6 +886,44 @@ function ProjectRow({
                 onChange={(e) => setMsTitle(e.target.value)}
                 placeholder="Ex: Landing page publicada"
               />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Descrição</Label>
+              <textarea
+                className="min-h-[5rem] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={msDescription}
+                onChange={(e) => setMsDescription(e.target.value)}
+                placeholder="Opcional"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Status</Label>
+                <select
+                  className={nativeSelectClassName}
+                  value={msStatus}
+                  onChange={(e) => setMsStatus(e.target.value)}
+                >
+                  <option value="pending">Pendente</option>
+                  <option value="in_progress">Em progresso</option>
+                  <option value="blocked">Bloqueado</option>
+                  <option value="completed">Concluído</option>
+                  <option value="missed">Perdido</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Prioridade</Label>
+                <select
+                  className={nativeSelectClassName}
+                  value={msPriority}
+                  onChange={(e) => setMsPriority(e.target.value)}
+                >
+                  <option value="low">Baixa</option>
+                  <option value="medium">Média</option>
+                  <option value="high">Alta</option>
+                  <option value="urgent">Urgente</option>
+                </select>
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label>Prazo</Label>
@@ -884,6 +1001,82 @@ export function ProjectHierarchyView({
   const [createTaskMilestoneId, setCreateTaskMilestoneId] = useState("");
   const [editTaskOpen, setEditTaskOpen] = useState(false);
   const [editTaskId, setEditTaskId] = useState<string | null>(null);
+  const [hierarchyDeleteConfirm, setHierarchyDeleteConfirm] =
+    useState<HierarchyDeleteConfirm>(null);
+
+  const hierarchyDeleteMutation = useMutation({
+    mutationFn: async (payload: NonNullable<HierarchyDeleteConfirm>) => {
+      if (payload.kind === "project") {
+        const res = await fetch(`/api/projects/${encodeURIComponent(payload.id)}`, {
+          method: "DELETE",
+        });
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}));
+          throw new Error(j?.error?.message ?? "Falha ao remover projeto");
+        }
+        return;
+      }
+      if (payload.kind === "milestone") {
+        const res = await fetch(
+          `/api/projects/${encodeURIComponent(payload.projectId)}/milestones/${encodeURIComponent(payload.milestoneId)}`,
+          { method: "DELETE" },
+        );
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}));
+          throw new Error(j?.error?.message ?? "Falha ao remover milestone");
+        }
+        return;
+      }
+      const res = await fetch(`/api/tasks/${encodeURIComponent(payload.taskId)}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j?.error?.message ?? "Falha ao remover tarefa");
+      }
+    },
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ["project-hierarchy"] });
+      void queryClient.invalidateQueries({ queryKey: ["board"] });
+      void queryClient.invalidateQueries({ queryKey: ["projects"] });
+      void queryClient.invalidateQueries({ queryKey: ["project-hub"] });
+      void queryClient.invalidateQueries({ queryKey: ["okr-dashboard"] });
+      void queryClient.invalidateQueries({ queryKey: ["pm-dashboard-stats"] });
+      if (variables.kind === "task" && variables.taskId === editTaskId) {
+        setEditTaskOpen(false);
+        setEditTaskId(null);
+      }
+      setHierarchyDeleteConfirm(null);
+    },
+  });
+
+  const hierarchyDeleteDialogProps = (() => {
+    const c = hierarchyDeleteConfirm;
+    if (!c) return null;
+    switch (c.kind) {
+      case "project":
+        return {
+          title: "Remover projeto",
+          description: `Remover o projeto "${c.title}"? Milestones e tarefas vinculados serão afetados. Esta ação não pode ser desfeita.`,
+          confirmLabel: "Remover",
+          onConfirm: () => hierarchyDeleteMutation.mutate(c),
+        };
+      case "milestone":
+        return {
+          title: "Remover milestone",
+          description: `Remover o milestone "${c.title}"? As tarefas deste milestone podem ficar sem milestone.`,
+          confirmLabel: "Remover",
+          onConfirm: () => hierarchyDeleteMutation.mutate(c),
+        };
+      case "task":
+        return {
+          title: "Remover tarefa",
+          description: `Remover a tarefa "${c.title}"? Esta ação não pode ser desfeita.`,
+          confirmLabel: "Remover",
+          onConfirm: () => hierarchyDeleteMutation.mutate(c),
+        };
+    }
+  })();
 
   const { data, isLoading } = useQuery<{ data: ProjectHierarchyItem[] }>({
     queryKey: ["project-hierarchy"],
@@ -1183,7 +1376,11 @@ export function ProjectHierarchyView({
                   {renderSortIcon("targetDate")}
                 </button>
               </HierarchyHeaderCell>
-              <div className="min-w-0" aria-hidden />
+              <div className="flex min-w-0 items-center justify-end pr-1">
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Ações
+                </span>
+              </div>
             </div>
           </div>
           {sorted.map((project) => (
@@ -1197,6 +1394,15 @@ export function ProjectHierarchyView({
               onCreateTask={handleCreateTask}
               onEditTask={handleEditTask}
               onEditProject={onEditProject}
+              onRequestDeleteProject={(id, title) =>
+                setHierarchyDeleteConfirm({ kind: "project", id, title })
+              }
+              onRequestDeleteMilestone={(projectId, milestoneId, title) =>
+                setHierarchyDeleteConfirm({ kind: "milestone", projectId, milestoneId, title })
+              }
+              onRequestDeleteTask={(taskId, title) =>
+                setHierarchyDeleteConfirm({ kind: "task", taskId, title })
+              }
               expandSignal={allExpanded}
               hierarchyGridTpl={hierarchyGridTpl}
               cycleTitle={project.cycleId ? (cycleTitleById.get(project.cycleId) ?? null) : null}
@@ -1233,6 +1439,21 @@ export function ProjectHierarchyView({
         taskId={editTaskId}
         columns={columns}
       />
+
+      {hierarchyDeleteDialogProps && (
+        <ConfirmActionDialog
+          open={hierarchyDeleteConfirm !== null}
+          onOpenChange={(open) => {
+            if (!open) setHierarchyDeleteConfirm(null);
+          }}
+          title={hierarchyDeleteDialogProps.title}
+          description={hierarchyDeleteDialogProps.description}
+          confirmLabel={hierarchyDeleteDialogProps.confirmLabel}
+          variant="destructive"
+          onConfirm={hierarchyDeleteDialogProps.onConfirm}
+          isConfirming={hierarchyDeleteMutation.isPending}
+        />
+      )}
     </>
   );
 }
