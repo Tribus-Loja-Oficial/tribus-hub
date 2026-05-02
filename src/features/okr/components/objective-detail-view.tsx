@@ -17,6 +17,7 @@ import {
   invalidateAfterObjectiveMutation,
 } from "@/lib/query/invalidate-hub-cache";
 import { formatOkrProgressPercent } from "@/features/okr/lib/okr-progress-format";
+import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
 
 type ObjectiveWithKRs = OkrObjective & { keyResults: OkrKeyResult[] };
 
@@ -37,6 +38,7 @@ export function ObjectiveDetailView({ objectiveId, embedded }: ObjectiveDetailVi
   const [editObjectiveOpen, setEditObjectiveOpen] = useState(false);
   const [updateKrOpen, setUpdateKrOpen] = useState(false);
   const [selectedKr, setSelectedKr] = useState<OkrKeyResult | null>(null);
+  const [confirmDeleteKrId, setConfirmDeleteKrId] = useState<string | null>(null);
   const { data, isLoading } = useQuery<{ data: ObjectiveWithKRs }>({
     queryKey: ["okr-objective", objectiveId],
     queryFn: async (): Promise<{ data: ObjectiveWithKRs }> => {
@@ -280,9 +282,7 @@ export function ObjectiveDetailView({ objectiveId, embedded }: ObjectiveDetailVi
                     size="sm"
                     variant="ghost"
                     className="h-7 w-7 p-0 text-destructive/70 hover:text-destructive"
-                    onClick={() => {
-                      if (confirm("Remover este key result?")) deleteMutation.mutate(kr.id);
-                    }}
+                    onClick={() => setConfirmDeleteKrId(kr.id)}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
@@ -308,6 +308,21 @@ export function ObjectiveDetailView({ objectiveId, embedded }: ObjectiveDetailVi
         open={updateKrOpen}
         onOpenChange={setUpdateKrOpen}
         keyResult={selectedKr}
+      />
+
+      <ConfirmActionDialog
+        nested={!!embedded}
+        open={confirmDeleteKrId !== null}
+        onOpenChange={(open) => {
+          if (!open) setConfirmDeleteKrId(null);
+        }}
+        title="Remover key result"
+        description="Remover este key result?"
+        confirmLabel="Remover"
+        onConfirm={() => {
+          if (confirmDeleteKrId) deleteMutation.mutate(confirmDeleteKrId);
+        }}
+        isConfirming={deleteMutation.isPending}
       />
     </div>
   );

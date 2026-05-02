@@ -53,6 +53,7 @@ import { deriveOkrWorkflowStatusInsight } from "@/features/okr/lib/okr-workflow-
 import { reconcileOkrHealthInsightForDisplay } from "@/features/okr/lib/okr-pace-health-local";
 import { formatOkrProgressPercent } from "@/features/okr/lib/okr-progress-format";
 import { cn } from "@/lib/utils/cn";
+import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
 import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resizable-grid-columns";
 import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
 import {
@@ -149,6 +150,8 @@ export function OkrPage() {
   const [selectedKr, setSelectedKr] = useState<OkrKeyResult | null>(null);
   const [objMenu, setObjMenu] = useState<string | null>(null);
   const [krMenu, setKrMenu] = useState<string | null>(null);
+  const [confirmDeleteObjectiveId, setConfirmDeleteObjectiveId] = useState<string | null>(null);
+  const [confirmDeleteKrId, setConfirmDeleteKrId] = useState<string | null>(null);
 
   const { widths, startResize } = useResizableGridColumns(
     "hub:okr-page-list-cols-v9",
@@ -851,13 +854,12 @@ export function OkrPage() {
                     krMenuOpen={krMenu}
                     onKrMenuOpenChange={(open, krId) => setKrMenu(open ? krId : null)}
                     onDeleteObj={() => {
-                      if (confirm("Remover este objetivo e todos seus key results?"))
-                        deleteObjMutation.mutate(obj.id);
                       setObjMenu(null);
+                      setConfirmDeleteObjectiveId(obj.id);
                     }}
                     onDeleteKr={(id) => {
-                      if (confirm("Remover este key result?")) deleteKrMutation.mutate(id);
                       setKrMenu(null);
+                      setConfirmDeleteKrId(id);
                     }}
                     onAddKr={() => openAddKr(obj.id)}
                     onUpdateKr={(kr) => {
@@ -902,6 +904,34 @@ export function OkrPage() {
         open={updateKrOpen}
         onOpenChange={setUpdateKrOpen}
         keyResult={selectedKr}
+      />
+
+      <ConfirmActionDialog
+        open={confirmDeleteObjectiveId !== null}
+        onOpenChange={(open) => {
+          if (!open) setConfirmDeleteObjectiveId(null);
+        }}
+        title="Remover objetivo"
+        description="Remover este objetivo e todos os seus key results?"
+        confirmLabel="Remover"
+        onConfirm={() => {
+          if (confirmDeleteObjectiveId) deleteObjMutation.mutate(confirmDeleteObjectiveId);
+        }}
+        isConfirming={deleteObjMutation.isPending}
+      />
+
+      <ConfirmActionDialog
+        open={confirmDeleteKrId !== null}
+        onOpenChange={(open) => {
+          if (!open) setConfirmDeleteKrId(null);
+        }}
+        title="Remover key result"
+        description="Remover este key result?"
+        confirmLabel="Remover"
+        onConfirm={() => {
+          if (confirmDeleteKrId) deleteKrMutation.mutate(confirmDeleteKrId);
+        }}
+        isConfirming={deleteKrMutation.isPending}
       />
     </div>
   );

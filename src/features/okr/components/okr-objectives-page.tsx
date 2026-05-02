@@ -30,6 +30,7 @@ import { reconcileOkrHealthInsightForDisplay } from "@/features/okr/lib/okr-pace
 import { useResizableGridColumns, GridColResizeHandle } from "@/hooks/use-resizable-grid-columns";
 import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
 import { cn } from "@/lib/utils/cn";
+import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
 import { deriveOkrWorkflowStatusInsight } from "@/features/okr/lib/okr-workflow-status";
 import { formatOkrProgressPercent } from "@/features/okr/lib/okr-progress-format";
 import {
@@ -86,6 +87,7 @@ export function OkrObjectivesPage() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [updateKrOpen, setUpdateKrOpen] = useState(false);
   const [selectedKr, setSelectedKr] = useState<OkrKeyResult | null>(null);
+  const [confirmDeleteObjectiveId, setConfirmDeleteObjectiveId] = useState<string | null>(null);
 
   const { widths, startResize } = useResizableGridColumns(
     "hub:okr-objectives-cols-v6",
@@ -361,8 +363,8 @@ export function OkrObjectivesPage() {
                   menuOpen={menuOpen === obj.id}
                   onMenuToggle={() => setMenuOpen(menuOpen === obj.id ? null : obj.id)}
                   onDelete={() => {
-                    if (confirm("Remover este objetivo?")) deleteMutation.mutate(obj.id);
                     setMenuOpen(null);
+                    setConfirmDeleteObjectiveId(obj.id);
                   }}
                   onUpdateKr={(kr) => {
                     setSelectedKr(kr);
@@ -380,6 +382,20 @@ export function OkrObjectivesPage() {
         open={updateKrOpen}
         onOpenChange={setUpdateKrOpen}
         keyResult={selectedKr}
+      />
+
+      <ConfirmActionDialog
+        open={confirmDeleteObjectiveId !== null}
+        onOpenChange={(open) => {
+          if (!open) setConfirmDeleteObjectiveId(null);
+        }}
+        title="Remover objetivo"
+        description="Remover este objetivo?"
+        confirmLabel="Remover"
+        onConfirm={() => {
+          if (confirmDeleteObjectiveId) deleteMutation.mutate(confirmDeleteObjectiveId);
+        }}
+        isConfirming={deleteMutation.isPending}
       />
     </div>
   );

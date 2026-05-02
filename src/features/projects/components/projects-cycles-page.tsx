@@ -31,12 +31,20 @@ import { CycleGovernanceBadge } from "@/components/cycles/cycle-governance-badge
 import { ProjectHealthRow } from "./project-badges";
 import { WorkflowStatusRow } from "@/components/workflow-status-badge";
 import { cn } from "@/lib/utils/cn";
+import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
 import { formatCivilDate, parseCivilDateInput } from "@/lib/date/civil-date";
 import { differenceInDays, isAfter, isBefore } from "date-fns";
 import type { OkrCycle, Project, ProjectStatus } from "@/lib/types/domain";
 
 type SortKey = "start_desc" | "start_asc" | "end_desc" | "end_asc";
 type StatusFilter = "all" | OkrCycle["status"];
+
+type PendingCycleConfirm =
+  | null
+  | { kind: "activate_replace"; targetId: string; replacingTitle: string }
+  | { kind: "close"; id: string; title: string }
+  | { kind: "reopen"; id: string; title: string }
+  | { kind: "delete"; id: string };
 
 type WorkspaceCycleRow = {
   id: string;
@@ -112,6 +120,7 @@ export function ProjectsCyclesPage() {
   const [sortKey, setSortKey] = useState<SortKey>("start_desc");
   const [quickOnlyActive, setQuickOnlyActive] = useState(false);
   const [quickOnlyPlanned, setQuickOnlyPlanned] = useState(false);
+  const [pendingCycleConfirm, setPendingCycleConfirm] = useState<PendingCycleConfirm>(null);
 
   const { data: cyclesRes, isLoading } = useQuery<{ data: OkrCycle[] }>({
     queryKey: ["okr-cycles"],
@@ -261,21 +270,59 @@ export function ProjectsCyclesPage() {
   }, [cycles, quickOnlyActive, quickOnlyPlanned, search, sortKey, statusFilter]);
 
   function requestActivate(id: string) {
-    if (
-      activeCycle &&
-      activeCycle.id !== id &&
-      !confirm(
-        `Colocar este ciclo em andamento encerrará o ciclo em andamento atual (“${activeCycle.title}”). Continuar?`,
-      )
-    )
+    if (activeCycle && activeCycle.id !== id) {
+      setPendingCycleConfirm({
+        kind: "activate_replace",
+        targetId: id,
+        replacingTitle: activeCycle.title,
+      });
       return;
+    }
     patchMutation.mutate({ id, status: "active" });
   }
 
   function requestClose(id: string, title: string) {
-    if (!confirm(`Encerrar o ciclo “${title}”?`)) return;
-    patchMutation.mutate({ id, status: "closed" });
+    setPendingCycleConfirm({ kind: "close", id, title });
   }
+
+  const cycleConfirmProps = (() => {
+    const p = pendingCycleConfirm;
+    if (!p) return null;
+    switch (p.kind) {
+      case "activate_replace":
+        return {
+          title: "Colocar ciclo em andamento",
+          description: `Colocar este ciclo em andamento encerrará o ciclo em andamento atual (“${p.replacingTitle}”). Continuar?`,
+          variant: "default" as const,
+          confirmLabel: "Continuar",
+          onConfirm: () => patchMutation.mutate({ id: p.targetId, status: "active" }),
+        };
+      case "close":
+        return {
+          title: "Encerrar ciclo",
+          description: `Encerrar o ciclo “${p.title}”?`,
+          variant: "default" as const,
+          confirmLabel: "Encerrar",
+          onConfirm: () => patchMutation.mutate({ id: p.id, status: "closed" }),
+        };
+      case "reopen":
+        return {
+          title: "Reabrir ciclo",
+          description: `Reabrir “${p.title}” como planejado? Revise as datas se o período já passou.`,
+          variant: "default" as const,
+          confirmLabel: "Reabrir",
+          onConfirm: () => patchMutation.mutate({ id: p.id, status: "planned" }),
+        };
+      case "delete":
+        return {
+          title: "Remover ciclo",
+          description: "Remover este ciclo?",
+          variant: "destructive" as const,
+          confirmLabel: "Remover",
+          onConfirm: () => deleteMutation.mutate(p.id),
+        };
+    }
+  })();
 
   return (
     <div className="max-w-6xl space-y-8">
@@ -730,13 +777,11 @@ export function ProjectsCyclesPage() {
                               type="button"
                               className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-muted/50"
                               onClick={() => {
-                                if (
-                                  confirm(
-                                    `Reabrir “${cycle.title}” como planejado? Revise as datas se o período já passou.`,
-                                  )
-                                ) {
-                                  patchMutation.mutate({ id: cycle.id, status: "planned" });
-                                }
+                                setPendingCycleConfirm({
+                                  kind: "reopen",
+                                  id: cycle.id,
+                                  title: cycle.title,
+                                });
                                 setMenuOpen(null);
                               }}
                             >
@@ -749,7 +794,7 @@ export function ProjectsCyclesPage() {
                             type="button"
                             className="flex w-full items-center gap-2 px-3 py-1.5 text-sm text-destructive hover:bg-muted/50"
                             onClick={() => {
-                              if (confirm("Remover este ciclo?")) deleteMutation.mutate(cycle.id);
+                              setPendingCycleConfirm({ kind: "delete", id: cycle.id });
                               setMenuOpen(null);
                             }}
                           >
@@ -781,6 +826,21 @@ export function ProjectsCyclesPage() {
         }}
         cycle={cycleToEdit}
       />
+
+      {cycleConfirmProps && (
+        <ConfirmActionDialog
+          open={pendingCycleConfirm !== null}
+          onOpenChange={(open) => {
+            if (!open) setPendingCycleConfirm(null);
+          }}
+          title={cycleConfirmProps.title}
+          description={cycleConfirmProps.description}
+          confirmLabel={cycleConfirmProps.confirmLabel}
+          variant={cycleConfirmProps.variant}
+          onConfirm={cycleConfirmProps.onConfirm}
+          isConfirming={patchMutation.isPending || deleteMutation.isPending}
+        />
+      )}
     </div>
   );
 }

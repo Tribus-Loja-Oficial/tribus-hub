@@ -38,6 +38,7 @@ import {
   nativeSelectSmClassName,
 } from "@/components/ui/form-control-classes";
 import { cn } from "@/lib/utils/cn";
+import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
 import {
   TABLE_HEALTH_CHIP_PX,
   TABLE_HEALTH_CHIP_WIDTH_CLASS,
@@ -472,6 +473,7 @@ export function ProjectDetailView({
   const queryClient = useQueryClient();
   const [createMilestoneOpen, setCreateMilestoneOpen] = useState(false);
   const [editProjectOpen, setEditProjectOpen] = useState(false);
+  const [confirmDeleteMilestoneId, setConfirmDeleteMilestoneId] = useState<string | null>(null);
   const { data, isLoading, isError, error } = useQuery<{ data: HubPayload }>({
     queryKey: ["project-hub", projectId],
     queryFn: async () => {
@@ -1072,10 +1074,7 @@ export function ProjectDetailView({
                         type="button"
                         title="Eliminar milestone"
                         aria-label="Eliminar milestone"
-                        onClick={() => {
-                          if (confirm("Remover este milestone?"))
-                            deleteMilestoneMutation.mutate(m.id);
-                        }}
+                        onClick={() => setConfirmDeleteMilestoneId(m.id)}
                         className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground/40 transition-colors hover:text-destructive"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -1241,6 +1240,21 @@ export function ProjectDetailView({
         onOpenChange={setEditProjectOpen}
         project={project}
         nested={!!embedded}
+      />
+
+      <ConfirmActionDialog
+        nested={!!embedded}
+        open={confirmDeleteMilestoneId !== null}
+        onOpenChange={(open) => {
+          if (!open) setConfirmDeleteMilestoneId(null);
+        }}
+        title="Remover milestone"
+        description="Remover este milestone?"
+        confirmLabel="Remover"
+        onConfirm={() => {
+          if (confirmDeleteMilestoneId) deleteMilestoneMutation.mutate(confirmDeleteMilestoneId);
+        }}
+        isConfirming={deleteMilestoneMutation.isPending}
       />
     </div>
   );

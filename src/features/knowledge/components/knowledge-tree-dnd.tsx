@@ -38,6 +38,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Page } from "@/lib/types/domain";
 import { cn } from "@/lib/utils/cn";
+import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
 
 export interface PageNode extends Page {
   children: PageNode[];
@@ -555,6 +556,9 @@ export function KnowledgeTreeDnd({
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameTarget, setRenameTarget] = useState<Page | null>(null);
   const [renameTitle, setRenameTitle] = useState("");
+  const [confirmDeletePage, setConfirmDeletePage] = useState<{ id: string; title: string } | null>(
+    null,
+  );
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
@@ -793,6 +797,7 @@ export function KnowledgeTreeDnd({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["knowledge-tree"] });
+      setConfirmDeletePage(null);
     },
   });
 
@@ -803,13 +808,7 @@ export function KnowledgeTreeDnd({
       setRenameOpen(true);
       return;
     }
-    if (
-      window.confirm(
-        `Excluir permanentemente "${node.title}"? Itens filhos ficam órfãos na raiz até serem reorganizados.`,
-      )
-    ) {
-      deleteMutation.mutate(node.id);
-    }
+    setConfirmDeletePage({ id: node.id, title: node.title });
   };
 
   const activeDragNode = useMemo(() => {
@@ -1170,6 +1169,25 @@ export function KnowledgeTreeDnd({
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmActionDialog
+        open={confirmDeletePage !== null}
+        onOpenChange={(o) => {
+          if (!o) setConfirmDeletePage(null);
+        }}
+        title="Excluir página"
+        description={
+          confirmDeletePage
+            ? `Excluir permanentemente "${confirmDeletePage.title}"? Itens filhos ficam órfãos na raiz até serem reorganizados.`
+            : ""
+        }
+        confirmLabel="Excluir"
+        variant="destructive"
+        onConfirm={() => {
+          if (confirmDeletePage) deleteMutation.mutate(confirmDeletePage.id);
+        }}
+        isConfirming={deleteMutation.isPending}
+      />
     </>
   );
 }

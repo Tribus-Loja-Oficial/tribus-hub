@@ -23,6 +23,7 @@ import { CreateKeyResultDialog } from "./create-key-result-dialog";
 import { UpdateKeyResultDialog } from "./update-key-result-dialog";
 import { EntityQuickViewEyeButton } from "@/components/entity-quick-view-dialog";
 import { cn } from "@/lib/utils/cn";
+import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -47,6 +48,7 @@ export function OkrKeyResultsPage() {
   const [groupByObjective, setGroupByObjective] = useState(true);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [confirmDeleteKrId, setConfirmDeleteKrId] = useState<string | null>(null);
 
   const params = new URLSearchParams();
   if (filterStatus) params.set("status", filterStatus);
@@ -278,8 +280,8 @@ export function OkrKeyResultsPage() {
                           menuOpen={menuOpen === kr.id}
                           onMenuToggle={() => setMenuOpen(menuOpen === kr.id ? null : kr.id)}
                           onDelete={() => {
-                            if (confirm("Remover este key result?")) deleteMutation.mutate(kr.id);
                             setMenuOpen(null);
+                            setConfirmDeleteKrId(kr.id);
                           }}
                           onUpdate={() => {
                             setSelectedKr(kr);
@@ -305,8 +307,8 @@ export function OkrKeyResultsPage() {
                   menuOpen={menuOpen === kr.id}
                   onMenuToggle={() => setMenuOpen(menuOpen === kr.id ? null : kr.id)}
                   onDelete={() => {
-                    if (confirm("Remover este key result?")) deleteMutation.mutate(kr.id);
                     setMenuOpen(null);
+                    setConfirmDeleteKrId(kr.id);
                   }}
                   onUpdate={() => {
                     setSelectedKr(kr);
@@ -323,6 +325,20 @@ export function OkrKeyResultsPage() {
         open={updateOpen}
         onOpenChange={setUpdateOpen}
         keyResult={selectedKr}
+      />
+
+      <ConfirmActionDialog
+        open={confirmDeleteKrId !== null}
+        onOpenChange={(open) => {
+          if (!open) setConfirmDeleteKrId(null);
+        }}
+        title="Remover key result"
+        description="Remover este key result?"
+        confirmLabel="Remover"
+        onConfirm={() => {
+          if (confirmDeleteKrId) deleteMutation.mutate(confirmDeleteKrId);
+        }}
+        isConfirming={deleteMutation.isPending}
       />
     </div>
   );
