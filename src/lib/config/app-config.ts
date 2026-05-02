@@ -6,11 +6,6 @@ export const appConfig = {
   isProduction: env.NODE_ENV === "production",
   isDevelopment: env.NODE_ENV === "development",
 
-  upload: {
-    maxSizeBytes: env.UPLOAD_MAX_SIZE_BYTES,
-    allowedMimeTypes: env.UPLOAD_ALLOWED_MIME_TYPES.split(",").map((t) => t.trim()),
-  },
-
   pagination: {
     defaultPageSize: 20,
     maxPageSize: 100,

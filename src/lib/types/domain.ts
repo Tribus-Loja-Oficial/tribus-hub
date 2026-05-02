@@ -21,8 +21,6 @@ export type AuditAction =
   | "task.updated"
   | "task.moved"
   | "task.deleted"
-  | "asset.uploaded"
-  | "asset.deleted"
   | "user.created"
   | "user.login"
   | "ingestion.validated"
@@ -312,35 +310,5 @@ export interface PageRevision {
   contentText: string | null;
   createdBy: string;
   changeReason: string | null;
-  createdAt: string;
-}
-
-// ─── Assets ───────────────────────────────────────────────────────────────────
-
-export type AssetUsageKind = "cover" | "inline" | "attachment" | "reference" | "avatar";
-
-export interface Asset {
-  id: string;
-  workspaceId: string;
-  storageProvider: "r2";
-  bucket: string;
-  objectKey: string;
-  originalFilename: string;
-  mimeType: string;
-  extension: string;
-  sizeBytes: number;
-  checksumSha256: string | null;
-  width: number | null;
-  height: number | null;
-  uploadedBy: string;
-  createdAt: string;
-}
-
-export interface AssetLink {
-  id: string;
-  assetId: string;
-  entityType: string;
-  entityId: string;
-  usageKind: AssetUsageKind;
   createdAt: string;
 }

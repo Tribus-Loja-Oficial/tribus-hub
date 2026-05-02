@@ -13,15 +13,14 @@ O tribus-hub segue a mesma disciplina arquitetural dos demais projetos Tribus:
 
 ## Stack de decisão
 
-| Decisão | Escolha | Motivo |
-|---------|---------|--------|
-| Framework | Next.js App Router | SSR, Server Components, API Routes integradas |
-| ORM | Drizzle | Type-safety forte, migrations versionadas, sem magic |
-| Auth | Auth.js | Suporte a credentials, JWT, cookie seguro |
-| Editor | Tiptap | Extensível, baseado em ProseMirror, React-native |
-| DnD | dnd-kit | Acessível, performático, composable |
-| Storage | Cloudflare R2 | S3-compatible, sem egress fee |
-| UI base | Radix UI | Headless, acessível, sem opinião visual |
+| Decisão   | Escolha            | Motivo                                               |
+| --------- | ------------------ | ---------------------------------------------------- |
+| Framework | Next.js App Router | SSR, Server Components, API Routes integradas        |
+| ORM       | Drizzle            | Type-safety forte, migrations versionadas, sem magic |
+| Auth      | Auth.js            | Suporte a credentials, JWT, cookie seguro            |
+| Editor    | Tiptap             | Extensível, baseado em ProseMirror, React-native     |
+| DnD       | dnd-kit            | Acessível, performático, composable                  |
+| UI base   | Radix UI           | Headless, acessível, sem opinião visual              |
 
 ## Fluxo geral de uma request
 

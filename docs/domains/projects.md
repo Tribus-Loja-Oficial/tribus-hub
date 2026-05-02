@@ -19,11 +19,11 @@ Planejamento estratégico e acompanhamento de iniciativas da Tribus.
 
 - Tarefas referenciam `project_id` e `milestone_id`
 - Páginas podem documentar projetos (via relation_links)
-- Assets podem ser associados a projetos (via asset_links)
 
 ## OKRs
 
 Objectives podem existir:
+
 1. Dentro de um projeto (`project_id` preenchido)
 2. Como objetivo de workspace (`project_id` null, `workspace_id` preenchido)
 

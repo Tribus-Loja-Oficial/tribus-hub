@@ -75,10 +75,6 @@ jobs:
         run: npm run test:coverage -- --reporter=json --outputFile=.vitest-coverage.json
         env:
           AUTH_SECRET: ${{ vars.AUTH_SECRET }}
-          R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID }}
-          R2_ACCESS_KEY_ID: ${{ vars.R2_ACCESS_KEY_ID }}
-          R2_SECRET_ACCESS_KEY: ${{ vars.R2_SECRET_ACCESS_KEY }}
-          R2_BUCKET_NAME: ${{ vars.R2_BUCKET_NAME }}
 
       - name: Publish coverage snapshot
         if: github.event_name == 'push' && vars.MONITOR_API_URL != ''
@@ -91,7 +87,3 @@ jobs:
         run: npm run build
         env:
           AUTH_SECRET: ${{ vars.AUTH_SECRET }}
-          R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID }}
-          R2_ACCESS_KEY_ID: ${{ vars.R2_ACCESS_KEY_ID }}
-          R2_SECRET_ACCESS_KEY: ${{ vars.R2_SECRET_ACCESS_KEY }}
-          R2_BUCKET_NAME: ${{ vars.R2_BUCKET_NAME }}

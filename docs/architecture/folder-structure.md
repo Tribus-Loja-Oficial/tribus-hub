@@ -11,7 +11,7 @@ tribus-hub/
 ├── docs/
 │   ├── project-context.md          # contexto canônico (leia primeiro)
 │   ├── architecture/               # visão geral, camadas, decisões
-│   ├── domains/                    # knowledge, projects, tasks, assets, auth
+│   ├── domains/                    # knowledge, projects, tasks, auth
 │   ├── flows/                      # fluxos de execução
 │   ├── reference/                  # rotas, env vars, glossário
 │   └── operations/                 # deploy, seeding
@@ -30,7 +30,6 @@ tribus-hub/
 │   │   │   ├── knowledge/
 │   │   │   ├── projects/
 │   │   │   ├── tasks/
-│   │   │   ├── assets/
 │   │   │   └── settings/
 │   │   └── api/
 │   │       ├── auth/[...nextauth]/ # Auth.js handlers
@@ -38,7 +37,6 @@ tribus-hub/
 │   │       ├── projects/           # projects, milestones
 │   │       ├── tasks/              # tasks, board, move
 │   │       ├── task-columns/       # columns, reorder
-│   │       ├── assets/             # upload, list, get, delete, link
 │   │       ├── search/             # busca global
 │   │       └── health/             # health check
 │   ├── components/
@@ -50,7 +48,6 @@ tribus-hub/
 │   │   ├── knowledge/components/   # KnowledgeListPage, PageDetailView
 │   │   ├── projects/components/    # ProjectsListPage
 │   │   ├── tasks/components/       # TaskBoardPage
-│   │   ├── assets/components/      # AssetsPage
 │   │   ├── search/                 # SearchModal
 │   │   └── auth/components/        # LoginForm
 │   ├── lib/
@@ -62,7 +59,6 @@ tribus-hub/
 │   │   │   ├── migrations/         # arquivos SQL gerados
 │   │   │   └── seeds/seed.ts       # seed inicial
 │   │   ├── repositories/           # acesso ao banco por domínio
-│   │   ├── integrations/r2/        # R2 client + service
 │   │   ├── services/               # regra de negócio
 │   │   ├── schemas/                # Zod schemas de input de API
 │   │   ├── permissions/index.ts    # guards e helpers

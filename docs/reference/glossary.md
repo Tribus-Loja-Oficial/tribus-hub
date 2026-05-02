@@ -16,10 +16,6 @@
 
 **Task** — Item de trabalho. Pertence a uma coluna e opcionalmente a um projeto/milestone.
 
-**Asset** — Arquivo armazenado no Cloudflare R2. Metadados persistidos no banco. Associado a entidades via `asset_links`.
-
-**Asset Link** — Associação entre um asset e uma entidade (page, project, task). Tem `usage_kind` (cover, inline, attachment, reference).
-
 **Audit Log** — Registro imutável de ações sensíveis. Contém actor, entidade, action e metadata JSON.
 
 **Soft Delete** — Exclusão lógica: `deleted_at` é preenchido, o registro permanece no banco. Oposto de hard delete.

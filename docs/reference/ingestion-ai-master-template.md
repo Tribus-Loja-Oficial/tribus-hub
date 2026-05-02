@@ -47,18 +47,18 @@ Cada item de `objects`:
 
 ## Tabela mestre: o que a ingestão v1.0 aceita
 
-| `type`             | Domínio      | Suportado hoje | Notas                                                    |
-| ------------------ | ------------ | -------------- | -------------------------------------------------------- |
-| `okr_cycle`        | OKR          | Sim            | —                                                        |
-| `okr_objective`    | OKR          | Sim            | Liga a ciclo via `cycle_id` / `cycle_ref`                |
-| `okr_key_result`   | OKR          | Sim            | Exige `objective_id` **ou** `objective_ref`              |
-| `project`          | Projetos     | Sim            | —                                                        |
-| `milestone`        | Projetos     | Sim            | Exige `project_id` **ou** `project_ref`                  |
-| `task`             | Tarefas      | Sim            | Coluna via `column_id` / `column_name` / padrão do board |
-| `knowledge_page`   | Knowledge    | **Não**        | Planeado; ver secção futura                              |
-| `knowledge_folder` | Knowledge    | **Não**        | Planeado                                                 |
-| `task_label`       | Tarefas      | **Não**        | Planeado (criar etiquetas)                               |
-| `workspace_member` | Utilizadores | **Não**        | Fora do âmbito da ingestão atual                         |
+| `type`             | Domínio      | Suportado hoje | Notas                                                                                       |
+| ------------------ | ------------ | -------------- | ------------------------------------------------------------------------------------------- |
+| `okr_cycle`        | OKR          | Sim            | —                                                                                           |
+| `okr_objective`    | OKR          | Sim            | Liga a ciclo via `cycle_id` / `cycle_ref`                                                   |
+| `okr_key_result`   | OKR          | Sim            | Exige `objective_id` **ou** `objective_ref`                                                 |
+| `project`          | Projetos     | Sim            | Ciclo OKR opcional (`cycle_ref` / `cycle_id`); `estimation_unit` para estimativa de tarefas |
+| `milestone`        | Projetos     | Sim            | Exige `project_id` **ou** `project_ref`                                                     |
+| `task`             | Tarefas      | Sim            | Coluna via `column_id` / `column_name` / padrão do board                                    |
+| `knowledge_page`   | Knowledge    | **Não**        | Planeado; ver secção futura                                                                 |
+| `knowledge_folder` | Knowledge    | **Não**        | Planeado                                                                                    |
+| `task_label`       | Tarefas      | **Não**        | Planeado (criar etiquetas)                                                                  |
+| `workspace_member` | Utilizadores | **Não**        | Fora do âmbito da ingestão atual                                                            |
 
 ---
 
@@ -79,6 +79,7 @@ A ordem no JSON que a IA gerar **pode ser qualquer uma**; referências `*_ref` d
 | `okr_objective`  | `cycle_ref`     | `okr_cycle`                       |
 | `okr_key_result` | `objective_ref` | `okr_objective`                   |
 | `okr_key_result` | `cycle_ref`     | `okr_cycle` (opcional)            |
+| `project`        | `cycle_ref`     | `okr_cycle` (opcional)            |
 | `milestone`      | `project_ref`   | `project`                         |
 | `task`           | `project_ref`   | `project` (opcional)              |
 | `task`           | `milestone_ref` | `milestone` (opcional)            |
@@ -103,13 +104,13 @@ Alternativa: usar `*_id` com **UUID real** já existente no D1 (não inventar).
 
 ## 1. `okr_cycle` — campos em `data`
 
-| Campo         | Obrigatório | Tipo   | Valores / notas                                               |
-| ------------- | ----------- | ------ | ------------------------------------------------------------- |
-| `title`       | **Sim**     | string | max 200                                                       |
-| `start_date`  | **Sim**     | string | `YYYY-MM-DD`                                                  |
-| `end_date`    | **Sim**     | string | `YYYY-MM-DD`                                                  |
-| `description` | Não         | string | max 2000                                                      |
-| `status`      | Não         | enum   | `planned`, `active`, `closed`, `archived` — default `planned` |
+| Campo         | Obrigatório | Tipo   | Valores / notas                                   |
+| ------------- | ----------- | ------ | ------------------------------------------------- |
+| `title`       | **Sim**     | string | max 200                                           |
+| `start_date`  | **Sim**     | string | `YYYY-MM-DD`                                      |
+| `end_date`    | **Sim**     | string | `YYYY-MM-DD`                                      |
+| `description` | Não         | string | max 2000                                          |
+| `status`      | Não         | enum   | `planned`, `active`, `closed` — default `planned` |
 
 ---
 
@@ -150,55 +151,65 @@ Alternativa: usar `*_id` com **UUID real** já existente no D1 (não inventar).
 | `status`        | Não         | enum   | `draft`, `on_track`, `at_risk`, `off_track`, `completed` — default `draft` |
 | `start_date`    | Não         | string | `YYYY-MM-DD`                                                               |
 | `target_date`   | Não         | string | `YYYY-MM-DD`                                                               |
+| `confidence`    | Não         | number | 0 a 100; omitido → API usa 50                                              |
+| `sort_order`    | Não         | number | ordem na lista de KRs; omitido → 0                                         |
 
 ---
 
 ## 4. `project` — campos em `data`
 
-| Campo           | Obrigatório | Tipo   | Valores / notas                                                              |
-| --------------- | ----------- | ------ | ---------------------------------------------------------------------------- |
-| `title`         | **Sim**     | string | max 500                                                                      |
-| `summary`       | Não         | string | max 1000                                                                     |
-| `status`        | Não         | enum   | `planned`, `active`, `on_hold`, `completed`, `cancelled` — default `planned` |
-| `health_status` | Não         | enum   | `on_track`, `at_risk`, `blocked`, `off_track`                                |
-| `priority`      | Não         | enum   | `low`, `medium`, `high`, `urgent`                                            |
-| `owner_user_id` | Não         | string | ID de utilizador                                                             |
-| `start_date`    | Não         | string | `YYYY-MM-DD`                                                                 |
-| `target_date`   | Não         | string | `YYYY-MM-DD`                                                                 |
+| Campo                | Obrigatório | Tipo   | Valores / notas                                                                 |
+| -------------------- | ----------- | ------ | ------------------------------------------------------------------------------- |
+| `title`              | **Sim**     | string | max 500                                                                         |
+| `summary`            | Não         | string | max 1000                                                                        |
+| `status`             | Não         | enum   | `planned`, `active`, `on_hold`, `completed`, `cancelled` — default `planned`    |
+| `health_status`      | Não         | enum   | `on_track`, `at_risk`, `blocked`, `off_track`                                   |
+| `priority`           | Não         | enum   | `low`, `medium`, `high`, `urgent`                                               |
+| `owner_user_id`      | Não         | string | ID de utilizador                                                                |
+| `cycle_id`           | Não         | string | ID real de ciclo OKR                                                            |
+| `cycle_ref`          | Não         | string | `client_ref` de `okr_cycle` no mesmo payload                                    |
+| `cycle_external_ref` | Não         | string | Ref. humana de ciclo existente (ex.: `CYC-0001`)                                |
+| `estimation_unit`    | Não         | enum   | `hours`, `story_points` — default `hours` (coerência com estimativas de `task`) |
+| `start_date`         | Não         | string | `YYYY-MM-DD`                                                                    |
+| `target_date`        | Não         | string | `YYYY-MM-DD`                                                                    |
 
 ---
 
 ## 5. `milestone` — campos em `data`
 
-| Campo           | Obrigatório | Tipo   | Valores / notas                                                         |
-| --------------- | ----------- | ------ | ----------------------------------------------------------------------- |
-| `title`         | **Sim**     | string | max 500                                                                 |
-| `project_id`    | **Cond.**   | string | Obrigatório **a menos que** exista `project_ref`                        |
-| `project_ref`   | **Cond.**   | string | `client_ref` de `project`                                               |
-| `description`   | Não         | string | max 2000                                                                |
-| `status`        | Não         | enum   | `pending`, `in_progress`, `completed`, `missed` — default `pending`     |
-| `priority`      | Não         | enum   | `low`, `medium`, `high`, `urgent` — default no API: `medium` se omitido |
-| `owner_user_id` | Não         | string | ID de utilizador                                                        |
-| `due_date`      | Não         | string | `YYYY-MM-DD`                                                            |
+| Campo           | Obrigatório | Tipo   | Valores / notas                                                                |
+| --------------- | ----------- | ------ | ------------------------------------------------------------------------------ |
+| `title`         | **Sim**     | string | max 500                                                                        |
+| `project_id`    | **Cond.**   | string | Obrigatório **a menos que** exista `project_ref`                               |
+| `project_ref`   | **Cond.**   | string | `client_ref` de `project`                                                      |
+| `description`   | Não         | string | max 2000                                                                       |
+| `status`        | Não         | enum   | `pending`, `in_progress`, `completed`, `missed`, `blocked` — default `pending` |
+| `priority`      | Não         | enum   | `low`, `medium`, `high`, `urgent` — default no API: `medium` se omitido        |
+| `owner_user_id` | Não         | string | ID de utilizador                                                               |
+| `due_date`      | Não         | string | `YYYY-MM-DD`                                                                   |
 
 ---
 
 ## 6. `task` — campos em `data`
 
-| Campo              | Obrigatório | Tipo     | Valores / notas                                 |
-| ------------------ | ----------- | -------- | ----------------------------------------------- |
-| `title`            | **Sim**     | string   | max 500                                         |
-| `description`      | Não         | string   | max 5000 → enviado como texto da tarefa         |
-| `project_id`       | Não         | string   | ID real                                         |
-| `project_ref`      | Não         | string   | `client_ref` de `project`                       |
-| `milestone_id`     | Não         | string   | ID real                                         |
-| `milestone_ref`    | Não         | string   | `client_ref` de `milestone`                     |
-| `column_id`        | Não         | string   | ID da coluna do board                           |
-| `column_name`      | Não         | string   | Nome ou slug da coluna (match case-insensitive) |
-| `priority`         | Não         | enum     | `low`, `medium`, `high`, `urgent`               |
-| `assignee_user_id` | Não         | string   | ID de utilizador                                |
-| `due_date`         | Não         | string   | `YYYY-MM-DD`                                    |
-| `label_ids`        | Não         | string[] | IDs de labels **já existentes** no workspace    |
+| Campo              | Obrigatório | Tipo     | Valores / notas                                      |
+| ------------------ | ----------- | -------- | ---------------------------------------------------- |
+| `title`            | **Sim**     | string   | max 500                                              |
+| `description`      | Não         | string   | max 5000 → enviado como texto da tarefa              |
+| `project_id`       | Não         | string   | ID real                                              |
+| `project_ref`      | Não         | string   | `client_ref` de `project`                            |
+| `milestone_id`     | Não         | string   | ID real                                              |
+| `milestone_ref`    | Não         | string   | `client_ref` de `milestone`                          |
+| `column_id`        | Não         | string   | ID da coluna do board                                |
+| `column_name`      | Não         | string   | Nome ou slug da coluna (match case-insensitive)      |
+| `priority`         | Não         | enum     | `low`, `medium`, `high`, `urgent`                    |
+| `assignee_user_id` | Não         | string   | ID de utilizador                                     |
+| `due_date`         | Não         | string   | `YYYY-MM-DD`                                         |
+| `label_ids`        | Não         | string[] | IDs de labels **já existentes** no workspace         |
+| `estimated_hours`  | Não         | number   | Quando o projeto usa `estimation_unit: hours`        |
+| `estimated_points` | Não         | number   | Quando o projeto usa `estimation_unit: story_points` |
+
+A API valida estimativas face a `estimation_unit` do projeto; valores incoerentes podem ser rejeitados.
 
 Resolução de coluna: `column_id` → senão `column_name` → senão coluna default → senão primeira por `sortOrder`. Sem colunas disponíveis, a criação falha.
 
@@ -251,7 +262,9 @@ Copiável para testar o validador; substitua datas e IDs reais onde fizer sentid
         "title": "Projeto exemplo",
         "summary": "Resumo opcional",
         "status": "planned",
-        "priority": "medium"
+        "priority": "medium",
+        "cycle_ref": "c_exemplo",
+        "estimation_unit": "hours"
       }
     },
     {
@@ -269,7 +282,8 @@ Copiável para testar o validador; substitua datas e IDs reais onde fizer sentid
         "title": "Tarefa exemplo",
         "project_ref": "p_exemplo",
         "milestone_ref": "m_exemplo",
-        "priority": "medium"
+        "priority": "medium",
+        "estimated_hours": 8
       }
     }
   ]

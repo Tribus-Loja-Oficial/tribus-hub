@@ -1,5 +1,5 @@
 /**
- * Additional authenticated /v1 routes (projects detail, PM, OKR writes, search, assets).
+ * Additional authenticated /v1 routes (projects detail, PM, OKR writes, search).
  * Kept separate from index.ts to limit file size.
  */
 import { ensureExternalRef } from "./external-refs";
@@ -1070,131 +1070,6 @@ export async function handleV1ExtraRoutes(
     }
   }
 
-  // --- Assets ---
-  if (pathname.startsWith("/v1/assets")) {
-    const err = needWs();
-    if (err) return err;
-    const parts = pathname.split("/").filter(Boolean);
-    // ["v1","assets"] or ["v1","assets", id] or ["v1","assets", id, "link"]
-    if (method === "GET" && parts.length === 2) {
-      const rows = await db
-        .prepare(
-          `SELECT id, workspace_id, storage_provider, bucket, object_key, original_filename, mime_type, extension, size_bytes, checksum_sha256, width, height, uploaded_by, created_at
-           FROM assets WHERE workspace_id = ? ORDER BY created_at DESC`,
-        )
-        .bind(workspaceId)
-        .all<Record<string, unknown>>();
-      if (!rows.success) return json({ error: { message: rows.error } }, 500);
-      return json({ data: (rows.results ?? []).map(mapAssetCamel) });
-    }
-    if (method === "POST" && parts.length === 2) {
-      const aerr = needActor();
-      if (aerr) return aerr;
-      const input = parseJson<{
-        bucket: string;
-        objectKey: string;
-        originalFilename: string;
-        mimeType: string;
-        extension: string;
-        sizeBytes: number;
-        checksumSha256?: string | null;
-        width?: number | null;
-        height?: number | null;
-      }>(body);
-      const id = createId();
-      const now = new Date().toISOString();
-      const ins = await db
-        .prepare(
-          `INSERT INTO assets (id, workspace_id, storage_provider, bucket, object_key, original_filename, mime_type, extension, size_bytes, checksum_sha256, width, height, uploaded_by, created_at)
-           VALUES (?, ?, 'r2', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        )
-        .bind(
-          id,
-          workspaceId,
-          input.bucket,
-          input.objectKey,
-          input.originalFilename,
-          input.mimeType,
-          input.extension,
-          input.sizeBytes,
-          input.checksumSha256 ?? null,
-          input.width ?? null,
-          input.height ?? null,
-          actorUserId,
-          now,
-        )
-        .all();
-      if (!ins.success) return json({ error: { message: ins.error ?? "insert failed" } }, 400);
-      const row = await db
-        .prepare(`SELECT * FROM assets WHERE id = ?`)
-        .bind(id)
-        .all<Record<string, unknown>>();
-      return json({ data: mapAssetCamel(row.results?.[0] ?? {}) }, 201);
-    }
-    const assetId = parts[2];
-    if (assetId && parts.length === 3) {
-      if (method === "GET") {
-        const row = await db
-          .prepare(`SELECT * FROM assets WHERE id = ? AND workspace_id = ?`)
-          .bind(assetId, workspaceId)
-          .all<Record<string, unknown>>();
-        if (!row.success || !row.results?.[0])
-          return json({ error: { message: "Not found" } }, 404);
-        return json({ data: mapAssetCamel(row.results[0]) });
-      }
-      if (method === "DELETE") {
-        const row = await db
-          .prepare(`SELECT id FROM assets WHERE id = ? AND workspace_id = ?`)
-          .bind(assetId, workspaceId)
-          .all<{ id: string }>();
-        if (!row.success || !row.results?.[0])
-          return json({ error: { message: "Not found" } }, 404);
-        await db.prepare(`DELETE FROM asset_links WHERE asset_id = ?`).bind(assetId).all();
-        const del = await db.prepare(`DELETE FROM assets WHERE id = ?`).bind(assetId).all();
-        if (!del.success) return json({ error: { message: del.error } }, 400);
-        return json({ data: null });
-      }
-    }
-    if (method === "POST" && parts.length === 4 && parts[3] === "link" && assetId) {
-      const input = parseJson<{ entityType: string; entityId: string; usageKind: string }>(body);
-      const linkId = createId();
-      const now = new Date().toISOString();
-      const assetCheck = await db
-        .prepare(`SELECT id FROM assets WHERE id = ? AND workspace_id = ?`)
-        .bind(assetId, workspaceId)
-        .all<{ id: string }>();
-      if (!assetCheck.success || !assetCheck.results?.[0])
-        return json({ error: { message: "Not found" } }, 404);
-      const ins = await db
-        .prepare(
-          `INSERT INTO asset_links (id, asset_id, entity_type, entity_id, usage_kind, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
-        )
-        .bind(
-          linkId,
-          assetId,
-          input.entityType,
-          input.entityId,
-          input.usageKind ?? "attachment",
-          now,
-        )
-        .all();
-      if (!ins.success) return json({ error: { message: ins.error ?? "link failed" } }, 400);
-      return json(
-        {
-          data: {
-            id: linkId,
-            assetId,
-            entityType: input.entityType,
-            entityId: input.entityId,
-            usageKind: input.usageKind ?? "attachment",
-            createdAt: now,
-          },
-        },
-        201,
-      );
-    }
-  }
-
   // --- Single project + milestones + okr links + hub (prefix /v1/projects/) ---
   if (pathname.startsWith("/v1/projects/") && pathname !== "/v1/projects/hierarchy") {
     const err = needWs();
@@ -1487,22 +1362,6 @@ export async function handleV1ExtraRoutes(
           isFolder: Boolean(p.is_folder),
         }));
       }
-      const al = await db
-        .prepare(
-          `SELECT al.usage_kind, a.id, a.original_filename, a.mime_type, a.size_bytes, a.created_at
-           FROM asset_links al INNER JOIN assets a ON a.id = al.asset_id
-           WHERE al.entity_type = 'project' AND al.entity_id = ? AND a.workspace_id = ?`,
-        )
-        .bind(projectId, workspaceId)
-        .all<Record<string, unknown>>();
-      const linkedAssets = (al.results ?? []).map((r) => ({
-        id: r.id,
-        filename: r.original_filename,
-        mimeType: r.mime_type,
-        sizeBytes: r.size_bytes,
-        usageKind: r.usage_kind,
-        createdAt: r.created_at,
-      }));
       const openMilestones = milestones.filter((m) => m.status !== "completed").length;
       return json({
         data: {
@@ -1524,7 +1383,6 @@ export async function handleV1ExtraRoutes(
             completedEstimate: mileProg.completed,
           },
           linkedPages,
-          linkedAssets,
           recentTasks: (tasksRes.results ?? []).map((t) => ({
             ...mapTaskCamel(t),
             externalRef: taskRefMap.get(String(t.id)) ?? null,
@@ -2104,24 +1962,5 @@ function mapTaskCamel(t: Record<string, unknown>) {
     updatedAt: t.updated_at,
     archivedAt: t.archived_at,
     deletedAt: t.deleted_at,
-  };
-}
-
-function mapAssetCamel(a: Record<string, unknown>) {
-  return {
-    id: a.id,
-    workspaceId: a.workspace_id,
-    storageProvider: a.storage_provider,
-    bucket: a.bucket,
-    objectKey: a.object_key,
-    originalFilename: a.original_filename,
-    mimeType: a.mime_type,
-    extension: a.extension,
-    sizeBytes: a.size_bytes,
-    checksumSha256: a.checksum_sha256,
-    width: a.width,
-    height: a.height,
-    uploadedBy: a.uploaded_by,
-    createdAt: a.created_at,
   };
 }

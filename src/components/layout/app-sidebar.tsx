@@ -11,7 +11,6 @@ import {
   BookOpen,
   Target,
   CheckSquare,
-  Paperclip,
   Settings,
   CalendarRange,
   LayoutDashboard,
@@ -128,10 +127,7 @@ const observatorySubItems = [
   },
 ] as const;
 
-const bottomNavItems = [
-  { href: "/tasks", label: "Tasks", icon: CheckSquare },
-  { href: "/assets", label: "Assets", icon: Paperclip },
-];
+const bottomNavItems = [{ href: "/tasks", label: "Tasks", icon: CheckSquare }];
 
 const bottomItems = [{ href: "/settings", label: "Configurações", icon: Settings }];
 
@@ -148,7 +144,6 @@ const PREFETCH_ROUTES = [
   "/observatory",
   "/observatory/cycles",
   "/knowledge",
-  "/assets",
   "/settings",
   "/profile",
 ] as const;
@@ -378,7 +373,7 @@ export function AppSidebar() {
           </div>
 
           {/* Tasks */}
-          {bottomNavItems.slice(0, 1).map(({ href, label, icon: Icon }) => {
+          {bottomNavItems.map(({ href, label, icon: Icon }) => {
             const active = pathname.startsWith(href);
             return (
               <Link key={href} href={href} className={navItemClass(active)}>
@@ -444,17 +439,6 @@ export function AppSidebar() {
               </div>
             )}
           </div>
-
-          {/* Assets */}
-          {bottomNavItems.slice(1).map(({ href, label, icon: Icon }) => {
-            const active = pathname.startsWith(href);
-            return (
-              <Link key={href} href={href} className={navItemClass(active)}>
-                <Icon className={iconClass(active)} />
-                {label}
-              </Link>
-            );
-          })}
         </nav>
 
         {/* Bottom: settings */}

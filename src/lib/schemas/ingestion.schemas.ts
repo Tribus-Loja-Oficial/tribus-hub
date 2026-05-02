@@ -47,6 +47,8 @@ const okrKeyResultDataSchema = z
     status: z.enum(["draft", "on_track", "at_risk", "off_track", "completed"]).optional(),
     start_date: z.string().date().optional(),
     target_date: z.string().date().optional(),
+    confidence: z.number().min(0).max(100).optional(),
+    sort_order: z.number().optional(),
   })
   .refine((d) => d.objective_id || d.objective_ref || d.objective_external_ref, {
     message: "objective_id, objective_ref ou objective_external_ref é obrigatório",
@@ -61,6 +63,10 @@ const projectDataSchema = z.object({
   priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
   owner_user_id: z.string().optional(),
   owner_user_external_ref: z.string().max(100).optional(),
+  cycle_id: z.string().optional(),
+  cycle_ref: z.string().optional(),
+  cycle_external_ref: z.string().max(100).optional(),
+  estimation_unit: z.enum(["hours", "story_points"]).optional(),
   start_date: z.string().date().optional(),
   target_date: z.string().date().optional(),
 });
@@ -100,6 +106,8 @@ const taskDataSchema = z.object({
   assignee_user_external_ref: z.string().max(100).optional(),
   due_date: z.string().date().optional(),
   label_ids: z.array(z.string()).optional(),
+  estimated_hours: z.number().optional(),
+  estimated_points: z.number().optional(),
 });
 
 // ─── Discriminated union for ingestion objects ────────────────────────────────

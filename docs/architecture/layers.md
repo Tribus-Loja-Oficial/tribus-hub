@@ -28,8 +28,6 @@ Acesso ao banco de dados via Drizzle. Contém apenas queries.
 
 Encapsula dependências externas.
 
-- `r2/r2.client.ts` — instância do S3Client
-- `r2/r2.service.ts` — upload, delete, signed URLs
 - `email/` — futuro
 
 **Regra**: não contém regra de negócio. Expõe operações de I/O.
@@ -40,7 +38,6 @@ Contém toda a lógica de negócio. Orquestra repositories e integrations.
 
 - `knowledge.service.ts` — CRUD de páginas, revisões, árvore
 - `task-board.service.ts` — movimentação do board, ordenação
-- `asset.service.ts` — upload, listagem, remoção com R2
 - `audit.service.ts` — registro de auditoria
 
 **Regra**: não conhece Request/Response. Recebe dados, retorna dados.
@@ -50,6 +47,7 @@ Contém toda a lógica de negócio. Orquestra repositories e integrations.
 Handlers HTTP finos.
 
 Padrão obrigatório:
+
 1. `requireAuth()` — autenticação
 2. Parse do body com Zod schema
 3. Chamada ao service
@@ -60,6 +58,7 @@ Padrão obrigatório:
 Componentes React. Server Components para leitura, Client Components para interação.
 
 **Regras**:
+
 - Não contém regra de negócio sensível
 - Não faz queries ao banco diretamente
 - Usa `fetch` ou TanStack Query para dados

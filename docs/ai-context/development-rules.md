@@ -12,7 +12,6 @@ Este arquivo define **como a IA deve trabalhar** dentro do projeto tribus-hub. D
 - Usar `process.env` fora de `src/lib/config/env.ts`. Todo acesso a variáveis de ambiente deve passar pelos helpers exportados por essa camada.
 - **Pular validação com schema.** Toda entrada de API (body, query quando relevante) deve passar por schema Zod em `src/lib/schemas/` com `.safeParse()`.
 - **Hard delete** em entidades centrais (pages, projects, tasks). Usar soft delete (campo `isDeleted`, `deletedAt`, `archivedAt`).
-- Acessar o R2 SDK diretamente em rotas ou services. Usar apenas `src/lib/integrations/r2/`.
 - Criar rotas sem chamar `requireAuth()` no topo do handler (exceto rota de login e health check).
 - Queries Drizzle fora de `src/lib/repositories/`. Repositórios são o único ponto de contato com o banco.
 
@@ -20,7 +19,7 @@ Este arquivo define **como a IA deve trabalhar** dentro do projeto tribus-hub. D
 
 - **Usar a camada de services** para orquestração e regras de negócio.
 - **Usar a camada de repositories** para toda comunicação com o banco (Drizzle). Nunca construir queries em routes.
-- **Usar a camada de integrations** para acesso ao R2 e serviços externos.
+- **Usar a camada de integrations** para serviços externos (ex.: email).
 - **Validar entrada com schemas Zod** em toda rota que recebe body. Schemas em `src/lib/schemas/<domain>.schemas.ts`.
 - **Manter separação de responsabilidades:** API routes → auth + validação + delegação; Services → lógica + repos + integrations; Repositories → queries; Integrations → SDKs externos; Schemas → payloads; Config → env vars.
 - **Soft delete** nas entidades centrais. Nunca `DELETE FROM` sem uso de campo de flag.

@@ -18,10 +18,10 @@ O usuário acessa a interface de Ingestão pelo botão **"Ingestão"** no cabeç
 
 ### Endpoints
 
-| Método | Rota | Descrição |
-|--------|------|-----------|
-| POST | `/api/ingestion/validate` | Valida o payload sem criar objetos |
-| POST | `/api/ingestion/execute` | Valida e executa a criação em lote |
+| Método | Rota                      | Descrição                          |
+| ------ | ------------------------- | ---------------------------------- |
+| POST   | `/api/ingestion/validate` | Valida o payload sem criar objetos |
+| POST   | `/api/ingestion/execute`  | Valida e executa a criação em lote |
 
 **Autorização:** `role >= admin`. Membros comuns não têm acesso.
 
@@ -41,11 +41,11 @@ Todo payload de ingestão deve seguir este envelope obrigatório:
 
 ### Campos do envelope
 
-| Campo | Tipo | Obrigatório | Descrição |
-|-------|------|-------------|-----------|
-| `version` | `"1.0"` | Sim | Versão do schema. Atualmente apenas `"1.0"` |
-| `mode` | `"create"` | Sim | Operação a executar. Atualmente apenas `"create"` |
-| `objects` | array | Sim | Lista de objetos a ingerir. Mínimo 1, máximo 200 |
+| Campo     | Tipo       | Obrigatório | Descrição                                         |
+| --------- | ---------- | ----------- | ------------------------------------------------- |
+| `version` | `"1.0"`    | Sim         | Versão do schema. Atualmente apenas `"1.0"`       |
+| `mode`    | `"create"` | Sim         | Operação a executar. Atualmente apenas `"create"` |
+| `objects` | array      | Sim         | Lista de objetos a ingerir. Mínimo 1, máximo 200  |
 
 ---
 
@@ -63,24 +63,24 @@ Cada item do array `objects` segue este padrão:
 
 ### Campos do objeto
 
-| Campo | Tipo | Obrigatório | Descrição |
-|-------|------|-------------|-----------|
-| `type` | string | Sim | Tipo do objeto. Ver lista de tipos suportados |
-| `client_ref` | string | Não | Referência interna única no payload. Usada para vincular objetos entre si |
-| `data` | object | Sim | Dados específicos do tipo. Ver schemas por tipo |
+| Campo        | Tipo   | Obrigatório | Descrição                                                                 |
+| ------------ | ------ | ----------- | ------------------------------------------------------------------------- |
+| `type`       | string | Sim         | Tipo do objeto. Ver lista de tipos suportados                             |
+| `client_ref` | string | Não         | Referência interna única no payload. Usada para vincular objetos entre si |
+| `data`       | object | Sim         | Dados específicos do tipo. Ver schemas por tipo                           |
 
 ---
 
 ## Tipos suportados
 
-| Tipo | Descrição |
-|------|-----------|
-| `okr_cycle` | Ciclo OKR |
-| `okr_objective` | Objetivo OKR |
-| `okr_key_result` | Key Result OKR |
-| `project` | Projeto |
-| `milestone` | Milestone de projeto |
-| `task` | Tarefa |
+| Tipo             | Descrição            |
+| ---------------- | -------------------- |
+| `okr_cycle`      | Ciclo OKR            |
+| `okr_objective`  | Objetivo OKR         |
+| `okr_key_result` | Key Result OKR       |
+| `project`        | Projeto              |
+| `milestone`      | Milestone de projeto |
+| `task`           | Tarefa               |
 
 ---
 
@@ -125,14 +125,15 @@ Para criar objetos que dependem de outros objetos criados no mesmo payload, use 
 
 ### Campos de referência por tipo
 
-| No objeto | Campo de referência | Aponta para tipo |
-|-----------|-------------------|-----------------|
-| `okr_objective` | `cycle_ref` | `okr_cycle` |
-| `okr_key_result` | `objective_ref` | `okr_objective` |
-| `okr_key_result` | `cycle_ref` | `okr_cycle` |
-| `milestone` | `project_ref` | `project` |
-| `task` | `project_ref` | `project` |
-| `task` | `milestone_ref` | `milestone` |
+| No objeto        | Campo de referência | Aponta para tipo |
+| ---------------- | ------------------- | ---------------- |
+| `okr_objective`  | `cycle_ref`         | `okr_cycle`      |
+| `okr_key_result` | `objective_ref`     | `okr_objective`  |
+| `okr_key_result` | `cycle_ref`         | `okr_cycle`      |
+| `project`        | `cycle_ref`         | `okr_cycle`      |
+| `milestone`      | `project_ref`       | `project`        |
+| `task`           | `project_ref`       | `project`        |
+| `task`           | `milestone_ref`     | `milestone`      |
 
 ---
 
@@ -243,6 +244,7 @@ O `refMap` mapeia cada `client_ref` para o ID real gerado no banco. Útil para r
 A ingestão **não é totalmente transacional** a nível de banco de dados, porque os objetos são criados via chamadas separadas ao hub-api.
 
 **Comportamento:**
+
 - Se o payload tiver erros de validação (estrutural ou semântico), **nenhum objeto é criado**.
 - Se a criação de um objeto falhar durante a execução, os objetos já criados antes dele **permanecem no banco**.
 - O sistema retorna `HTTP 207` e detalha o que foi criado e o que falhou.
@@ -265,11 +267,11 @@ A ingestão **não é totalmente transacional** a nível de banco de dados, porq
 
 ## Limites
 
-| Limite | Valor |
-|--------|-------|
-| Objetos por payload | máx. 200 |
-| Tamanho do payload | limitado pelo Next.js (padrão 4MB) |
-| Rate limit | herdado do hub-api |
+| Limite              | Valor                              |
+| ------------------- | ---------------------------------- |
+| Objetos por payload | máx. 200                           |
+| Tamanho do payload  | limitado pelo Next.js (padrão 4MB) |
+| Rate limit          | herdado do hub-api                 |
 
 ---
 
@@ -309,7 +311,9 @@ A ingestão **não é totalmente transacional** a nível de banco de dados, porq
         "metric_type": "number",
         "unit": "lançamentos",
         "start_value": 0,
-        "target_value": 3
+        "target_value": 3,
+        "confidence": 70,
+        "sort_order": 0
       }
     },
     {
@@ -319,7 +323,9 @@ A ingestão **não é totalmente transacional** a nível de banco de dados, porq
         "title": "Coleção Inverno 2025",
         "summary": "Desenvolvimento e lançamento da coleção inverno",
         "status": "planned",
-        "priority": "high"
+        "priority": "high",
+        "cycle_ref": "ciclo_s1_2025",
+        "estimation_unit": "story_points"
       }
     },
     {
@@ -338,7 +344,8 @@ A ingestão **não é totalmente transacional** a nível de banco de dados, porq
         "title": "Fotografar produtos da coleção",
         "project_ref": "proj_colecao_inverno",
         "milestone_ref": "ms_catalogo",
-        "priority": "high"
+        "priority": "high",
+        "estimated_points": 5
       }
     }
   ]
@@ -365,6 +372,5 @@ A IA pode gerar o JSON diretamente com base nesta documentação. O usuário ent
 
 - Suporte a `mode: "update"` (atualização em lote)
 - Suporte a knowledge pages
-- Suporte a assets e links entre entidades
 - Templates gerados por IA dentro da interface
 - Histórico de ingestões executadas

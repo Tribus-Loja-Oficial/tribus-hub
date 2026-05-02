@@ -13,7 +13,6 @@ const SEGMENT_LABELS: Record<string, string> = {
   projects: "Project Manager",
   list: "Projects",
   tasks: "Tasks",
-  assets: "Assets",
   settings: "Configurações",
   profile: "Perfil",
   login: "Entrar",

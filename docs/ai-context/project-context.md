@@ -40,7 +40,7 @@ O hub **não replica** dados do Bling. Ele documenta, organiza e planeja.
 │  Repositories (lib/repositories/)                   │
 │  └─ queries Drizzle, sem lógica de negócio          │
 │  Integrations (lib/integrations/)                   │
-│  └─ R2 SDK, email, serviços externos                │
+│  └─ email, serviços externos                        │
 ├─────────────────────────────────────────────────────┤
 │  Internal API + DB (apps/hub-api)                   │
 │  └─ Cloudflare Workers + D1                         │
@@ -61,7 +61,6 @@ Schemas Zod (`lib/schemas/`) validam na borda da API. Erros (`lib/errors/`) e ob
 - Queries SQL **apenas em** `src/lib/repositories/`
 - Toda entrada de API **validada com Zod** (`.safeParse()`)
 - Toda rota protegida com `requireAuth()` (Auth.js session)
-- R2 acessado **apenas via** `src/lib/integrations/r2/`
 - **Soft delete obrigatório** nas entidades centrais (pages, projects, tasks) — nunca hard delete
 
 ---
@@ -73,7 +72,6 @@ Schemas Zod (`lib/schemas/`) validam na borda da API. Erros (`lib/errors/`) e ob
 | Knowledge | Wiki, páginas, editor Tiptap, revisões                | `/api/knowledge/pages`            |
 | Projects  | Projetos, milestones, OKRs (objectives + key results) | `/api/projects`, `/api/okr`       |
 | Tasks     | Kanban, colunas, drag-and-drop (dnd-kit)              | `/api/tasks`, `/api/task-columns` |
-| Assets    | Upload R2, metadados, asset links                     | `/api/assets`                     |
 | Search    | Busca global (⌘K)                                     | `/api/search`                     |
 | Auth      | Login credentials, roles, guards                      | `(auth)/`                         |
 
@@ -96,7 +94,6 @@ src/
     knowledge/
     projects/
     tasks/
-    assets/
     search/
     auth/
   lib/
@@ -104,7 +101,7 @@ src/
     config/             # env.ts, app-config, feature-flags
     db/                 # schema Drizzle, migrations, seeds
     repositories/       # Queries de banco por entidade
-    integrations/       # r2/, email/ (acesso externo)
+    integrations/       # email/ (acesso externo)
     services/           # Regra de negócio por domínio
     schemas/            # Zod schemas de input da API
     permissions/        # guards e helpers de autorização
@@ -133,7 +130,6 @@ src/
 | ---------------- | ---------------------------------------------------------------------------------- |
 | Edição de página | UI → PATCH `/api/knowledge/pages/:id` → knowledge.service → pages.repository → DB  |
 | Board kanban     | UI (dnd-kit) → POST `/api/tasks/move` → task-board.service → tasks.repository → DB |
-| Upload de asset  | UI → POST `/api/assets/upload` → asset.service → r2.integration → R2 + DB          |
 | Busca global     | UI (⌘K) → GET `/api/search?q=` → search.service → search.repository → DB           |
 | OKR              | UI → POST `/api/okr/objectives` → okr.service → repositories → DB                  |
 
@@ -141,11 +137,10 @@ src/
 
 ## 9. Integrações externas
 
-| Integração              | Uso                                     | Abstração                |
-| ----------------------- | --------------------------------------- | ------------------------ |
-| Cloudflare R2           | Storage de assets (imagens, PDFs, etc.) | `lib/integrations/r2/`   |
-| Cloudflare Workers + D1 | API interna e persistência              | `apps/hub-api/`          |
-| Vercel                  | Deploy e hosting                        | CI/CD via GitHub Actions |
+| Integração              | Uso                        | Abstração                |
+| ----------------------- | -------------------------- | ------------------------ |
+| Cloudflare Workers + D1 | API interna e persistência | `apps/hub-api/`          |
+| Vercel                  | Deploy e hosting           | CI/CD via GitHub Actions |
 
 ---
 
@@ -173,12 +168,10 @@ src/
 | Knowledge domain        | `docs/domains/knowledge.md`       |
 | Projects domain         | `docs/domains/projects.md`        |
 | Tasks domain            | `docs/domains/tasks.md`           |
-| Assets domain           | `docs/domains/assets.md`          |
 | Fluxo auth              | `docs/flows/auth-flow.md`         |
 | Fluxo page editing      | `docs/flows/page-editing-flow.md` |
 | Fluxo task board        | `docs/flows/task-board-flow.md`   |
 | Fluxo file upload       | `docs/flows/file-upload-flow.md`  |
-| Integração R2           | `docs/integrations/r2.md`         |
 | Integração Auth.js      | `docs/integrations/auth.md`       |
 | Rotas da API            | `docs/reference/routes.md`        |
 | Variáveis de ambiente   | `docs/reference/env-vars.md`      |

@@ -8,6 +8,7 @@ Use este template como **modelo de prompt** ao solicitar tarefas a uma IA no rep
 
 ```markdown
 Leia antes de começar:
+
 - AGENTS.md (na raiz do tribus-hub)
 - docs/ai-context/project-context.md
 - docs/ai-context/development-rules.md
@@ -23,11 +24,11 @@ Tarefa:
 ---
 
 Regras:
+
 - Respeitar a arquitetura existente (config → repositories/integrations → services → API; schemas para validação).
 - Não acessar process.env fora de src/lib/config/env.ts.
 - Toda rota protegida com requireAuth(); toda entrada validada com Zod.
 - Soft delete obrigatório em pages, projects, tasks (nunca hard delete).
-- R2 apenas via src/lib/integrations/r2/.
 - Manter os padrões do projeto (TypeScript strict, nomenclatura, separação de camadas).
 - Atualizar a documentação impactada (domains, flows, reference, architecture, getting-started, integrations, operations).
 - Se nenhuma doc precisar mudar, explicar explicitamente por quê.
@@ -35,6 +36,7 @@ Regras:
 ---
 
 Entrega obrigatória:
+
 1. Arquivos de código alterados (lista).
 2. Resumo das mudanças (o que foi feito e por quê).
 3. Arquivos de documentação alterados (lista ou justificativa de por que nenhum).
@@ -48,6 +50,7 @@ Entrega obrigatória:
 
 ```markdown
 Leia antes de começar:
+
 - AGENTS.md
 - docs/ai-context/project-context.md
 - docs/ai-context/development-rules.md
@@ -61,12 +64,14 @@ Tarefa:
 Adicionar um campo `dueDate` com notificação visual no card do kanban quando a tarefa estiver atrasada (dueDate < hoje). Exibir um badge vermelho no card. O campo já existe no schema Drizzle e na API, mas não está sendo exibido na UI.
 
 Regras:
+
 - Alterar apenas o componente de card do kanban e o hook que carrega os dados do board.
 - Não adicionar nova rota ou campo no banco.
 - Manter o padrão de componentes Server/Client e uso de cn() para classes.
 - Nenhuma doc de domínio precisa mudar, mas verificar se reference/routes.md está atualizado (não precisa neste caso).
 
 Entrega obrigatória:
+
 1. Arquivos de código alterados
 2. Resumo das mudanças
 3. Arquivos de documentação alterados (ou justificativa)

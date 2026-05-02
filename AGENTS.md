@@ -6,7 +6,7 @@ Este arquivo é o **contrato de trabalho** e o **guia obrigatório** que toda IA
 
 ## 1. Contexto do projeto (resumo)
 
-- **O que é o tribus-hub:** plataforma interna central da Tribus. Next.js 15 App Router, TypeScript, Drizzle ORM, Auth.js, Tailwind CSS, Tiptap, dnd-kit. Organiza conhecimento, projetos, tarefas e assets da empresa.
+- **O que é o tribus-hub:** plataforma interna central da Tribus. Next.js 15 App Router, TypeScript, Drizzle ORM, Auth.js, Tailwind CSS, Tiptap, dnd-kit. Organiza conhecimento, projetos e tarefas da empresa.
 - **Papel:** fonte de verdade estratégica, documental e operacional interna. Não replica dados do Bling (ERP). Documenta, organiza e planeja.
 - **Arquitetura em camadas:** config → schemas → repositories → integrations → services → API routes → UI. Cada camada tem responsabilidade única e estrita.
 
@@ -22,9 +22,9 @@ A IA **deve sempre** ler, nesta ordem:
 
 Além disso, ler **toda a documentação relevante ao domínio da tarefa**:
 
-- **Domínio afetado:** `docs/domains/*` (knowledge, projects, tasks, assets, auth).
+- **Domínio afetado:** `docs/domains/*` (knowledge, projects, tasks, auth).
 - **Fluxos impactados:** `docs/flows/*` (auth-flow, page-editing-flow, task-board-flow, file-upload-flow, project-management-flow).
-- **Integrações envolvidas:** `docs/integrations/*` (r2, auth, drizzle-postgres).
+- **Integrações envolvidas:** `docs/integrations/*` (auth, drizzle-postgres).
 - **Arquitetura:** `docs/architecture/*` (overview, layers, folder-structure, decisions).
 - **Referência:** `docs/reference/routes.md`, `docs/reference/env-vars.md` quando a tarefa envolver rotas ou variáveis de ambiente.
 - **Convenções:** `docs/conventions/code.md`, `docs/conventions/security.md`.
@@ -42,7 +42,6 @@ Além disso, ler **toda a documentação relevante ao domínio da tarefa**:
 - **Lógica de negócio em services.** API routes apenas autenticam, validam, delegam para `src/lib/services/` e respondem.
 - **Toda rota protegida com `requireAuth()`.** Não confiar em estado do client para autorização.
 - **Soft delete obrigatório** nas entidades centrais (pages, projects, tasks). Nunca `DELETE` hard em produção.
-- **R2 acessado apenas via** `src/lib/integrations/r2/`. Nunca usar S3 SDK diretamente em rotas ou services.
 
 Detalhes completos: **docs/conventions/code.md** e **docs/conventions/security.md**.
 

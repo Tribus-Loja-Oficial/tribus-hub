@@ -13,7 +13,6 @@ import {
   Flag,
   CheckSquare,
   BookOpen,
-  Paperclip,
   Plus,
   Loader2,
   Trash2,
@@ -32,8 +31,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { isBefore, formatDistanceToNow } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { isBefore } from "date-fns";
 import { formatCivilDate, parseCivilDateInput, startOfLocalDay } from "@/lib/date/civil-date";
 import {
   nativeSelectClassName,
@@ -62,22 +60,6 @@ const OVERVIEW_HEALTH_CHIP_TRACK_PX = 176;
 interface HubPayload {
   project: Project;
   milestones: Milestone[];
-  objectives: Array<{
-    id: string;
-    title: string;
-    description?: string | null;
-    status: string;
-    keyResults: Array<{
-      id: string;
-      title: string;
-      currentValue: number;
-      targetValue: number;
-      startValue: number;
-      unit?: string | null;
-      status: string;
-      confidence?: number | null;
-    }>;
-  }>;
   stats: {
     taskCount: number;
     milestoneCount: number;
@@ -87,7 +69,6 @@ interface HubPayload {
     completedEstimate?: number;
   };
   linkedPages: Array<{ id: string; title: string; isFolder: boolean }>;
-  linkedAssets: Array<{ id: string; filename: string; mimeType: string; sizeBytes: number }>;
   recentTasks: Task[];
 }
 
@@ -129,12 +110,6 @@ interface ProjectDetailViewProps {
 type MemberRow = { id: string; name: string; email: string };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function formatBytes(n: number) {
-  if (n < 1024) return `${n} B`;
-  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
-  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 function isOverdue(dateStr: string | null | undefined, completedAt?: string | null) {
   if (!dateStr || completedAt) return false;
@@ -568,8 +543,7 @@ export function ProjectDetailView({
     );
   }
 
-  const { project, milestones, objectives, stats, linkedPages, linkedAssets, recentTasks } =
-    data.data;
+  const { project, milestones, stats, linkedPages, recentTasks } = data.data;
   /** UUID canónico do projeto (tasks usam este id; a rota pode ser slug, ex. /projects/qqqq). */
   const taskBoardProjectId = project.id;
 
@@ -739,10 +713,6 @@ export function ProjectDetailView({
           <TabsTrigger value="knowledge" className="gap-1.5">
             <BookOpen className="h-3.5 w-3.5" />
             Knowledge
-          </TabsTrigger>
-          <TabsTrigger value="assets" className="gap-1.5">
-            <Paperclip className="h-3.5 w-3.5" />
-            Assets
           </TabsTrigger>
         </TabsList>
 
@@ -1256,38 +1226,6 @@ export function ProjectDetailView({
                 </li>
               ))}
             </ul>
-          )}
-        </TabsContent>
-
-        {/* ASSETS */}
-        <TabsContent value="assets" className="pt-2">
-          {linkedAssets.length === 0 ? (
-            <p className="rounded-xl border border-dashed py-8 text-center text-sm text-muted-foreground">
-              Nenhum arquivo anexado.
-            </p>
-          ) : (
-            <div className="overflow-hidden rounded-xl border border-border">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/30 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                    <th className="px-4 py-3 font-medium">Arquivo</th>
-                    <th className="px-4 py-3 font-medium">Tipo</th>
-                    <th className="px-4 py-3 font-medium">Tamanho</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {linkedAssets.map((a) => (
-                    <tr key={a.id} className="border-b border-border/60 hover:bg-accent/20">
-                      <td className="px-4 py-2.5 font-medium">{a.filename}</td>
-                      <td className="px-4 py-2.5 text-xs text-muted-foreground">{a.mimeType}</td>
-                      <td className="px-4 py-2.5 tabular-nums text-muted-foreground">
-                        {formatBytes(a.sizeBytes)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
           )}
         </TabsContent>
       </Tabs>

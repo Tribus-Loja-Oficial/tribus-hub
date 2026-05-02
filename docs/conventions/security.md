@@ -10,7 +10,6 @@ Regras **prescritivas** de segurança para o **tribus-hub**. Toda rota, serviço
 - Em produção, definir variáveis no painel do Vercel; não deixar segredos em código ou em logs.
 - `process.env` **apenas em** `src/lib/config/env.ts`. Qualquer outro ponto de acesso é proibido pela arquitetura.
 - `NEXT_PUBLIC_*` são expostos ao browser — nunca usar para segredos (chaves privadas, tokens de acesso, etc.).
-- Credenciais R2 (`R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`) devem ter escopo mínimo: leitura/escrita apenas no bucket específico, sem acesso administrativo à conta.
 
 ---
 
@@ -52,16 +51,6 @@ Regras **prescritivas** de segurança para o **tribus-hub**. Toda rota, serviço
 
 ---
 
-## Cloudflare R2 — upload seguro
-
-- Validar **mime type** e **tamanho** no servidor antes de enviar ao R2 — nunca confiar na extensão do arquivo.
-- O `Content-Type` deve ser definido explicitamente ao fazer upload (não inferir do client).
-- **Signed URLs** para arquivos privados — nunca expor a URL interna do bucket diretamente.
-- Signed URLs têm validade de **1 hora** por padrão. Não armazenar signed URLs em banco — gerá-las on-demand.
-- Ao deletar um asset: remover do R2 **e** do banco (campo `deletedAt`) — não deixar objetos órfãos no storage.
-
----
-
 ## Logs e observabilidade
 
 - Nunca logar: passwords (mesmo hasheados), tokens de sessão, chaves de API.
@@ -76,7 +65,6 @@ Regras **prescritivas** de segurança para o **tribus-hub**. Toda rota, serviço
 - Cookie de sessão: HttpOnly, Secure em prod, SameSite=lax.
 - Toda entrada validada com Zod; toda rota autenticada com `requireAuth()`.
 - Soft delete obrigatório — nunca hard delete em produção.
-- R2: validar mime/tamanho no servidor; signed URLs para arquivos privados.
 - Nunca expor stack traces ou dados internos ao client.
 
 Referência de env vars: [getting-started/environment-variables](../getting-started/environment-variables.md). Regras de código: [conventions/code](code.md).

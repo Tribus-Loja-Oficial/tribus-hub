@@ -33,19 +33,6 @@ const envSchema = z.object({
   /** Cloudflare Turnstile site key (client). Login still works when unset if CDS has no Turnstile secret. */
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
 
-  // Cloudflare R2 (optional — uploads are disabled when not configured)
-  R2_ACCOUNT_ID: z.string().optional(),
-  R2_ACCESS_KEY_ID: z.string().optional(),
-  R2_SECRET_ACCESS_KEY: z.string().optional(),
-  R2_BUCKET_NAME: z.string().default("tribus-hub-assets"),
-  R2_PUBLIC_URL: z.string().url().optional(),
-
-  // Upload limits
-  UPLOAD_MAX_SIZE_BYTES: z.coerce.number().default(52_428_800), // 50MB
-  UPLOAD_ALLOWED_MIME_TYPES: z
-    .string()
-    .default("image/jpeg,image/png,image/webp,image/gif,application/pdf,text/plain"),
-
   // Email (optional)
   EMAIL_FROM: z.string().email().optional(),
   EMAIL_SERVER_HOST: z.string().optional(),

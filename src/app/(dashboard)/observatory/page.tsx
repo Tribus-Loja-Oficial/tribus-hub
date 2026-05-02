@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Construction, ExternalLink, HeartPulse, Store } from "lucide-react";
+import { Building2, Construction, ExternalLink, HeartPulse, Store } from "lucide-react";
 
 export const metadata: Metadata = { title: "Observatory · Dashboard" };
 
@@ -17,11 +17,17 @@ const links = [
       "Monitoramento técnico da infraestrutura, serviços, cobertura de testes e estabilidade operacional.",
     icon: HeartPulse,
   },
+  {
+    title: "Tribus ERP",
+    href: "https://tribus-erp.vercel.app/",
+    description: "Plataforma operacional — gestão e processos internos da Tribus.",
+    icon: Building2,
+  },
 ] as const;
 
 export default function ObservatoryDashboardPage() {
   return (
-    <div className="mx-auto max-w-3xl space-y-8">
+    <div className="mx-auto max-w-5xl space-y-8">
       <div className="rounded-2xl border border-border/80 bg-gradient-to-br from-muted/40 via-card to-card p-8 shadow-sm">
         <div className="flex items-start gap-4">
           <div className="bg-primary/12 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ring-1 ring-primary/20">
@@ -41,7 +47,7 @@ export default function ObservatoryDashboardPage() {
         <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           Atalhos rápidos
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {links.map(({ title, href, description, icon: Icon }) => (
             <a
               key={href}

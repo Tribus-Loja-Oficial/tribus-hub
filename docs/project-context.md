@@ -36,7 +36,7 @@ O hub **não replica** dados do Bling. Ele documenta, organiza e planeja.
 │  Repositories (lib/repositories/)                   │
 │  └─ acesso ao banco, nada mais                      │
 │  Integrations (lib/integrations/)                   │
-│  └─ R2, email, serviços externos                   │
+│  └─ email, serviços externos                       │
 ├─────────────────────────────────────────────────────┤
 │  Internal API + DB (apps/hub-api)                   │
 │  └─ Cloudflare Workers + D1                         │
@@ -53,17 +53,15 @@ O hub **não replica** dados do Bling. Ele documenta, organiza e planeja.
 - Queries SQL **apenas em** `src/lib/repositories/`
 - Toda entrada de API **validada com Zod**
 - Toda rota protegida com `requireAuth()`
-- R2 acessado **apenas via** `src/lib/integrations/r2/`
 - Soft delete nas entidades centrais (pages, projects, tasks)
 
 ## 5. Domínios funcionais
 
-| Domínio | Propósito |
-|---------|-----------|
+| Domínio   | Propósito                       |
+| --------- | ------------------------------- |
 | Knowledge | Wiki, páginas, editor, revisões |
-| Projects | Objetivos, OKRs, milestones |
-| Tasks | Kanban, execução, board |
-| Assets | Upload, metadados, R2 |
+| Projects  | Objetivos, OKRs, milestones     |
+| Tasks     | Kanban, execução, board         |
 
 ## 6. Estrutura de pastas
 
@@ -82,7 +80,6 @@ src/
     knowledge/
     projects/
     tasks/
-    assets/
     search/
     auth/
   lib/
@@ -90,7 +87,7 @@ src/
     config/             # env, app-config, feature-flags
     db/                 # schema, migrations, seeds
     repositories/       # acesso ao banco
-    integrations/       # R2, email
+    integrations/       # email
     services/           # regra de negócio
     schemas/            # Zod schemas de input
     permissions/        # guards e helpers
@@ -111,38 +108,37 @@ src/
 
 - **Edição de página**: UI → PATCH /api/knowledge/pages/:id → knowledge.service → pages.repository → DB
 - **Board**: UI (dnd-kit) → POST /api/tasks/move → task-board.service → tasks.repository → DB
-- **Upload**: UI → POST /api/assets/upload → asset.service → r2.service → R2 + DB
 - **Busca**: UI (⌘K) → GET /api/search?q= → search.service → search.repository → DB
 
 ## 9. Integrações externas
 
-| Integração | Uso | Abstração |
-|-----------|-----|-----------|
-| Cloudflare R2 | Storage de assets | `lib/integrations/r2/` |
-| Cloudflare Workers + D1 | API interna e persistência | `apps/hub-api/` |
-| Vercel | Deploy | CI/CD via GitHub Actions |
+| Integração              | Uso                        | Abstração                |
+| ----------------------- | -------------------------- | ------------------------ |
+| Cloudflare Workers + D1 | API interna e persistência | `apps/hub-api/`          |
+| Vercel                  | Deploy                     | CI/CD via GitHub Actions |
 
 ## 10. Referência de documentação
 
-| Documento | Localização |
-|-----------|-------------|
-| Arquitetura geral | `docs/architecture/overview.md` |
-| Camadas | `docs/architecture/layers.md` |
-| Decisões | `docs/architecture/decisions.md` |
-| Knowledge domain | `docs/domains/knowledge.md` |
-| Tasks domain | `docs/domains/tasks.md` |
-| Fluxo de auth | `docs/flows/auth-flow.md` |
-| Edição de páginas | `docs/flows/page-editing-flow.md` |
-| Board flow | `docs/flows/task-board-flow.md` |
-| Upload flow | `docs/flows/file-upload-flow.md` |
-| Rotas | `docs/reference/routes.md` |
-| Env vars | `docs/reference/env-vars.md` |
-| Glossário | `docs/reference/glossary.md` |
-| Deploy | `docs/operations/deploy.md` |
+| Documento               | Localização                       |
+| ----------------------- | --------------------------------- |
+| Arquitetura geral       | `docs/architecture/overview.md`   |
+| Camadas                 | `docs/architecture/layers.md`     |
+| Decisões                | `docs/architecture/decisions.md`  |
+| Knowledge domain        | `docs/domains/knowledge.md`       |
+| Tasks domain            | `docs/domains/tasks.md`           |
+| Fluxo de auth           | `docs/flows/auth-flow.md`         |
+| Edição de páginas       | `docs/flows/page-editing-flow.md` |
+| Board flow              | `docs/flows/task-board-flow.md`   |
+| File upload (histórico) | `docs/flows/file-upload-flow.md`  |
+| Rotas                   | `docs/reference/routes.md`        |
+| Env vars                | `docs/reference/env-vars.md`      |
+| Glossário               | `docs/reference/glossary.md`      |
+| Deploy                  | `docs/operations/deploy.md`       |
 
 ## 11. Regra de atualização
 
 Este arquivo deve ser atualizado sempre que:
+
 - Uma nova camada ou padrão for introduzido
 - Um novo domínio funcional for criado
 - Uma decisão arquitetural for tomada

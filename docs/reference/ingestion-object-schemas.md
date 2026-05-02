@@ -36,14 +36,14 @@ A validação na API segue `src/lib/schemas/ingestion.schemas.ts`. O ficheiro `p
 }
 ```
 
-| Campo          | Tipo                | Obrigatório | Valores válidos                           | Padrão      |
-| -------------- | ------------------- | ----------- | ----------------------------------------- | ----------- |
-| `title`        | string              | **Sim**     | max 200 chars                             | —           |
-| `description`  | string              | Não         | max 2000 chars                            | null        |
-| `start_date`   | string (YYYY-MM-DD) | **Sim**     | data válida                               | —           |
-| `end_date`     | string (YYYY-MM-DD) | **Sim**     | data válida                               | —           |
-| `status`       | enum                | Não         | `planned`, `active`, `closed`, `archived` | `"planned"` |
-| `external_ref` | string              | Não         | max 100 chars; ref. humana do novo ciclo  | null        |
+| Campo          | Tipo                | Obrigatório | Valores válidos                          | Padrão      |
+| -------------- | ------------------- | ----------- | ---------------------------------------- | ----------- |
+| `title`        | string              | **Sim**     | max 200 chars                            | —           |
+| `description`  | string              | Não         | max 2000 chars                           | null        |
+| `start_date`   | string (YYYY-MM-DD) | **Sim**     | data válida                              | —           |
+| `end_date`     | string (YYYY-MM-DD) | **Sim**     | data válida                              | —           |
+| `status`       | enum                | Não         | `planned`, `active`, `closed`            | `"planned"` |
+| `external_ref` | string              | Não         | max 100 chars; ref. humana do novo ciclo | null        |
 
 ---
 
@@ -105,7 +105,9 @@ A validação na API segue `src/lib/schemas/ingestion.schemas.ts`. O ficheiro `p
     "target_value": 500,
     "status": "draft",
     "start_date": "2025-01-01",
-    "target_date": "2025-03-31"
+    "target_date": "2025-03-31",
+    "confidence": 70,
+    "sort_order": 0
   }
 }
 ```
@@ -131,6 +133,8 @@ A validação na API segue `src/lib/schemas/ingestion.schemas.ts`. O ficheiro `p
 | `status`                  | enum                | Não         | `draft`, `on_track`, `at_risk`, `off_track`, `completed` | `"draft"`      |
 | `start_date`              | string (YYYY-MM-DD) | Não         | data válida                                              | null           |
 | `target_date`             | string (YYYY-MM-DD) | Não         | data válida                                              | null           |
+| `confidence`              | number              | Não         | 0 a 100 (confiança no KR); omitido → API usa 50          | —              |
+| `sort_order`              | number              | Não         | ordem na lista de KRs; omitido → 0                       | —              |
 
 **Regra obrigatória:** exatamente uma entre `objective_id`, `objective_ref` e `objective_external_ref`.
 
@@ -148,6 +152,8 @@ A validação na API segue `src/lib/schemas/ingestion.schemas.ts`. O ficheiro `p
     "status": "planned",
     "health_status": "on_track",
     "priority": "high",
+    "cycle_ref": "ciclo_exemplo",
+    "estimation_unit": "hours",
     "owner_user_id": "usr_abc123",
     "start_date": "2025-03-01",
     "target_date": "2025-06-30"
@@ -164,6 +170,10 @@ A validação na API segue `src/lib/schemas/ingestion.schemas.ts`. O ficheiro `p
 | `priority`                | enum                | Não         | `low`, `medium`, `high`, `urgent`                        | null        |
 | `owner_user_id`           | string              | Não         | ID de usuário válido                                     | null        |
 | `owner_user_external_ref` | string              | Não         | max 100 chars; utilizador existente                      | null        |
+| `cycle_id`                | string              | Não         | ID real de ciclo OKR existente                           | null        |
+| `cycle_ref`               | string              | Não         | `client_ref` de um `okr_cycle` no mesmo payload          | null        |
+| `cycle_external_ref`      | string              | Não         | max 100 chars; ciclo existente (ex.: `CYC-0001`)         | null        |
+| `estimation_unit`         | enum                | Não         | `hours`, `story_points` — alinhado ao projeto no PM      | `"hours"`   |
 | `external_ref`            | string              | Não         | max 100 chars                                            | null        |
 | `start_date`              | string (YYYY-MM-DD) | Não         | data válida                                              | null        |
 | `target_date`             | string (YYYY-MM-DD) | Não         | data válida                                              | null        |
@@ -188,19 +198,19 @@ A validação na API segue `src/lib/schemas/ingestion.schemas.ts`. O ficheiro `p
 }
 ```
 
-| Campo                     | Tipo                | Obrigatório | Valores válidos                                 | Padrão      |
-| ------------------------- | ------------------- | ----------- | ----------------------------------------------- | ----------- |
-| `title`                   | string              | **Sim**     | max 500 chars                                   | —           |
-| `description`             | string              | Não         | max 2000 chars                                  | null        |
-| `project_id`              | string              | Cond.       | ID real de um projeto existente                 | —           |
-| `project_ref`             | string              | Cond.       | client_ref de um `project` no payload           | —           |
-| `project_external_ref`    | string              | Cond.       | max 100 chars; projeto existente                | —           |
-| `external_ref`            | string              | Não         | max 100 chars                                   | null        |
-| `status`                  | enum                | Não         | `pending`, `in_progress`, `completed`, `missed` | `"pending"` |
-| `priority`                | enum                | Não         | `low`, `medium`, `high`, `urgent`               | null        |
-| `owner_user_id`           | string              | Não         | ID de usuário válido                            | null        |
-| `owner_user_external_ref` | string              | Não         | max 100 chars; utilizador existente             | null        |
-| `due_date`                | string (YYYY-MM-DD) | Não         | data válida                                     | null        |
+| Campo                     | Tipo                | Obrigatório | Valores válidos                                            | Padrão      |
+| ------------------------- | ------------------- | ----------- | ---------------------------------------------------------- | ----------- |
+| `title`                   | string              | **Sim**     | max 500 chars                                              | —           |
+| `description`             | string              | Não         | max 2000 chars                                             | null        |
+| `project_id`              | string              | Cond.       | ID real de um projeto existente                            | —           |
+| `project_ref`             | string              | Cond.       | client_ref de um `project` no payload                      | —           |
+| `project_external_ref`    | string              | Cond.       | max 100 chars; projeto existente                           | —           |
+| `external_ref`            | string              | Não         | max 100 chars                                              | null        |
+| `status`                  | enum                | Não         | `pending`, `in_progress`, `completed`, `missed`, `blocked` | `"pending"` |
+| `priority`                | enum                | Não         | `low`, `medium`, `high`, `urgent`                          | null        |
+| `owner_user_id`           | string              | Não         | ID de usuário válido                                       | null        |
+| `owner_user_external_ref` | string              | Não         | max 100 chars; utilizador existente                        | null        |
+| `due_date`                | string (YYYY-MM-DD) | Não         | data válida                                                | null        |
 
 **Regra obrigatória:** exatamente uma entre `project_id`, `project_ref` e `project_external_ref`.
 
@@ -220,29 +230,34 @@ A validação na API segue `src/lib/schemas/ingestion.schemas.ts`. O ficheiro `p
     "priority": "high",
     "assignee_user_id": "usr_abc123",
     "due_date": "2025-05-10",
+    "estimated_hours": 4,
     "label_ids": ["lbl_design", "lbl_frontend"]
   }
 }
 ```
 
-| Campo                        | Tipo                | Obrigatório | Valores válidos                              | Padrão              |
-| ---------------------------- | ------------------- | ----------- | -------------------------------------------- | ------------------- |
-| `title`                      | string              | **Sim**     | max 500 chars                                | —                   |
-| `external_ref`               | string              | Não         | max 100 chars                                | null                |
-| `description`                | string              | Não         | max 5000 chars                               | null                |
-| `project_id`                 | string              | Não         | ID real de um projeto existente              | null                |
-| `project_ref`                | string              | Não         | client_ref de um `project` no payload        | null                |
-| `project_external_ref`       | string              | Não         | max 100 chars; projeto existente             | null                |
-| `milestone_id`               | string              | Não         | ID real de um milestone existente            | null                |
-| `milestone_ref`              | string              | Não         | client_ref de um `milestone` no payload      | null                |
-| `milestone_external_ref`     | string              | Não         | max 100 chars; milestone existente           | null                |
-| `column_id`                  | string              | Não         | ID real de uma coluna do board               | padrão do workspace |
-| `column_name`                | string              | Não         | Nome ou slug de uma coluna (ex: `"A fazer"`) | padrão do workspace |
-| `priority`                   | enum                | Não         | `low`, `medium`, `high`, `urgent`            | null                |
-| `assignee_user_id`           | string              | Não         | ID de usuário válido                         | null                |
-| `assignee_user_external_ref` | string              | Não         | max 100 chars; utilizador existente          | null                |
-| `due_date`                   | string (YYYY-MM-DD) | Não         | data válida                                  | null                |
-| `label_ids`                  | string[]            | Não         | IDs de labels existentes no workspace        | `[]`                |
+| Campo                        | Tipo                | Obrigatório | Valores válidos                                | Padrão              |
+| ---------------------------- | ------------------- | ----------- | ---------------------------------------------- | ------------------- |
+| `title`                      | string              | **Sim**     | max 500 chars                                  | —                   |
+| `external_ref`               | string              | Não         | max 100 chars                                  | null                |
+| `description`                | string              | Não         | max 5000 chars                                 | null                |
+| `project_id`                 | string              | Não         | ID real de um projeto existente                | null                |
+| `project_ref`                | string              | Não         | client_ref de um `project` no payload          | null                |
+| `project_external_ref`       | string              | Não         | max 100 chars; projeto existente               | null                |
+| `milestone_id`               | string              | Não         | ID real de um milestone existente              | null                |
+| `milestone_ref`              | string              | Não         | client_ref de um `milestone` no payload        | null                |
+| `milestone_external_ref`     | string              | Não         | max 100 chars; milestone existente             | null                |
+| `column_id`                  | string              | Não         | ID real de uma coluna do board                 | padrão do workspace |
+| `column_name`                | string              | Não         | Nome ou slug de uma coluna (ex: `"A fazer"`)   | padrão do workspace |
+| `priority`                   | enum                | Não         | `low`, `medium`, `high`, `urgent`              | null                |
+| `assignee_user_id`           | string              | Não         | ID de usuário válido                           | null                |
+| `assignee_user_external_ref` | string              | Não         | max 100 chars; utilizador existente            | null                |
+| `due_date`                   | string (YYYY-MM-DD) | Não         | data válida                                    | null                |
+| `label_ids`                  | string[]            | Não         | IDs de labels existentes no workspace          | `[]`                |
+| `estimated_hours`            | number              | Não         | Estimativa quando o projeto usa `hours`        | —                   |
+| `estimated_points`           | number              | Não         | Estimativa quando o projeto usa `story_points` | —                   |
+
+**Estimativa:** o Worker aceita `estimated_hours` ou `estimated_points` conforme `estimation_unit` do projeto; valores incoerentes com a unidade podem ser ignorados ou rejeitados pela API.
 
 **Resolução de coluna:**
 

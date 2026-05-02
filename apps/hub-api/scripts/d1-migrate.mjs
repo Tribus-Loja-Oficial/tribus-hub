@@ -18,6 +18,7 @@ const migrations = [
   { id: "0012_project_task_estimation", file: "./migrations/0012_project_task_estimation.sql" },
   { id: "0013_okr_cycle_status_three_way", file: "./migrations/0013_okr_cycle_status_three_way.sql" },
   { id: "0014_milestone_blocked_status", file: "./migrations/0014_milestone_blocked_status.sql" },
+  { id: "0015_remove_assets_tables", file: "./migrations/0015_remove_assets_tables.sql" },
 ];
 
 function run(cmd) {

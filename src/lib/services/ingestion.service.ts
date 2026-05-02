@@ -139,6 +139,26 @@ export function validateIngestionPayload(payload: IngestionPayload): ValidationR
       }
     }
 
+    if (obj.type === "project") {
+      const d = obj.data;
+      if (d.cycle_ref && !d.cycle_id) {
+        const target = clientRefs.get(d.cycle_ref);
+        if (!target) {
+          errors.push({
+            ...ctx,
+            field: "data.cycle_ref",
+            message: `cycle_ref "${d.cycle_ref}" não encontrado no payload. Adicione um objeto okr_cycle com esse client_ref ou use cycle_id com um ID real.`,
+          });
+        } else if (target.type !== "okr_cycle") {
+          errors.push({
+            ...ctx,
+            field: "data.cycle_ref",
+            message: `cycle_ref "${d.cycle_ref}" aponta para "${target.type}", mas deve ser "okr_cycle".`,
+          });
+        }
+      }
+    }
+
     if (obj.type === "milestone") {
       const d = obj.data;
       if (d.project_ref && !d.project_id) {
@@ -338,7 +358,7 @@ async function createIngestionObject(
       return createKeyResult(user, obj.data, refMap, externalRefCache);
 
     case "project":
-      return createProject(user, obj.data, externalRefCache);
+      return createProject(user, obj.data, refMap, externalRefCache);
 
     case "milestone":
       return createMilestone(user, obj.data, refMap, externalRefCache);
@@ -475,6 +495,8 @@ async function createKeyResult(
       status: data.status ?? "draft",
       startDate: data.start_date ?? null,
       targetDate: data.target_date ?? null,
+      confidence: data.confidence ?? undefined,
+      sortOrder: data.sort_order ?? undefined,
     },
   });
   return result.id;
@@ -483,11 +505,16 @@ async function createKeyResult(
 async function createProject(
   user: AuthenticatedUser,
   data: Extract<IngestionObject, { type: "project" }>["data"],
+  refMap: Record<string, string>,
   externalRefCache: Map<string, string | null>,
 ): Promise<string> {
   const ownerUserId =
     data.owner_user_id ??
     (await resolveExternalRef(user, externalRefCache, "user", data.owner_user_external_ref));
+  const cycleIdFromRef = data.cycle_ref ? (refMap[data.cycle_ref] ?? data.cycle_id) : data.cycle_id;
+  const cycleId =
+    cycleIdFromRef ??
+    (await resolveExternalRef(user, externalRefCache, "okr_cycle", data.cycle_external_ref));
   const result = await hubApiFetch<{ id: string }>({
     method: "POST",
     path: "/v1/projects",
@@ -501,6 +528,8 @@ async function createProject(
       healthStatus: data.health_status ?? null,
       priority: data.priority ?? null,
       ownerUserId: ownerUserId ?? null,
+      cycleId: cycleId ?? null,
+      estimationUnit: data.estimation_unit ?? undefined,
       startDate: data.start_date ?? null,
       targetDate: data.target_date ?? null,
     },
@@ -588,6 +617,8 @@ async function createTask(
       dueDate: data.due_date ?? null,
       descriptionText: data.description ?? null,
       labelIds: data.label_ids ?? [],
+      estimatedHours: data.estimated_hours ?? undefined,
+      estimatedPoints: data.estimated_points ?? undefined,
     },
   });
   return result.id;
