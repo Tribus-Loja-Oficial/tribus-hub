@@ -684,7 +684,7 @@ export function ProjectDetailView({
       {/* Progress bar */}
       <div className="space-y-1">
         <div className="flex justify-between text-xs text-muted-foreground">
-          <span>Progresso por estimativa</span>
+          <span>Progresso das tarefas</span>
           <span className="tabular-nums">{Math.round(project.progressPercent ?? 0)}%</span>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-muted">

@@ -48,8 +48,12 @@ function createId() {
 
 type ProjectEstimateSummary = {
   unit: "hours" | "story_points";
+  /** Soma só de estimativas &gt; 0 (horas ou SP) — UI “X / Y horas”. */
   total: number;
   completed: number;
+  /** Peso por tarefa: estimativa se &gt; 0, senão 1 — roll-up coerente de % projeto/milestone. */
+  weightTotal: number;
+  weightCompleted: number;
   milestoneProgressPercent: Map<string, number>;
 };
 
@@ -86,50 +90,58 @@ async function milestoneTaskProgressPercentByProject(
   const unit = (r.results?.[0]?.estimation_unit ?? "hours") as "hours" | "story_points";
   const byMilestone = new Map<
     string,
-    { total: number; completed: number; count: number; done: number }
+    {
+      estimateTotal: number;
+      estimateCompleted: number;
+      weightTotal: number;
+      weightCompleted: number;
+    }
   >();
   let projectTotal = 0;
   let projectCompleted = 0;
+  let projectWeightTotal = 0;
+  let projectWeightCompleted = 0;
   for (const row of r.results ?? []) {
     const estimateRaw = unit === "story_points" ? row.estimated_points : row.estimated_hours;
     const estimate = Number(estimateRaw ?? 0);
     const isDone =
       Boolean(row.completed_at) || String(row.column_slug ?? "").toLowerCase() === "done";
     const isPositiveEstimate = Number.isFinite(estimate) && estimate > 0;
+    const taskWeight = isPositiveEstimate ? estimate : 1;
+    projectWeightTotal += taskWeight;
+    if (isDone) projectWeightCompleted += taskWeight;
     if (isPositiveEstimate) {
       projectTotal += estimate;
       if (isDone) projectCompleted += estimate;
     }
     if (!row.milestone_id) continue;
     const current = byMilestone.get(row.milestone_id) ?? {
-      total: 0,
-      completed: 0,
-      count: 0,
-      done: 0,
+      estimateTotal: 0,
+      estimateCompleted: 0,
+      weightTotal: 0,
+      weightCompleted: 0,
     };
+    current.weightTotal += taskWeight;
+    if (isDone) current.weightCompleted += taskWeight;
     if (isPositiveEstimate) {
-      current.total += estimate;
-      if (isDone) current.completed += estimate;
+      current.estimateTotal += estimate;
+      if (isDone) current.estimateCompleted += estimate;
     }
-    current.count += 1;
-    if (isDone) current.done += 1;
     byMilestone.set(row.milestone_id, current);
   }
   const milestoneProgressPercent = new Map<string, number>();
   for (const [milestoneId, stat] of byMilestone.entries()) {
-    if (stat.total > 0) {
-      milestoneProgressPercent.set(milestoneId, Math.round((stat.completed / stat.total) * 100));
-    } else {
-      milestoneProgressPercent.set(
-        milestoneId,
-        stat.count > 0 ? Math.round((stat.done / stat.count) * 100) : 0,
-      );
-    }
+    milestoneProgressPercent.set(
+      milestoneId,
+      stat.weightTotal > 0 ? Math.round((stat.weightCompleted / stat.weightTotal) * 100) : 0,
+    );
   }
   return {
     unit,
     total: projectTotal,
     completed: projectCompleted,
+    weightTotal: projectWeightTotal,
+    weightCompleted: projectWeightCompleted,
     milestoneProgressPercent,
   };
 }
@@ -1015,9 +1027,9 @@ export async function handleV1ExtraRoutes(
         }).length;
         const progress = progCache.get(id);
         const progressPercent =
-          progress && progress.total > 0
-            ? Math.round((progress.completed / progress.total) * 100)
-            : Number(raw.progress_percent ?? 0);
+          progress && progress.weightTotal > 0
+            ? Math.round((progress.weightCompleted / progress.weightTotal) * 100)
+            : 0;
         return {
           ...mapProjectRowCamel(raw),
           progressPercent,
@@ -1250,9 +1262,9 @@ export async function handleV1ExtraRoutes(
         milestoneTaskProgressPercentByProject(db, projectId),
       ]);
       const progressPercent =
-        mileProg.total > 0
-          ? Math.round((mileProg.completed / mileProg.total) * 100)
-          : Number(projectRaw.progress_percent ?? 0);
+        mileProg.weightTotal > 0
+          ? Math.round((mileProg.weightCompleted / mileProg.weightTotal) * 100)
+          : 0;
       const projectDto = {
         ...mapProjectRowCamel(projectRaw),
         progressPercent,

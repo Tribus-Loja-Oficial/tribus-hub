@@ -413,12 +413,22 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <div className="rounded-xl border border-border bg-card">
               <div className="flex items-center justify-between border-b border-border px-5 py-4">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-amber-500" />
-                  <span className="text-sm font-medium">Atenção necessária</span>
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />
+                    <span className="text-sm font-medium leading-tight text-foreground">
+                      Objetivos e KRs em atenção
+                    </span>
+                  </div>
+                  <p className="pl-6 text-[11px] leading-snug text-muted-foreground">
+                    Fora do rumo ou em risco no escopo atual
+                  </p>
                 </div>
-                <Link href="/okr/objectives" className="text-xs text-primary hover:underline">
-                  Ver todos
+                <Link
+                  href="/okr/okrs"
+                  className="flex shrink-0 items-center gap-1 text-xs text-primary hover:underline"
+                >
+                  Ver todos <ChevronRight className="h-3 w-3" />
                 </Link>
               </div>
               <div className="divide-y divide-border">
@@ -476,7 +486,7 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
                   </p>
                 </div>
                 <Link
-                  href="/okr/objectives"
+                  href="/okr/okrs"
                   className="flex shrink-0 items-center gap-1 text-xs text-primary hover:underline"
                 >
                   Ver todos <ChevronRight className="h-3 w-3" />

@@ -262,7 +262,7 @@ export function CycleDetailView({ cycleId }: CycleDetailViewProps) {
           <div className="py-10 text-center">
             <Target className="mx-auto mb-2 h-8 w-8 text-muted-foreground opacity-30" />
             <p className="text-sm text-muted-foreground">Nenhum objetivo neste ciclo.</p>
-            <Link href="/okr/objectives">
+            <Link href="/okr/okrs">
               <Button variant="outline" size="sm" className="mt-3">
                 Gerenciar objetivos
               </Button>
