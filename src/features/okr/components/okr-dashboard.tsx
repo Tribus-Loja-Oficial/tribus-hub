@@ -38,6 +38,12 @@ import { differenceInDays, isAfter, isBefore, formatDistanceToNow } from "date-f
 import { ptBR } from "date-fns/locale";
 import { formatCivilDate, parseCivilDateInput, startOfLocalDay } from "@/lib/date/civil-date";
 import { cn } from "@/lib/utils/cn";
+import { reconcileOkrHealthInsightForDisplay } from "@/features/okr/lib/okr-pace-health-local";
+
+/** Filtro padrão: mesmo escopo que o backend sem query — ciclo com status em andamento. */
+const DASHBOARD_FILTER_ACTIVE = "__dashboard_active_cycle__";
+/** Workspace inteiro (todos os ciclos). */
+const DASHBOARD_FILTER_ALL = "__dashboard_all_cycles__";
 
 function calcCycleTimeProgress(cycle: OkrCycle): number {
   const now = new Date();
@@ -107,15 +113,19 @@ interface OkrDashboardProps {
 }
 
 export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
-  const [selectedCycleId, setSelectedCycleId] = useState(initialCycleId ?? "");
+  const [cycleFilter, setCycleFilter] = useState<string>(initialCycleId ?? DASHBOARD_FILTER_ACTIVE);
   const [createCycleOpen, setCreateCycleOpen] = useState(false);
   const [createObjectiveOpen, setCreateObjectiveOpen] = useState(false);
   const [createKrOpen, setCreateKrOpen] = useState(false);
 
-  const queryParams = selectedCycleId ? `?cycleId=${selectedCycleId}` : "";
+  const queryParams = useMemo(() => {
+    if (cycleFilter === DASHBOARD_FILTER_ALL) return "?allCycles=1";
+    if (cycleFilter === DASHBOARD_FILTER_ACTIVE) return "";
+    return `?cycleId=${encodeURIComponent(cycleFilter)}`;
+  }, [cycleFilter]);
 
   const { data, isLoading } = useQuery<{ data: DashboardData }>({
-    queryKey: ["okr-dashboard", selectedCycleId],
+    queryKey: ["okr-dashboard", cycleFilter],
     queryFn: () => fetch(`/api/okr/dashboard${queryParams}`).then((r) => r.json()),
   });
 
@@ -128,9 +138,26 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
   const recentUpdates = dashboard?.recentUpdates ?? [];
   const cyclePace = dashboard?.cyclePace ?? null;
 
-  const selectedCycleTitle = selectedCycleId
-    ? allCycles.find((c) => c.id === selectedCycleId)?.title
-    : null;
+  const scopeIsAllCycles = cycleFilter === DASHBOARD_FILTER_ALL;
+  const scopeIsActiveDefault = cycleFilter === DASHBOARD_FILTER_ACTIVE;
+
+  const headerScopeBadge = useMemo(() => {
+    if (scopeIsAllCycles) return "Todos os ciclos";
+    if (scopeIsActiveDefault) return activeCycle?.title ?? null;
+    return allCycles.find((c) => c.id === cycleFilter)?.title ?? null;
+  }, [scopeIsAllCycles, scopeIsActiveDefault, activeCycle?.title, allCycles, cycleFilter]);
+
+  const headerScopeDescription = scopeIsAllCycles
+    ? "Métricas de todos os objetivos e key results do workspace, em todos os ciclos."
+    : scopeIsActiveDefault
+      ? "Métricas do ciclo em andamento (o mesmo período que o OKR Manager usa por padrão)."
+      : "Métricas e riscos filtrados para o ciclo selecionado.";
+
+  const defaultCycleIdForCreates = scopeIsAllCycles
+    ? undefined
+    : scopeIsActiveDefault
+      ? activeCycle?.id
+      : cycleFilter;
 
   const cycleTimeProgress = activeCycle ? calcCycleTimeProgress(activeCycle) : null;
   const daysLeft = activeCycle
@@ -153,29 +180,28 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-xl font-semibold text-foreground">OKR Manager</h1>
-              {selectedCycleTitle && (
+              {headerScopeBadge && (
                 <span className="rounded-md border border-primary/25 bg-primary/10 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-primary">
-                  {selectedCycleTitle}
+                  {headerScopeBadge}
                 </span>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">
-              {selectedCycleId
-                ? "Métricas e riscos filtrados para o ciclo selecionado."
-                : "Visão executiva do health dos OKRs no workspace."}
-            </p>
+            <p className="text-sm text-muted-foreground">{headerScopeDescription}</p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           {allCycles.length > 0 && (
             <select
-              className={cn(nativeSelectSmClassName, "h-9 min-w-[11rem]")}
-              value={selectedCycleId}
-              onChange={(e) => setSelectedCycleId(e.target.value)}
+              className={cn(nativeSelectSmClassName, "h-9 min-w-[12rem]")}
+              value={cycleFilter}
+              onChange={(e) => setCycleFilter(e.target.value)}
               aria-label="Filtrar por ciclo"
             >
-              <option value="">Todos os ciclos</option>
+              <option value={DASHBOARD_FILTER_ACTIVE}>
+                {activeCycle ? `Ciclo em andamento (${activeCycle.title})` : "Ciclo em andamento"}
+              </option>
+              <option value={DASHBOARD_FILTER_ALL}>Todos os ciclos</option>
               {allCycles.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.title}
@@ -210,7 +236,7 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
               "cartões de métricas resumem o total de objetivos, KRs e progresso geral;",
               "o painel de atenção destaca OKRs em risco ou atrasados;",
               "o gráfico de progresso mostra a evolução ao longo do ciclo;",
-              "use o filtro de ciclo (canto superior direito) para focar em um período específico.",
+              'o filtro no canto superior direito começa no ciclo em andamento; escolha "Todos os ciclos" para ver o workspace inteiro.',
             ]}
           />
         </GuideSection>
@@ -297,7 +323,11 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
                 <StatCard
                   label="Progresso médio (KRs)"
                   value={`${stats.avgKrProgress}%`}
-                  sub="Média de progresso de todos os KRs no escopo"
+                  sub={
+                    scopeIsAllCycles
+                      ? "Média de todos os KRs no workspace (todos os ciclos)"
+                      : "Média de progresso dos KRs no escopo do filtro"
+                  }
                   icon={Activity}
                   iconClassName="bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400"
                 />
@@ -317,7 +347,9 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
                     Health dos objetivos
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    (health por ritmo no escopo atual; concluídos à parte)
+                    {scopeIsAllCycles
+                      ? "(health por ritmo · todos os ciclos no escopo; concluídos à parte)"
+                      : "(health por ritmo no escopo do filtro; concluídos à parte)"}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
@@ -428,9 +460,13 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
             <div className="overflow-hidden rounded-xl border border-border bg-card">
               <div className="flex items-center justify-between border-b border-border bg-gradient-to-b from-muted/45 to-muted/10 px-5 py-3">
                 <div>
-                  <span className="text-sm font-semibold text-foreground">Objetivos do ciclo</span>
+                  <span className="text-sm font-semibold text-foreground">
+                    {scopeIsAllCycles ? "Objetivos no escopo" : "Objetivos do ciclo"}
+                  </span>
                   <p className="mt-0.5 text-[11px] text-muted-foreground">
-                    Resumo rápido com dono, prazo e progresso
+                    {scopeIsAllCycles
+                      ? "Todos os ciclos · resumo com dono, prazo e progresso"
+                      : "Resumo rápido com dono, prazo e progresso"}
                   </p>
                 </div>
                 <Link
@@ -471,12 +507,12 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
       <CreateObjectiveDialog
         open={createObjectiveOpen}
         onOpenChange={setCreateObjectiveOpen}
-        defaultCycleId={activeCycle?.id}
+        defaultCycleId={defaultCycleIdForCreates}
       />
       <CreateKeyResultDialog
         open={createKrOpen}
         onOpenChange={setCreateKrOpen}
-        defaultCycleId={activeCycle?.id}
+        defaultCycleId={defaultCycleIdForCreates}
       />
     </div>
   );
@@ -633,8 +669,15 @@ function KrPerformanceSection({ objectives }: { objectives: ObjectiveWithKRsForD
       }
     }
     const now = new Date();
+    /** Mesmo ritmo que badges/listas (`reconcileOkrHealthInsightForDisplay`); o slug cru da API pode divergir por UTC vs calendário local. */
     const krIsPaceRisk = (kr: OkrKeyResult) => {
-      const slug = kr.healthInsight?.slug;
+      if (kr.status === "completed") return false;
+      const reconciled = reconcileOkrHealthInsightForDisplay(kr.healthInsight, {
+        startDate: kr.startDate,
+        targetDate: kr.targetDate,
+        now,
+      });
+      const slug = reconciled?.slug ?? kr.healthInsight?.slug;
       if (slug === "at_risk" || slug === "off_track") return true;
       return kr.status === "at_risk" || kr.status === "off_track";
     };

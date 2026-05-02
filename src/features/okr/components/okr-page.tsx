@@ -982,7 +982,7 @@ function ObjectiveBlock({
       >
         <div className="flex min-h-[44px] items-center justify-center pr-2">
           <ChevronRight
-            className={`h-4 w-4 text-muted-foreground/70 transition-transform duration-150 ${
+            className={`h-5 w-5 shrink-0 text-muted-foreground/75 transition-transform duration-150 ${
               isExpanded ? "rotate-90" : ""
             }`}
           />

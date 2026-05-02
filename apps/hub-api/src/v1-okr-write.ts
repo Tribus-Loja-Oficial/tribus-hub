@@ -394,6 +394,7 @@ export async function handleV1OkrWriteRoutes(
     const err = needWs();
     if (err) return err;
     const cycleId = new URL(request.url).searchParams.get("cycleId") ?? undefined;
+    const allCyclesScope = new URL(request.url).searchParams.get("allCycles") === "1";
     try {
       const cycles = await db
         .prepare(
@@ -411,7 +412,12 @@ export async function handleV1OkrWriteRoutes(
       if (!cycles.success) throw new Error(cycles.error);
       const allCycles = (cycles.results ?? []).map(mapCycle);
       let activeCycle: Record<string, unknown> | null = null;
-      if (cycleId) {
+      let resolvedCycleId: string | undefined;
+      if (allCyclesScope) {
+        /** Escopo workspace inteiro: métricas agregam todos os ciclos; cartão de tempo do ciclo fica fora. */
+        resolvedCycleId = undefined;
+        activeCycle = null;
+      } else if (cycleId) {
         const one = await db
           .prepare(
             `SELECT c.*, er.external_ref
@@ -425,6 +431,7 @@ export async function handleV1OkrWriteRoutes(
           .bind(cycleId, workspaceId)
           .all<Record<string, unknown>>();
         activeCycle = one.results?.[0] ?? null;
+        resolvedCycleId = cycleId;
       } else {
         const a = await db
           .prepare(
@@ -440,8 +447,8 @@ export async function handleV1OkrWriteRoutes(
           .bind(workspaceId)
           .all<Record<string, unknown>>();
         activeCycle = a.results?.[0] ?? null;
+        resolvedCycleId = activeCycle?.id as string | undefined;
       }
-      const resolvedCycleId = cycleId ?? (activeCycle?.id as string | undefined);
       const objFull = await db
         .prepare(
           `SELECT o.*, er.external_ref
@@ -561,7 +568,10 @@ export async function handleV1OkrWriteRoutes(
           attentionItems: buildAttention(enrichedObjectives),
           recentUpdates,
           objectives: objectivesForDashboard,
-          cyclePace: activeCycle ? buildCyclePace(stats.avgKrProgress, activeCycle) : null,
+          cyclePace:
+            activeCycle && !allCyclesScope
+              ? buildCyclePace(stats.avgKrProgress, activeCycle)
+              : null,
         },
       });
     } catch (e) {

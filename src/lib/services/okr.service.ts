@@ -336,9 +336,12 @@ export async function getKeyResultUpdates(
 
 export async function getDashboard(
   user: AuthenticatedUser,
-  cycleId?: string,
+  params?: { cycleId?: string; allCycles?: boolean },
 ): Promise<DashboardData> {
-  const q = cycleId ? `?cycleId=${encodeURIComponent(cycleId)}` : "";
+  const sp = new URLSearchParams();
+  if (params?.allCycles) sp.set("allCycles", "1");
+  else if (params?.cycleId) sp.set("cycleId", params.cycleId);
+  const q = sp.toString() ? `?${sp.toString()}` : "";
   return hubApiFetch<DashboardData>({
     path: `/v1/okr/dashboard${q}`,
     workspaceId: user.workspaceId,
