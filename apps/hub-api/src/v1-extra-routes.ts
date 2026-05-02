@@ -333,6 +333,35 @@ export async function handleV1ExtraRoutes(
     return null;
   };
 
+  /**
+   * Mesma semântica do GET /v1/okr/dashboard: allCycles=1 → workspace inteiro;
+   * cycleId → ciclo explícito; sem params → ciclo com status active (se existir), senão workspace inteiro.
+   */
+  type PmDashboardScope = { kind: "workspace" } | { kind: "cycle"; cycleId: string };
+  const resolvePmDashboardScope = async (ws: string): Promise<PmDashboardScope | Response> => {
+    const url = new URL(request.url);
+    if (url.searchParams.get("allCycles") === "1") return { kind: "workspace" };
+    const cycleIdParam = url.searchParams.get("cycleId")?.trim() ?? "";
+    if (cycleIdParam.length > 0) {
+      const row = await db
+        .prepare(
+          `SELECT id FROM okr_cycles WHERE workspace_id = ? AND id = ? AND deleted_at IS NULL`,
+        )
+        .bind(ws, cycleIdParam)
+        .first<{ id: string }>();
+      if (!row) return json({ error: { message: "cycle not found" } }, 404);
+      return { kind: "cycle", cycleId: cycleIdParam };
+    }
+    const active = await db
+      .prepare(
+        `SELECT id FROM okr_cycles WHERE workspace_id = ? AND status = 'active' AND deleted_at IS NULL ORDER BY start_date DESC LIMIT 1`,
+      )
+      .bind(ws)
+      .first<{ id: string }>();
+    if (active?.id) return { kind: "cycle", cycleId: active.id };
+    return { kind: "workspace" };
+  };
+
   // --- GET /v1/search?q= ---
   if (method === "GET" && pathname === "/v1/search") {
     const err = needWs();
@@ -502,25 +531,30 @@ export async function handleV1ExtraRoutes(
   if (method === "GET" && pathname === "/v1/pm/dashboard") {
     const err = needWs();
     if (err) return err;
+    const ws = workspaceId!;
+    const scopeOrErr = await resolvePmDashboardScope(ws);
+    if (scopeOrErr instanceof Response) return scopeOrErr;
+    const scope = scopeOrErr;
     try {
-      const proj = await db
-        .prepare(
-          `SELECT id, status, health_status, start_date, target_date, progress_percent, completed_at, health_snapshot_json
-           FROM projects WHERE workspace_id = ? AND deleted_at IS NULL`,
-        )
-        .bind(workspaceId)
-        .all<Record<string, unknown>>();
+      const projSql =
+        `SELECT id, status, health_status, start_date, target_date, progress_percent, completed_at, health_snapshot_json
+           FROM projects WHERE workspace_id = ? AND deleted_at IS NULL` +
+        (scope.kind === "cycle" ? ` AND cycle_id = ?` : "");
+      const projStmt = db
+        .prepare(projSql)
+        .bind(...(scope.kind === "cycle" ? [ws, scope.cycleId] : [ws]));
+      const proj = await projStmt.all<Record<string, unknown>>();
       if (!proj.success) throw new Error(proj.error ?? "projects");
       const allProjects = proj.results ?? [];
       const active = allProjects.filter((p) => String(p.status) === "active");
       const today = new Date().toISOString().slice(0, 10);
-      const ms = await db
-        .prepare(
-          `SELECT m.id, m.status, m.due_date, m.project_id FROM milestones m
+      const msSql =
+        `SELECT m.id, m.status, m.due_date, m.project_id FROM milestones m
            INNER JOIN projects p ON p.id = m.project_id
-           WHERE p.workspace_id = ?`,
-        )
-        .bind(workspaceId)
+           WHERE p.workspace_id = ?` + (scope.kind === "cycle" ? ` AND p.cycle_id = ?` : "");
+      const ms = await db
+        .prepare(msSql)
+        .bind(...(scope.kind === "cycle" ? [ws, scope.cycleId] : [ws]))
         .all<{ id: string; status: string; due_date: string | null; project_id: string }>();
       if (!ms.success) throw new Error(ms.error ?? "milestones");
       const overdueMilestones = (ms.results ?? []).filter(
@@ -556,12 +590,17 @@ export async function handleV1ExtraRoutes(
     const err = needWs();
     if (err) return err;
     const daysAhead = Number(new URL(request.url).searchParams.get("days") ?? "14");
+    const ws = workspaceId!;
+    const scopeOrErr = await resolvePmDashboardScope(ws);
+    if (scopeOrErr instanceof Response) return scopeOrErr;
+    const scope = scopeOrErr;
     try {
+      const projSql =
+        `SELECT id, title, start_date, target_date, status FROM projects WHERE workspace_id = ? AND deleted_at IS NULL` +
+        (scope.kind === "cycle" ? ` AND cycle_id = ?` : "");
       const proj = await db
-        .prepare(
-          `SELECT id, title, start_date, target_date, status FROM projects WHERE workspace_id = ? AND deleted_at IS NULL`,
-        )
-        .bind(workspaceId)
+        .prepare(projSql)
+        .bind(...(scope.kind === "cycle" ? [ws, scope.cycleId] : [ws]))
         .all<{
           id: string;
           title: string;
@@ -619,18 +658,132 @@ export async function handleV1ExtraRoutes(
   if (method === "GET" && pathname === "/v1/pm/overdue-tasks-count") {
     const err = needWs();
     if (err) return err;
+    const ws = workspaceId!;
+    const scopeOrErr = await resolvePmDashboardScope(ws);
+    if (scopeOrErr instanceof Response) return scopeOrErr;
+    const scope = scopeOrErr;
     try {
       const today = new Date().toISOString().slice(0, 10);
+      const countSql =
+        scope.kind === "workspace"
+          ? `SELECT COUNT(*) as c FROM tasks WHERE workspace_id = ? AND deleted_at IS NULL AND completed_at IS NULL AND due_date IS NOT NULL AND due_date <= ?`
+          : `SELECT COUNT(*) as c FROM tasks t
+             INNER JOIN projects p ON p.id = t.project_id
+             WHERE t.workspace_id = ? AND p.workspace_id = ? AND p.deleted_at IS NULL AND p.cycle_id = ?
+               AND t.deleted_at IS NULL AND t.completed_at IS NULL AND t.due_date IS NOT NULL AND t.due_date <= ?`;
       const row = await db
-        .prepare(
-          `SELECT COUNT(*) as c FROM tasks WHERE workspace_id = ? AND deleted_at IS NULL AND completed_at IS NULL AND due_date IS NOT NULL AND due_date <= ?`,
-        )
-        .bind(workspaceId, today)
+        .prepare(countSql)
+        .bind(...(scope.kind === "workspace" ? [ws, today] : [ws, ws, scope.cycleId, today]))
         .all<{ c: number }>();
       if (!row.success) throw new Error(row.error);
       return json({ data: { count: Number(row.results?.[0]?.c ?? 0) } });
     } catch (e) {
       const message = e instanceof Error ? e.message : "overdue count failed";
+      return json({ error: { message } }, 500);
+    }
+  }
+
+  if (method === "GET" && pathname === "/v1/pm/overdue-milestones-list") {
+    const err = needWs();
+    if (err) return err;
+    const ws = workspaceId!;
+    const scopeOrErr = await resolvePmDashboardScope(ws);
+    if (scopeOrErr instanceof Response) return scopeOrErr;
+    const scope = scopeOrErr;
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const sql =
+        `SELECT m.id, m.project_id, m.title, m.description, m.status, m.priority, m.due_date, m.completed_at,
+                m.health_snapshot_json, m.owner_user_id, m.sort_order, m.created_at, m.updated_at,
+                p.title AS project_title, p.start_date AS project_start_date, p.target_date AS project_target_date, p.status AS project_status
+         FROM milestones m
+         INNER JOIN projects p ON p.id = m.project_id
+         WHERE p.workspace_id = ? AND p.deleted_at IS NULL
+           AND m.due_date IS NOT NULL AND m.due_date < ?
+           AND m.status != 'completed'` +
+        (scope.kind === "cycle" ? ` AND p.cycle_id = ?` : "") +
+        ` ORDER BY m.due_date ASC LIMIT 50`;
+      const res = await db
+        .prepare(sql)
+        .bind(...(scope.kind === "cycle" ? [ws, today, scope.cycleId] : [ws, today]))
+        .all<Record<string, unknown>>();
+      if (!res.success) throw new Error(res.error ?? "overdue milestones list");
+      const rows = (res.results ?? []).map((row) => {
+        const projectRaw = {
+          id: row.project_id,
+          title: row.project_title,
+          start_date: row.project_start_date,
+          target_date: row.project_target_date,
+          status: row.project_status,
+        } as Record<string, unknown>;
+        const rawM: Record<string, unknown> = {
+          id: row.id,
+          project_id: row.project_id,
+          title: row.title,
+          description: row.description,
+          status: row.status,
+          priority: row.priority,
+          due_date: row.due_date,
+          completed_at: row.completed_at,
+          health_snapshot_json: row.health_snapshot_json,
+          owner_user_id: row.owner_user_id,
+          sort_order: row.sort_order,
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+        };
+        const workflowStatusInsight = workflowStatusForMilestoneRow(rawM, projectRaw, 0);
+        return {
+          ...mapMilestoneCamel(rawM),
+          projectTitle: String(row.project_title ?? ""),
+          workflowStatusInsight,
+        };
+      });
+      return json({ data: rows });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "overdue milestones list failed";
+      return json({ error: { message } }, 500);
+    }
+  }
+
+  if (method === "GET" && pathname === "/v1/pm/overdue-tasks-list") {
+    const err = needWs();
+    if (err) return err;
+    const ws = workspaceId!;
+    const scopeOrErr = await resolvePmDashboardScope(ws);
+    if (scopeOrErr instanceof Response) return scopeOrErr;
+    const scope = scopeOrErr;
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const sql =
+        scope.kind === "workspace"
+          ? `SELECT t.*, p.title AS project_title
+             FROM tasks t
+             LEFT JOIN projects p ON p.id = t.project_id AND p.deleted_at IS NULL
+             WHERE t.workspace_id = ? AND t.deleted_at IS NULL AND t.completed_at IS NULL
+               AND t.due_date IS NOT NULL AND t.due_date <= ?
+             ORDER BY t.due_date ASC LIMIT 50`
+          : `SELECT t.*, p.title AS project_title
+             FROM tasks t
+             INNER JOIN projects p ON p.id = t.project_id
+             WHERE t.workspace_id = ? AND p.workspace_id = ? AND p.deleted_at IS NULL AND p.cycle_id = ?
+               AND t.deleted_at IS NULL AND t.completed_at IS NULL
+               AND t.due_date IS NOT NULL AND t.due_date <= ?
+             ORDER BY t.due_date ASC LIMIT 50`;
+      const res = await db
+        .prepare(sql)
+        .bind(...(scope.kind === "workspace" ? [ws, today] : [ws, ws, scope.cycleId, today]))
+        .all<Record<string, unknown>>();
+      if (!res.success) throw new Error(res.error ?? "overdue tasks list");
+      const rows = (res.results ?? []).map((row) => {
+        const { project_title: projectTitle, ...trow } = row;
+        return {
+          ...mapTaskCamel(trow),
+          projectTitle: projectTitle != null ? String(projectTitle) : null,
+        };
+      });
+      return json({ data: rows });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "overdue tasks list failed";
       return json({ error: { message } }, 500);
     }
   }

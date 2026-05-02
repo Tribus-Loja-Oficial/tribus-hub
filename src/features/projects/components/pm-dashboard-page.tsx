@@ -20,6 +20,8 @@ import {
   Activity,
   Layers3,
   Search,
+  Eye,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { nativeSelectSmClassName } from "@/components/ui/form-control-classes";
@@ -45,6 +47,14 @@ interface UpcomingMilestone {
   workflowStatusInsight?: WorkflowStatusInsight | null;
 }
 
+interface OverdueTaskRow {
+  id: string;
+  title: string;
+  projectId: string | null;
+  projectTitle: string | null;
+  dueDate: string | null;
+}
+
 interface DashboardStats {
   totalProjects: number;
   activeProjects: number;
@@ -56,6 +66,8 @@ interface DashboardStats {
   completedProjects: number;
   upcomingMilestones: UpcomingMilestone[];
   overdueTasksCount: number;
+  overdueMilestonesList?: UpcomingMilestone[];
+  overdueTasksList?: OverdueTaskRow[];
 }
 
 type WorkspaceCycleRow = {
@@ -85,6 +97,77 @@ const CYCLE_GOVERNANCE_OPTIONS: Array<{
   { value: "closed", label: "Encerrado" },
 ];
 
+/** Mesmo contrato do dashboard OKR: padrão = ciclo em andamento no backend; opção explícita para todos os ciclos. */
+const PM_DASHBOARD_FILTER_ACTIVE = "__pm_dashboard_active_cycle__";
+const PM_DASHBOARD_FILTER_ALL = "__pm_dashboard_all_cycles__";
+
+function OverdueExpandablePanel({
+  icon: Icon,
+  title,
+  count,
+  variant,
+  defaultOpen = false,
+  emptyLabel,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  count: number;
+  variant: "warn" | "risk";
+  defaultOpen?: boolean;
+  emptyLabel: string;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  const tone =
+    variant === "warn"
+      ? "border-orange-200 bg-orange-50/60 dark:border-orange-900/40 dark:bg-orange-950/25"
+      : "border-red-200 bg-red-50/60 dark:border-red-900/40 dark:bg-red-950/25";
+
+  return (
+    <div className={cn("overflow-hidden rounded-xl border", tone)}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-background/40"
+        aria-expanded={open}
+      >
+        <div
+          className={cn(
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
+            variant === "warn" ? "bg-orange-100 text-orange-600" : "bg-red-100 text-red-600",
+          )}
+        >
+          <Icon className="h-5 w-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-foreground">
+            {count} {title}
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            {open ? "Clique para recolher" : "Clique para ver a lista"}
+          </p>
+        </div>
+        <ChevronDown
+          className={cn(
+            "h-5 w-5 shrink-0 text-muted-foreground transition-transform",
+            open && "rotate-180",
+          )}
+        />
+      </button>
+      {open && (
+        <div className="border-t border-border/60 bg-card/30 px-2 py-2">
+          {count === 0 ? (
+            <p className="px-2 py-4 text-center text-xs text-muted-foreground">{emptyLabel}</p>
+          ) : (
+            children
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StatCard({
   icon: Icon,
   label,
@@ -92,7 +175,7 @@ function StatCard({
   color,
   sub,
   href,
-  alert,
+  highlight = "none",
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
@@ -100,34 +183,59 @@ function StatCard({
   color: string;
   sub?: string;
   href?: string;
-  alert?: boolean;
+  /** Destaque quando o indicador precisa de atenção (cores alinhadas aos alertas antigos). */
+  highlight?: "none" | "risk" | "warn";
 }) {
   const inner = (
     <div
       className={cn(
-        "flex items-center gap-4 rounded-xl border bg-card p-4 transition-shadow",
-        href && "cursor-pointer hover:shadow-sm",
-        alert && value > 0 && "border-red-200 bg-red-50/50",
+        "flex h-full min-h-[118px] gap-3 rounded-xl border bg-card p-4 transition-shadow",
+        href && "group-hover:shadow-sm",
+        highlight === "risk" && value > 0 && "border-red-200 bg-red-50/50",
+        highlight === "warn" && value > 0 && "border-orange-200 bg-orange-50/50",
       )}
     >
-      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${color}`}>
+      <div
+        className={cn(
+          "flex h-10 w-10 shrink-0 items-center justify-center self-start rounded-xl",
+          color,
+        )}
+      >
         <Icon className="h-5 w-5" />
       </div>
-      <div className="min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col">
         <p
           className={cn(
-            "text-2xl font-bold tabular-nums",
-            alert && value > 0 ? "text-red-700" : "text-foreground",
+            "text-2xl font-bold tabular-nums leading-none text-foreground",
+            highlight === "risk" && value > 0 && "text-red-700",
+            highlight === "warn" && value > 0 && "text-orange-800 dark:text-orange-100",
           )}
         >
           {value}
         </p>
-        <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
-        {sub && <p className="mt-0.5 text-[10px] text-muted-foreground/60">{sub}</p>}
+        <p className="mt-1 line-clamp-2 text-xs leading-snug text-muted-foreground">{label}</p>
+        <div className="mt-auto min-h-[2.25rem] pt-1 text-[10px] leading-snug text-muted-foreground/65">
+          {sub ? (
+            sub
+          ) : (
+            <span className="inline-block select-none opacity-0" aria-hidden>
+              .
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
-  return href ? <Link href={href}>{inner}</Link> : <div>{inner}</div>;
+  return href ? (
+    <Link
+      href={href}
+      className="group block h-full min-h-[118px] rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      {inner}
+    </Link>
+  ) : (
+    <div className="h-full min-h-[118px]">{inner}</div>
+  );
 }
 
 export function PmDashboardPage() {
@@ -148,9 +256,24 @@ export function PmDashboardPage() {
   const [projectHealthFilter, setProjectHealthFilter] = useState<
     "all" | "at_risk" | "off_track" | "on_track"
   >("all");
+  const [overviewCycleFilter, setOverviewCycleFilter] = useState<string>(
+    PM_DASHBOARD_FILTER_ACTIVE,
+  );
+
+  const pmDashboardQueryParams = useMemo(() => {
+    if (overviewCycleFilter === PM_DASHBOARD_FILTER_ALL) return "?allCycles=1";
+    if (overviewCycleFilter === PM_DASHBOARD_FILTER_ACTIVE) return "";
+    return `?cycleId=${encodeURIComponent(overviewCycleFilter)}`;
+  }, [overviewCycleFilter]);
+
   const { data: statsData, isLoading: statsLoading } = useQuery<{ data: DashboardStats }>({
-    queryKey: ["pm-dashboard-stats"],
-    queryFn: () => fetch("/api/pm/dashboard").then((r) => r.json()),
+    queryKey: ["pm-dashboard-stats", overviewCycleFilter],
+    queryFn: async () => {
+      const r = await fetch(`/api/pm/dashboard${pmDashboardQueryParams}`);
+      const body = (await r.json()) as { data?: DashboardStats; error?: { message?: string } };
+      if (!r.ok) throw new Error(body?.error?.message ?? "Falha ao carregar o dashboard");
+      return body as { data: DashboardStats };
+    },
     staleTime: 30_000,
   });
 
@@ -167,18 +290,54 @@ export function PmDashboardPage() {
 
   const stats = statsData?.data;
   const projects = projectsData?.data ?? [];
+  const workspaceCycles = cyclesRes?.data ?? [];
 
-  const activeProjects = projects
+  const activeCycleForOverview = useMemo(
+    () => workspaceCycles.find((c) => c.status === "active") ?? null,
+    [workspaceCycles],
+  );
+
+  const scopedOverviewProjects = useMemo(() => {
+    if (overviewCycleFilter === PM_DASHBOARD_FILTER_ALL) return projects;
+    const resolvedCycleId =
+      overviewCycleFilter === PM_DASHBOARD_FILTER_ACTIVE
+        ? (activeCycleForOverview?.id ?? null)
+        : overviewCycleFilter;
+    if (!resolvedCycleId) return projects;
+    return projects.filter((p) => p.cycleId === resolvedCycleId);
+  }, [projects, overviewCycleFilter, activeCycleForOverview?.id]);
+
+  const overviewScopeBadge = useMemo(() => {
+    if (overviewCycleFilter === PM_DASHBOARD_FILTER_ALL) return "Todos os ciclos";
+    if (overviewCycleFilter === PM_DASHBOARD_FILTER_ACTIVE) {
+      return activeCycleForOverview?.title ?? null;
+    }
+    return workspaceCycles.find((c) => c.id === overviewCycleFilter)?.title ?? null;
+  }, [overviewCycleFilter, activeCycleForOverview?.title, workspaceCycles]);
+
+  const overviewScopeDescription = useMemo(() => {
+    if (overviewCycleFilter === PM_DASHBOARD_FILTER_ALL) {
+      return "Métricas e listas consideram projetos de todos os ciclos do workspace.";
+    }
+    if (overviewCycleFilter === PM_DASHBOARD_FILTER_ACTIVE) {
+      return activeCycleForOverview
+        ? "Métricas e listas limitadas ao ciclo em andamento (igual ao OKR Manager)."
+        : "Sem ciclo em andamento: métricas e listas consideram o portfólio inteiro.";
+    }
+    return "Métricas e listas limitadas ao ciclo selecionado.";
+  }, [overviewCycleFilter, activeCycleForOverview]);
+
+  const activeProjects = scopedOverviewProjects
     .filter((p) => p.status === "active")
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
     .slice(0, 8);
 
-  const attentionProjects = projects.filter((p) => {
+  const attentionProjects = scopedOverviewProjects.filter((p) => {
     const slug = p.healthInsight?.slug;
     return slug === "at_risk" || slug === "off_track";
   });
 
-  const recentProjects = projects
+  const recentProjects = scopedOverviewProjects
     .slice()
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
     .slice(0, 5);
@@ -252,41 +411,73 @@ export function PmDashboardPage() {
   return (
     <div className="max-w-[1200px] space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
             <FolderKanban className="h-[18px] w-[18px] text-primary" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold leading-tight text-foreground">
-              {view === "cycles" ? "Ciclos de projetos" : "Projetos"}
-            </h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-lg font-semibold leading-tight text-foreground">
+                {view === "cycles" ? "Ciclos de projetos" : "Projetos"}
+              </h1>
+              {view === "overview" && overviewScopeBadge && (
+                <span className="rounded-md border border-primary/25 bg-primary/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-primary">
+                  {overviewScopeBadge}
+                </span>
+              )}
+            </div>
             <p className="mt-0.5 text-xs text-muted-foreground">
               {view === "cycles"
                 ? "Organização temporal do portfólio por ciclos"
-                : "Visão executiva do portfólio"}
+                : view === "overview"
+                  ? overviewScopeDescription
+                  : "Visão executiva do portfólio"}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant={view === "overview" ? "default" : "outline"} size="sm" asChild>
-            <Link href="/projects">
-              <Activity className="h-3.5 w-3.5" />
-              Visão geral
-            </Link>
-          </Button>
-          <Button size="sm" asChild>
-            <Link href="/projects/list">
-              <List className="h-3.5 w-3.5" />
-              Todos os projetos
-            </Link>
-          </Button>
-          <Button variant={view === "cycles" ? "default" : "outline"} size="sm" asChild>
-            <Link href="/projects/cycles">
-              <Layers3 className="h-3.5 w-3.5" />
-              Ciclos
-            </Link>
-          </Button>
+        <div className="flex flex-col items-stretch gap-2 sm:items-end">
+          {view === "overview" && workspaceCycles.length > 0 && (
+            <select
+              className={cn(nativeSelectSmClassName, "h-9 min-w-[12rem]")}
+              value={overviewCycleFilter}
+              onChange={(e) => setOverviewCycleFilter(e.target.value)}
+              aria-label="Filtrar dashboard por ciclo"
+            >
+              <option value={PM_DASHBOARD_FILTER_ACTIVE}>
+                {activeCycleForOverview
+                  ? `Ciclo em andamento (${activeCycleForOverview.title})`
+                  : "Ciclo em andamento"}
+              </option>
+              <option value={PM_DASHBOARD_FILTER_ALL}>Todos os ciclos</option>
+              {workspaceCycles.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.title}
+                  {c.status === "active" ? " (em andamento)" : ""}
+                </option>
+              ))}
+            </select>
+          )}
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Button variant={view === "overview" ? "default" : "outline"} size="sm" asChild>
+              <Link href="/projects">
+                <Activity className="h-3.5 w-3.5" />
+                Visão geral
+              </Link>
+            </Button>
+            <Button size="sm" asChild>
+              <Link href="/projects/list">
+                <List className="h-3.5 w-3.5" />
+                Todos os projetos
+              </Link>
+            </Button>
+            <Button variant={view === "cycles" ? "default" : "outline"} size="sm" asChild>
+              <Link href="/projects/cycles">
+                <Layers3 className="h-3.5 w-3.5" />
+                Ciclos
+              </Link>
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -299,76 +490,81 @@ export function PmDashboardPage() {
           <GuideList
             items={[
               "cards de health mostram projetos em risco, bloqueados e no prazo;",
-              "milestones próximas do vencimento são destacadas com alertas;",
-              "clique em qualquer card para filtrar a lista de projetos correspondente;",
+              "milestones e tasks em atraso aparecem em painéis expansíveis abaixo dos próximos milestones, com atalho para o detalhe;",
+              'o filtro por ciclo (visão geral) segue o mesmo padrão do dashboard OKR: começa no ciclo em andamento; use "Todos os ciclos" para o portfólio inteiro;',
+              "clique em qualquer card para abrir a lista ou vista relacionada;",
               "cada ciclo tem um único status de governança (planejado, em andamento ou encerrado), alinhado às demais telas de ciclos do hub.",
             ]}
           />
         </GuideSection>
       </PageGuide>
 
-      {/* Stats */}
+      {/* Stats — mesma altura por card; agrupado por Projetos / Milestones / Tasks */}
       {view === "overview" && statsLoading ? (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
-          {Array.from({ length: 7 }).map((_, i) => (
-            <div key={i} className="h-20 animate-pulse rounded-xl bg-muted" />
-          ))}
+        <div className="space-y-8">
+          <div className="space-y-2">
+            <div className="h-3 w-20 animate-pulse rounded bg-muted" />
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="min-h-[118px] animate-pulse rounded-xl bg-muted" />
+              ))}
+            </div>
+          </div>
         </div>
       ) : view === "overview" && stats ? (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
-          <StatCard
-            icon={FolderKanban}
-            label="Total"
-            value={stats.totalProjects}
-            color="bg-blue-50 text-blue-600"
-            href="/projects/list"
-          />
-          <StatCard
-            icon={TrendingUp}
-            label="Ativos"
-            value={stats.activeProjects}
-            color="bg-emerald-50 text-emerald-600"
-            href="/projects/list?status=in_progress"
-          />
-          <StatCard
-            icon={Gauge}
-            label="No rumo (ritmo)"
-            value={stats.paceOnTrackActive ?? 0}
-            color="bg-teal-50 text-teal-600"
-            sub="Ativos · health por datas + progresso"
-            href="/projects/list?status=in_progress"
-          />
-          <StatCard
-            icon={AlertTriangle}
-            label="Em risco"
-            value={stats.atRisk}
-            color="bg-yellow-50 text-yellow-600"
-            alert
-            href="/projects/list?health=at_risk"
-          />
-          <StatCard
-            icon={Ban}
-            label="Bloqueados"
-            value={stats.blocked}
-            color="bg-red-50 text-red-600"
-            alert
-            href="/projects/list?health=blocked"
-          />
-          <StatCard
-            icon={CalendarX}
-            label="Tasks atrasadas"
-            value={stats.overdueTasksCount}
-            color="bg-orange-50 text-orange-600"
-            alert
-            href="/tasks?dueFilter=overdue"
-          />
-          <StatCard
-            icon={CheckCircle2}
-            label="Concluídos"
-            value={stats.completedProjects}
-            color="bg-slate-100 text-slate-600"
-            href="/projects/list?status=completed"
-          />
+        <div className="space-y-8">
+          <section className="space-y-2">
+            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Projetos
+            </h3>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6 [&>*]:min-h-0">
+              <StatCard
+                icon={FolderKanban}
+                label="Total"
+                value={stats.totalProjects}
+                color="bg-blue-50 text-blue-600"
+                href="/projects/list"
+              />
+              <StatCard
+                icon={TrendingUp}
+                label="Ativos"
+                value={stats.activeProjects}
+                color="bg-emerald-50 text-emerald-600"
+                href="/projects/list?status=in_progress"
+              />
+              <StatCard
+                icon={Gauge}
+                label="No rumo (ritmo)"
+                value={stats.paceOnTrackActive ?? 0}
+                color="bg-teal-50 text-teal-600"
+                sub="Ativos · health por datas + progresso"
+                href="/projects/list?status=in_progress"
+              />
+              <StatCard
+                icon={AlertTriangle}
+                label="Em risco"
+                value={stats.atRisk}
+                color="bg-yellow-50 text-yellow-600"
+                highlight="risk"
+                href="/projects/list?health=at_risk"
+              />
+              <StatCard
+                icon={Ban}
+                label="Bloqueados"
+                value={stats.blocked}
+                color="bg-red-50 text-red-600"
+                highlight="risk"
+                href="/projects/list?health=blocked"
+              />
+              <StatCard
+                icon={CheckCircle2}
+                label="Concluídos"
+                value={stats.completedProjects}
+                color="bg-slate-100 text-slate-600"
+                href="/projects/list?status=completed"
+              />
+            </div>
+          </section>
         </div>
       ) : null}
 
@@ -491,6 +687,115 @@ export function PmDashboardPage() {
                 </div>
               </div>
             )}
+
+            {!statsLoading && stats && (
+              <div
+                className={cn(
+                  "space-y-4",
+                  stats.upcomingMilestones.length > 0 &&
+                    "mt-8 border-t-2 border-dashed border-border/80 pt-8",
+                )}
+              >
+                <h2 className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
+                  <CalendarX className="h-4 w-4 text-orange-600/80" />
+                  Prazos em atraso
+                  <span className="text-xs font-normal text-muted-foreground">
+                    (mesmo escopo do filtro de ciclo do topo)
+                  </span>
+                </h2>
+
+                <OverdueExpandablePanel
+                  icon={Flag}
+                  title="milestones atrasados"
+                  count={stats.overdueMilestones}
+                  variant="warn"
+                  emptyLabel="Nenhum milestone atrasado neste escopo."
+                >
+                  <ul className="divide-y divide-border/60">
+                    {(stats.overdueMilestonesList ?? []).map((m) => (
+                      <li
+                        key={m.id}
+                        className="flex items-center gap-2 px-2 py-2.5 first:pt-1 last:pb-1"
+                      >
+                        <Flag className="h-3.5 w-3.5 shrink-0 text-orange-500/70" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-foreground">{m.title}</p>
+                          <p className="truncate text-[11px] text-muted-foreground">
+                            {m.projectTitle}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          <WorkflowStatusRow insight={m.workflowStatusInsight} />
+                          {m.dueDate && (
+                            <span className="hidden text-xs tabular-nums text-muted-foreground sm:inline">
+                              {formatCivilDate(m.dueDate, "dd MMM")}
+                            </span>
+                          )}
+                          <Link
+                            href={`/projects/${encodeURIComponent(m.projectId)}/milestones/${encodeURIComponent(m.id)}`}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+                            aria-label={`Ver detalhes do milestone ${m.title}`}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Link>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  {stats.overdueMilestones > (stats.overdueMilestonesList ?? []).length ? (
+                    <p className="px-2 pb-1 text-[10px] text-muted-foreground">
+                      Lista limitada aos {(stats.overdueMilestonesList ?? []).length} com prazo mais
+                      antigo; o total no escopo é {stats.overdueMilestones}.
+                    </p>
+                  ) : null}
+                </OverdueExpandablePanel>
+
+                <OverdueExpandablePanel
+                  icon={CalendarX}
+                  title="tasks atrasadas"
+                  count={stats.overdueTasksCount}
+                  variant="risk"
+                  emptyLabel="Nenhuma task atrasada neste escopo."
+                >
+                  <ul className="divide-y divide-border/60">
+                    {(stats.overdueTasksList ?? []).map((t) => (
+                      <li
+                        key={t.id}
+                        className="flex items-center gap-2 px-2 py-2.5 first:pt-1 last:pb-1"
+                      >
+                        <CalendarX className="h-3.5 w-3.5 shrink-0 text-red-500/70" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-foreground">{t.title}</p>
+                          <p className="truncate text-[11px] text-muted-foreground">
+                            {t.projectTitle ?? "Sem projeto"}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          {t.dueDate && (
+                            <span className="hidden text-xs tabular-nums text-muted-foreground sm:inline">
+                              {formatCivilDate(t.dueDate, "dd MMM")}
+                            </span>
+                          )}
+                          <Link
+                            href={`/tasks/${encodeURIComponent(t.id)}`}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+                            aria-label={`Ver detalhes da task ${t.title}`}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Link>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  {stats.overdueTasksCount > (stats.overdueTasksList ?? []).length ? (
+                    <p className="px-2 pb-1 text-[10px] text-muted-foreground">
+                      Lista limitada às {(stats.overdueTasksList ?? []).length} com prazo mais
+                      antigo; o total no escopo é {stats.overdueTasksCount}.
+                    </p>
+                  ) : null}
+                </OverdueExpandablePanel>
+              </div>
+            )}
           </div>
 
           {/* Right column — 1/3 */}
@@ -533,49 +838,6 @@ export function PmDashboardPage() {
                 </div>
               )}
             </div>
-
-            {/* Overdue alerts */}
-            {!statsLoading && stats && (
-              <div className="space-y-2">
-                {stats.overdueMilestones > 0 && (
-                  <Link
-                    href="/projects/list"
-                    className="block rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 transition-colors hover:bg-orange-100/60"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Flag className="h-4 w-4 shrink-0 text-orange-500" />
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-orange-700">
-                          {stats.overdueMilestones} milestone
-                          {stats.overdueMilestones !== 1 ? "s" : ""} atrasado
-                          {stats.overdueMilestones !== 1 ? "s" : ""}
-                        </p>
-                        <p className="mt-0.5 text-xs text-orange-600/80">
-                          Clique para ver projetos
-                        </p>
-                      </div>
-                    </div>
-                  </Link>
-                )}
-                {stats.overdueTasksCount > 0 && (
-                  <Link
-                    href="/tasks"
-                    className="block rounded-xl border border-red-200 bg-red-50 px-4 py-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <CalendarX className="h-4 w-4 shrink-0 text-red-500" />
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-red-700">
-                          {stats.overdueTasksCount} task{stats.overdueTasksCount !== 1 ? "s" : ""}{" "}
-                          atrasada{stats.overdueTasksCount !== 1 ? "s" : ""}
-                        </p>
-                        <p className="mt-0.5 text-xs text-red-600/80">Clique para ver no board</p>
-                      </div>
-                    </div>
-                  </Link>
-                )}
-              </div>
-            )}
 
             {/* Recent activity */}
             <div className="space-y-3 rounded-xl border border-border bg-card p-4">
