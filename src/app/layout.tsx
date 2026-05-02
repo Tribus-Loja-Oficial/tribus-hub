@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "Tribus Hub",
-  description: "Plataforma interna central da Tribus",
+  description: "Plataforma Estratégica da Tribus",
   icons: {
     icon: "/tribus-hub-icon.png",
     shortcut: "/tribus-hub-icon.png",

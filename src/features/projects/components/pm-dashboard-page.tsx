@@ -321,7 +321,7 @@ export function PmDashboardPage() {
     }
     if (overviewCycleFilter === PM_DASHBOARD_FILTER_ACTIVE) {
       return activeCycleForOverview
-        ? "Métricas e listas limitadas ao ciclo em andamento (igual ao OKR Manager)."
+        ? "Métricas e listas limitadas ao ciclo em andamento."
         : "Sem ciclo em andamento: métricas e listas consideram o portfólio inteiro.";
     }
     return "Métricas e listas limitadas ao ciclo selecionado.";

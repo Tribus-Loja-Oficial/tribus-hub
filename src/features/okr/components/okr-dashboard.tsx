@@ -156,7 +156,7 @@ export function OkrDashboard({ initialCycleId }: OkrDashboardProps) {
   const headerScopeDescription = scopeIsAllCycles
     ? "Métricas de todos os objetivos e key results do workspace, em todos os ciclos."
     : scopeIsActiveDefault
-      ? "Métricas do ciclo em andamento (o mesmo período que o OKR Manager usa por padrão)."
+      ? "Métricas do ciclo em andamento."
       : "Métricas e riscos filtrados para o ciclo selecionado.";
 
   const defaultCycleIdForCreates = scopeIsAllCycles
